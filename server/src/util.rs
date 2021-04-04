@@ -124,3 +124,11 @@ macro_rules! alive {
         let $v = &*$v;
     };
 }
+
+macro_rules! alive_mut {
+    ($e:expr, $v:ident) => {
+        let $v = alive(&$e)?;
+        let mut $v = $v.borrow_mut();
+        let $v = &mut *$v;
+    };
+}
