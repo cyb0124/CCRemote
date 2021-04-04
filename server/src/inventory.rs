@@ -21,6 +21,20 @@ pub trait Inventory: 'static {
     fn set_size(&mut self, size: usize);
 }
 
+macro_rules! impl_inventory {
+    ($i:ident, $a:ident) => {
+        impl Inventory for $i {
+            type A = $a;
+            fn get_weak(&self) -> &Weak<RefCell<Self>> { &self.weak }
+            fn get_server(&self) -> &Rc<RefCell<Server>> { &self.server }
+            fn get_detail_cache(&self) -> &Rc<RefCell<DetailCache>> { &self.detail_cache }
+            fn get_accesses(&self) -> &Vec<Self::A> { &self.config.accesses }
+            fn get_size(&self) -> &Option<usize> { &self.size }
+            fn set_size(&mut self, size: usize) { self.size = Some(size) }
+        }
+    };
+}
+
 fn fetch_detail<T: Inventory>(this: &T, slot: usize) -> impl Future<Output = Result<DetailStack, String>> {
     let server = this.get_server().borrow();
     let access = server.load_balance(this.get_accesses());

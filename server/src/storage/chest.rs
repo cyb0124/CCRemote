@@ -28,15 +28,7 @@ pub struct ChestStorage {
     inv_slot_to_deposit: usize,
 }
 
-impl Inventory for ChestStorage {
-    type A = BusAccess;
-    fn get_weak(&self) -> &Weak<RefCell<Self>> { &self.weak }
-    fn get_server(&self) -> &Rc<RefCell<Server>> { &self.server }
-    fn get_detail_cache(&self) -> &Rc<RefCell<DetailCache>> { &self.detail_cache }
-    fn get_accesses(&self) -> &Vec<Self::A> { &self.config.accesses }
-    fn get_size(&self) -> &Option<usize> { &self.size }
-    fn set_size(&mut self, size: usize) { self.size = Some(size) }
-}
+impl_inventory!(ChestStorage, BusAccess);
 
 struct ChestExtractor {
     weak: Weak<RefCell<ChestStorage>>,
@@ -111,7 +103,7 @@ impl Storage for ChestStorage {
         })
     }
 
-    fn deposit(&mut self, factory: &Factory, stack: &DetailStack, bus_slot: usize) -> DepositResult {
+    fn deposit(&mut self, stack: &DetailStack, bus_slot: usize) -> DepositResult {
         let inv_slot = self.inv_slot_to_deposit;
         let inv_stack = &mut self.stacks[inv_slot];
         let n_deposited;
@@ -122,7 +114,7 @@ impl Storage for ChestStorage {
             n_deposited = stack.size;
             *inv_stack = Some(stack.clone())
         }
-        let server = factory.get_server().borrow();
+        let server = self.server.borrow();
         let access = server.load_balance(&self.config.accesses);
         let action = ActionFuture::from(Call {
             addr: access.inv_addr,
@@ -141,10 +133,10 @@ impl Storage for ChestStorage {
 }
 
 impl Extractor for ChestExtractor {
-    fn extract(&self, factory: &Factory, size: i32, bus_slot: usize) -> AbortOnDrop<Result<(), String>> {
+    fn extract(&self, size: i32, bus_slot: usize) -> AbortOnDrop<Result<(), String>> {
         let inv_slot = self.inv_slot;
-        let server = factory.get_server().borrow();
         upgrade!(self.weak, this);
+        let server = this.server.borrow();
         let access = server.load_balance(&this.config.accesses);
         let action = ActionFuture::from(Call {
             addr: access.inv_addr,

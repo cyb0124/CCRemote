@@ -68,10 +68,8 @@ pub struct Reservation {
 }
 
 impl Reservation {
-    pub fn extract(self, factory: &Factory, bus_slot: usize) -> impl Future<Output = Result<(), String>> {
-        let tasks =
-            self.extractors.into_iter().map(|(extractor, size)| extractor.extract(factory, size, bus_slot)).collect();
-        join_tasks(tasks)
+    pub fn extract(self, bus_slot: usize) -> impl Future<Output = Result<(), String>> {
+        join_tasks(self.extractors.into_iter().map(|(extractor, size)| extractor.extract(size, bus_slot)).collect())
     }
 }
 
@@ -268,7 +266,7 @@ impl Factory {
                 }
             }
             if let Some((storage, _)) = best {
-                let DepositResult { n_deposited, task } = storage.borrow_mut().deposit(self, &stack, bus_slot);
+                let DepositResult { n_deposited, task } = storage.borrow_mut().deposit(&stack, bus_slot);
                 stack.size -= n_deposited;
                 tasks.push(task)
             } else {

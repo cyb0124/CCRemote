@@ -2,12 +2,13 @@
 
 #[macro_use]
 pub mod util;
+#[macro_use]
+pub mod inventory;
 pub mod access;
 pub mod action;
 pub mod config;
 pub mod detail_cache;
 pub mod factory;
-pub mod inventory;
 pub mod item;
 pub mod lua_value;
 pub mod process;

@@ -16,7 +16,7 @@ pub trait Storage: 'static {
     fn update(&self) -> AbortOnDrop<Result<(), String>>;
     fn cleanup(&mut self);
     fn deposit_priority(&mut self, item: &Rc<Item>, detail: &Rc<Detail>) -> Option<i32>;
-    fn deposit(&mut self, factory: &Factory, stack: &DetailStack, bus_slot: usize) -> DepositResult;
+    fn deposit(&mut self, stack: &DetailStack, bus_slot: usize) -> DepositResult;
 }
 
 pub trait IntoStorage {
@@ -25,7 +25,7 @@ pub trait IntoStorage {
 }
 
 pub trait Extractor: 'static {
-    fn extract(&self, factory: &Factory, size: i32, bus_slot: usize) -> AbortOnDrop<Result<(), String>>;
+    fn extract(&self, size: i32, bus_slot: usize) -> AbortOnDrop<Result<(), String>>;
 }
 
 pub struct Provider {
@@ -49,4 +49,6 @@ impl Ord for Provider {
 }
 
 mod chest;
+mod drawer;
 pub use chest::*;
+pub use drawer::*;
