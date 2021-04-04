@@ -1,0 +1,22 @@
+[package]
+name = "cc-remote"
+version = "0.1.0"
+authors = ["Yibo Cao <cyb@ieee.org>"]
+edition = "2018"
+
+[dependencies]
+tokio = { version = "1", features = ["rt", "net", "time", "signal", "macros", "io-util"] }
+tokio-tungstenite = "0"
+ordered-float = "2"
+futures-util = "0"
+num-traits = "0"
+socket2 = "0"
+fnv = "1"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+lto = "true"
+codegen-units = 1
