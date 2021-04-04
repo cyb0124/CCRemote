@@ -1,4 +1,4 @@
-use super::access::{GetClient, GetAddr};
+use super::access::{GetAddr, GetClient};
 use super::action::{ActionFuture, Call};
 use super::detail_cache::{DetailCache, DetailResult};
 use super::item::{DetailStack, ItemStack};
