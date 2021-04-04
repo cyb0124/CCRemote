@@ -88,12 +88,12 @@ local function dec(h)
 end
 
 while true do
-  local id, socket = os.startTimer(3)
-  local url = url .. '#' .. id
+  local id = os.startTimer(3)
+  local url, socket, e, i, d = url .. '#' .. id
   log { text = 'Connecting to ' .. clientName .. '@' .. url, color = colors.yellow }
   http.websocketAsync(url)
   while true do
-    local e, i, d = os.pullEvent()
+    e, i, d = os.pullEvent()
     if e == 'timer' then
       if i == id then log { text = 'Timed out', color = colors.red } break end
     elseif e == 'websocket_failure' then
@@ -107,7 +107,6 @@ while true do
     end
   end
   if socket then
-    os.cancelTimer(id)
     log { text = "Connected", color = colors.green }
     local h, q = dec(function(p)
       for _, p in ipairs(p) do
@@ -123,9 +122,15 @@ while true do
         if not r then log { text = d, color = colors.red } break end
         q = ''
       end
-      r, d = pcall(socket.receive)
-      if not r then log { text = d, color = colors.red } break end
-      h(d)
+      e, i, d = os.pullEvent()
+      if e == 'timer' then
+        if i == id then id = nil end
+      elseif e == 'websocket_closed' then
+        if i == url then log { text = 'Connection closed', color = colors.red } break end
+      elseif e == 'websocket_message' then
+        if i == url then h(d) end
+      end
     end
+    if id then while e ~= 'timer' or i ~= id do e, i = os.pullEvent() end end
   end
 end
