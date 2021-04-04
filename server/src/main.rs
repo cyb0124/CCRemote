@@ -4,6 +4,8 @@
 pub mod util;
 #[macro_use]
 pub mod inventory;
+#[macro_use]
+pub mod recipe;
 pub mod access;
 pub mod action;
 pub mod config;
@@ -12,7 +14,6 @@ pub mod factory;
 pub mod item;
 pub mod lua_value;
 pub mod process;
-pub mod recipe;
 pub mod server;
 pub mod storage;
 

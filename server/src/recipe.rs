@@ -1,5 +1,5 @@
 use super::factory::Factory;
-use super::item::{Filter, Item};
+use super::item::{Detail, Filter, Item};
 use fnv::FnvHashMap;
 use std::{cmp::min, collections::hash_map::Entry, rc::Rc};
 
@@ -17,15 +17,46 @@ pub trait Input {
     fn extra_backup(self, size: i32) -> Self;
 }
 
+macro_rules! impl_input {
+    ($i:ident) => {
+        impl Input for $i {
+            fn get_item(&self) -> &Filter { &self.item }
+            fn get_size(&self) -> i32 { self.size }
+            fn get_allow_backup(&self) -> bool { self.allow_backup }
+            fn get_extra_backup(&self) -> i32 { self.extra_backup }
+
+            fn allow_backup(mut self) -> Self {
+                self.allow_backup = true;
+                self
+            }
+
+            fn extra_backup(mut self, size: i32) -> Self {
+                self.extra_backup += size;
+                self
+            }
+        }
+    };
+}
+
 pub trait Recipe {
     type In: Input;
     fn get_outputs(&self) -> &Vec<Output>;
     fn get_inputs(&self) -> &Vec<Self::In>;
 }
 
+macro_rules! impl_recipe {
+    ($r:ident, $i:ident) => {
+        impl Recipe for $r {
+            type In = $i;
+            fn get_outputs(&self) -> &Vec<Output> { &self.outputs }
+            fn get_inputs(&self) -> &Vec<$i> { &self.inputs }
+        }
+    };
+}
+
 pub struct ResolvedInputs {
     pub n_sets: i32,
-    pub items: Vec<Rc<Item>>,
+    pub items: Vec<(Rc<Item>, Rc<Detail>)>,
 }
 
 struct InputInfo {
@@ -42,7 +73,7 @@ pub fn resolve_inputs(factory: &Factory, recipe: &impl Recipe) -> Option<Resolve
     for input in recipe.get_inputs() {
         if let Some((item, item_info)) = factory.search_item(input.get_item()) {
             let item_info = item_info.borrow();
-            items.push(item.clone());
+            items.push((item.clone(), item_info.detail.clone()));
             match infos.entry(item) {
                 Entry::Vacant(input_info) => {
                     input_info.insert(InputInfo {
@@ -108,3 +139,19 @@ pub fn compute_demands(factory: &Factory, recipes: &Vec<impl Recipe>) -> Vec<Dem
     result.sort_unstable_by(|x: &Demand, y: &Demand| x.fullness.partial_cmp(&y.fullness).unwrap());
     result
 }
+
+pub struct SlottedInput {
+    item: Filter,
+    pub size: i32,
+    pub slots: Vec<usize>,
+    allow_backup: bool,
+    extra_backup: i32,
+}
+
+impl SlottedInput {
+    pub fn new(item: Filter, size: i32, slots: Vec<usize>) -> Self {
+        SlottedInput { item, size, slots, allow_backup: false, extra_backup: 0 }
+    }
+}
+
+impl_input!(SlottedInput);

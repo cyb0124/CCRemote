@@ -41,6 +41,28 @@ pub async fn join_tasks(tasks: Vec<AbortOnDrop<Result<(), String>>>) -> Result<(
     result
 }
 
+pub async fn join_outputs<T>(tasks: Vec<AbortOnDrop<Result<T, String>>>) -> Result<Vec<T>, String> {
+    let mut result: Result<Vec<T>, String> = Ok(Vec::new());
+    for task in tasks {
+        match task.into_future().await {
+            Err(e) => {
+                if let Err(ref mut result) = result {
+                    result.push_str("; ");
+                    result.push_str(&e)
+                } else {
+                    result = Err(e)
+                }
+            }
+            Ok(output) => {
+                if let Ok(ref mut result) = result {
+                    result.push(output)
+                }
+            }
+        }
+    }
+    result
+}
+
 pub async fn join_pair<A, B>(
     a: impl Future<Output = Result<A, String>>,
     b: impl Future<Output = Result<B, String>>,

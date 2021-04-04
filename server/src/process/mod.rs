@@ -2,6 +2,7 @@ use super::access::BusAccess;
 use super::action::{ActionFuture, Call};
 use super::factory::Factory;
 use super::inventory::Inventory;
+use super::item::DetailStack;
 use super::util::{alive, spawn, AbortOnDrop};
 use std::{cell::RefCell, iter::once, rc::Rc};
 
@@ -15,6 +16,8 @@ pub trait IntoProcess {
 }
 
 pub type SlotFilter = Box<dyn Fn(usize) -> bool>;
+pub type ExtractFilter = Box<dyn Fn(usize, &DetailStack) -> bool>;
+pub fn extract_all() -> Option<ExtractFilter> { Some(Box::new(|_, _| true)) }
 
 fn extract_output<T>(this: &T, factory: &mut Factory, slot: usize, size: i32) -> AbortOnDrop<Result<(), String>>
 where
@@ -49,4 +52,6 @@ where
 }
 
 mod inputless;
+mod slotted;
 pub use inputless::*;
+pub use slotted::*;
