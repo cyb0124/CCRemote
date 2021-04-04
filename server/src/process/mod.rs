@@ -32,7 +32,7 @@ macro_rules! impl_into_process {
                 })
             }
         }
-    }
+    };
 }
 
 pub type SlotFilter = Box<dyn Fn(usize) -> bool>;

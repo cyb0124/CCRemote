@@ -1,4 +1,4 @@
-use super::item::{Detail, DetailStack, Item};
+use super::item::{Detail, Item};
 use super::util::{make_local_one_shot, spawn, AbortOnDrop, LocalReceiver, LocalSender};
 use fnv::FnvHashMap;
 use std::{
@@ -15,7 +15,7 @@ enum DetailState {
 
 pub enum DetailResult<'a> {
     Resolved(&'a Rc<Detail>),
-    Resolving { sender: Option<LocalSender<DetailStack>>, receiver: LocalReceiver<Rc<Detail>> },
+    Resolving { sender: Option<LocalSender<(Rc<Item>, Rc<Detail>)>>, receiver: LocalReceiver<Rc<Detail>> },
 }
 
 pub struct DetailCache {
@@ -23,12 +23,16 @@ pub struct DetailCache {
     weak: Weak<RefCell<DetailCache>>,
 }
 
-async fn resolver_main(weak: Weak<RefCell<DetailCache>>, expected: Rc<Item>, receiver: LocalReceiver<DetailStack>) {
+async fn resolver_main(
+    weak: Weak<RefCell<DetailCache>>,
+    expected: Rc<Item>,
+    receiver: LocalReceiver<(Rc<Item>, Rc<Detail>)>,
+) {
     let result = receiver.await;
     if let Some(this) = weak.upgrade() {
         let mut this = this.borrow_mut();
         let e = match result {
-            Ok(DetailStack { item: actual, detail, .. }) => {
+            Ok((actual, detail)) => {
                 let correct = actual == expected;
                 this.insert(actual, detail);
                 if correct {

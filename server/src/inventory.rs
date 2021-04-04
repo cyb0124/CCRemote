@@ -76,7 +76,7 @@ fn fetch_detail_list<T: Inventory>(this: &T) -> impl Future<Output = Result<Vec<
                         if let Some(sender) = sender {
                             let detail = fetch_detail(this, slot);
                             tasks.push(spawn(async move {
-                                sender.send(detail.await);
+                                sender.send(detail.await.map(|stack| (stack.item, stack.detail)));
                                 Ok(())
                             }))
                         }
