@@ -1,0 +1,166 @@
+use super::super::access::BusAccess;
+use super::super::detail_cache::DetailCache;
+use super::super::factory::Factory;
+use super::super::inventory::{list_inventory, Inventory};
+use super::super::item::{DetailStack, Filter};
+use super::super::recipe::{compute_demands, resolve_inputs, Demand, Input, Output, Recipe};
+use super::super::server::Server;
+use super::super::util::{alive, join_tasks, spawn, AbortOnDrop};
+use super::{extract_output, scattering_insert, ExtractFilter, IntoProcess, Process};
+use fnv::FnvHashMap;
+use std::{
+    cell::RefCell,
+    cmp::min,
+    rc::{Rc, Weak},
+};
+
+pub struct ScatteringInput {
+    item: Filter,
+    size: i32,
+    allow_backup: bool,
+    extra_backup: i32,
+}
+
+impl ScatteringInput {
+    pub fn new(item: Filter) -> Self { ScatteringInput { item, size: 1, allow_backup: false, extra_backup: 0 } }
+}
+
+impl_input!(ScatteringInput);
+
+pub struct ScatteringRecipe {
+    outputs: Vec<Output>,
+    inputs: Vec<ScatteringInput>,
+}
+
+impl ScatteringRecipe {
+    pub fn new(outputs: Vec<Output>, input: ScatteringInput) -> Self {
+        ScatteringRecipe { outputs, inputs: vec![input] }
+    }
+}
+
+impl_recipe!(ScatteringRecipe, ScatteringInput);
+
+pub struct ScatteringConfig {
+    pub name: &'static str,
+    pub accesses: Vec<BusAccess>,
+    pub input_slots: Vec<usize>,
+    pub to_extract: Option<ExtractFilter>,
+    pub recipes: Vec<ScatteringRecipe>,
+    pub max_per_slot: i32,
+}
+
+pub struct ScatteringProcess {
+    weak: Weak<RefCell<ScatteringProcess>>,
+    config: ScatteringConfig,
+    detail_cache: Rc<RefCell<DetailCache>>,
+    factory: Weak<RefCell<Factory>>,
+    server: Rc<RefCell<Server>>,
+    size: Option<usize>,
+}
+
+impl_inventory!(ScatteringProcess, BusAccess);
+
+impl IntoProcess for ScatteringConfig {
+    type Output = ScatteringProcess;
+    fn into_process(self, factory: &Factory) -> Rc<RefCell<Self::Output>> {
+        Rc::new_cyclic(|weak| {
+            RefCell::new(Self::Output {
+                weak: weak.clone(),
+                config: self,
+                detail_cache: factory.get_detail_cache().clone(),
+                factory: factory.get_weak().clone(),
+                server: factory.get_server().clone(),
+                size: None,
+            })
+        })
+    }
+}
+
+impl Process for ScatteringProcess {
+    fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>> {
+        if self.config.to_extract.is_none() && compute_demands(factory, &self.config.recipes).is_empty() {
+            return spawn(async { Ok(()) });
+        }
+        let stacks = list_inventory(self);
+        let weak = self.weak.clone();
+        spawn(async move {
+            let mut stacks = stacks.await?;
+            let mut tasks = Vec::new();
+            {
+                alive!(weak, this);
+                upgrade_mut!(this.factory, factory);
+                let mut is_input_slot = vec![false; stacks.len()];
+                for slot in &this.config.input_slots {
+                    if *slot >= stacks.len() {
+                        return Err(format!("{}: invalid slot", this.config.name));
+                    }
+                    is_input_slot[*slot] = true
+                }
+                if let Some(ref to_extract) = this.config.to_extract {
+                    for (slot, stack) in stacks.iter().enumerate() {
+                        if let Some(stack) = stack {
+                            if !is_input_slot[slot] && to_extract(slot, stack) {
+                                tasks.push(extract_output(this, factory, slot, stack.detail.max_size))
+                            }
+                        }
+                    }
+                }
+                for Demand { i_recipe, .. } in compute_demands(factory, &this.config.recipes) {
+                    if let Some(mut inputs) = resolve_inputs(factory, &this.config.recipes[i_recipe]) {
+                        let mut insertions = FnvHashMap::<usize, i32>::default();
+                        let mut n_inserted = 0;
+                        let mut is_full = false;
+                        while inputs.n_sets > 0 {
+                            let mut min_any = 0;
+                            let mut min_recipe = None;
+                            for slot in &this.config.input_slots {
+                                if let Some(ref stack) = stacks[*slot] {
+                                    min_any = min(min_any, stack.size);
+                                    if stack.item == inputs.items[0].0 {
+                                        if let Some((_, min_recipe)) = min_recipe {
+                                            if stack.size >= min_recipe {
+                                                continue;
+                                            }
+                                        }
+                                        min_recipe = Some((*slot, stack.size))
+                                    }
+                                } else {
+                                    min_recipe = Some((*slot, 0))
+                                }
+                            }
+                            if min_any >= this.config.max_per_slot {
+                                is_full = true;
+                                break;
+                            }
+                            if let Some((slot, min_recipe)) = min_recipe {
+                                if min_recipe >= inputs.items[0].1.max_size {
+                                    break;
+                                }
+                                inputs.n_sets -= 1;
+                                n_inserted += 1;
+                                *insertions.entry(slot).or_default() += 1;
+                                let stack = &mut stacks[slot];
+                                if let Some(ref mut stack) = stack {
+                                    stack.size += 1
+                                } else {
+                                    let (item, detail) = inputs.items[0].clone();
+                                    *stack = Some(DetailStack { item, detail, size: 1 })
+                                }
+                            } else {
+                                break;
+                            }
+                        }
+                        if n_inserted > 0 {
+                            let reservation = factory.reserve_item(this.config.name, &inputs.items[0].0, n_inserted);
+                            tasks.push(scattering_insert(this, factory, reservation, insertions))
+                        }
+                        if is_full {
+                            break;
+                        }
+                    }
+                }
+            }
+            join_tasks(tasks).await
+        })
+    }
+}

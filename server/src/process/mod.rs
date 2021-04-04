@@ -1,9 +1,9 @@
 use super::access::BusAccess;
 use super::action::{ActionFuture, Call};
-use super::factory::Factory;
+use super::factory::{Factory, Reservation};
 use super::inventory::Inventory;
 use super::item::DetailStack;
-use super::util::{alive, spawn, AbortOnDrop};
+use super::util::{alive, join_tasks, spawn, AbortOnDrop};
 use std::{cell::RefCell, iter::once, rc::Rc};
 
 pub trait Process: 'static {
@@ -51,7 +51,58 @@ where
     })
 }
 
+fn scattering_insert<T, U>(
+    this: &T,
+    factory: &mut Factory,
+    reservation: Reservation,
+    insertions: U,
+) -> AbortOnDrop<Result<(), String>>
+where
+    T: Inventory<Access = BusAccess>,
+    U: IntoIterator<Item = (usize, i32)> + 'static,
+{
+    let bus_slot = factory.bus_allocate();
+    let weak = this.get_weak().clone();
+    let factory = factory.get_weak().clone();
+    spawn(async move {
+        let bus_slot = bus_slot.await?;
+        let task = async {
+            reservation.extract(bus_slot).await?;
+            let mut tasks = Vec::new();
+            {
+                alive!(weak, this);
+                let server = this.get_server().borrow();
+                for (inv_slot, size) in insertions.into_iter() {
+                    let access = server.load_balance(this.get_accesses());
+                    let action = ActionFuture::from(Call {
+                        addr: access.inv_addr,
+                        args: vec![
+                            "pullItems".into(),
+                            access.bus_addr.into(),
+                            (bus_slot + 1).into(),
+                            size.into(),
+                            (inv_slot + 1).into(),
+                        ],
+                    });
+                    server.enqueue_request_group(access.client, vec![action.clone().into()]);
+                    tasks.push(spawn(async move { action.await.map(|_| ()) }))
+                }
+            }
+            join_tasks(tasks).await?;
+            alive(&factory)?.borrow_mut().bus_free(bus_slot);
+            Ok(())
+        };
+        let result = task.await;
+        if result.is_err() {
+            alive(&factory)?.borrow_mut().bus_deposit(once(bus_slot));
+        }
+        result
+    })
+}
+
 mod inputless;
+mod scattering;
 mod slotted;
 pub use inputless::*;
+pub use scattering::*;
 pub use slotted::*;
