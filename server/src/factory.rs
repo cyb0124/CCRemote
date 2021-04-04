@@ -129,11 +129,11 @@ impl FactoryConfig {
 }
 
 impl Inventory for Factory {
-    type A = BasicAccess;
+    type Access = BasicAccess;
     fn get_weak(&self) -> &Weak<RefCell<Self>> { &self.weak }
     fn get_server(&self) -> &Rc<RefCell<Server>> { &self.config.server }
     fn get_detail_cache(&self) -> &Rc<RefCell<DetailCache>> { &self.config.detail_cache }
-    fn get_accesses(&self) -> &Vec<Self::A> { &self.config.bus_accesses }
+    fn get_accesses(&self) -> &Vec<Self::Access> { &self.config.bus_accesses }
     fn get_size(&self) -> &Option<usize> { &self.bus_size }
     fn set_size(&mut self, size: usize) { self.bus_size = Some(size) }
 }

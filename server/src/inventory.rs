@@ -1,4 +1,4 @@
-use super::access::Access;
+use super::access::{GetClient, GetAddr};
 use super::action::{ActionFuture, Call};
 use super::detail_cache::{DetailCache, DetailResult};
 use super::item::{DetailStack, ItemStack};
@@ -12,11 +12,11 @@ use std::{
 };
 
 pub trait Inventory: 'static {
-    type A: Access;
+    type Access: GetClient + GetAddr;
     fn get_weak(&self) -> &Weak<RefCell<Self>>;
     fn get_server(&self) -> &Rc<RefCell<Server>>;
     fn get_detail_cache(&self) -> &Rc<RefCell<DetailCache>>;
-    fn get_accesses(&self) -> &Vec<Self::A>;
+    fn get_accesses(&self) -> &Vec<Self::Access>;
     fn get_size(&self) -> &Option<usize>;
     fn set_size(&mut self, size: usize);
 }
@@ -24,11 +24,11 @@ pub trait Inventory: 'static {
 macro_rules! impl_inventory {
     ($i:ident, $a:ident) => {
         impl Inventory for $i {
-            type A = $a;
+            type Access = $a;
             fn get_weak(&self) -> &Weak<RefCell<Self>> { &self.weak }
             fn get_server(&self) -> &Rc<RefCell<Server>> { &self.server }
             fn get_detail_cache(&self) -> &Rc<RefCell<DetailCache>> { &self.detail_cache }
-            fn get_accesses(&self) -> &Vec<Self::A> { &self.config.accesses }
+            fn get_accesses(&self) -> &Vec<Self::Access> { &self.config.accesses }
             fn get_size(&self) -> &Option<usize> { &self.size }
             fn set_size(&mut self, size: usize) { self.size = Some(size) }
         }

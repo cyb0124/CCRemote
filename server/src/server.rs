@@ -1,4 +1,4 @@
-use super::access::Access;
+use super::access::GetClient;
 use super::action::ActionRequest;
 use super::lua_value::{serialize, vec_to_table, Parser, Value};
 use super::util::{spawn, AbortOnDrop};
@@ -314,7 +314,7 @@ impl Server {
         }
     }
 
-    pub fn load_balance<'a, T: Access>(&self, iter: impl IntoIterator<Item = &'a T>) -> &'a T {
+    pub fn load_balance<'a, T: GetClient>(&self, iter: impl IntoIterator<Item = &'a T>) -> &'a T {
         let mut iter = iter.into_iter();
         let mut best_access = iter.next().unwrap();
         let mut best_load = self.estimate_load(best_access.get_client());
