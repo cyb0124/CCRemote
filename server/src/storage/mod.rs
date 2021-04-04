@@ -1,5 +1,5 @@
 use super::factory::Factory;
-use super::item::{DetailStack, Item};
+use super::item::{Detail, DetailStack, Item};
 use super::util::AbortOnDrop;
 use std::{
     cell::{Cell, RefCell},
@@ -13,9 +13,9 @@ pub struct DepositResult {
 }
 
 pub trait Storage: 'static {
-    fn update(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>>;
+    fn update(&self) -> AbortOnDrop<Result<(), String>>;
     fn cleanup(&mut self);
-    fn deposit_priority(&mut self, item: &Rc<Item>) -> Option<i32>;
+    fn deposit_priority(&mut self, item: &Rc<Item>, detail: &Rc<Detail>) -> Option<i32>;
     fn deposit(&mut self, factory: &Factory, stack: &DetailStack, bus_slot: usize) -> DepositResult;
 }
 
@@ -47,3 +47,6 @@ impl PartialOrd<Provider> for Provider {
 impl Ord for Provider {
     fn cmp(&self, other: &Self) -> Ordering { self.priority.cmp(&other.priority) }
 }
+
+mod chest;
+pub use chest::*;

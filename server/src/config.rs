@@ -13,5 +13,13 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         bus_accesses: vec![BasicAccess { client: "1a", addr: "enderstorage:ender_chest_1" }],
         backups: vec![],
     }
-    .build(|factory| todo!())
+    .build(|factory| {
+        factory.add_storage(ChestConfig {
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "ironchest:obsidian_chest_1",
+                bus_addr: "enderstorage:ender_chest_1",
+            }],
+        })
+    })
 }

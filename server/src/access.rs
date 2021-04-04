@@ -12,3 +12,14 @@ impl Access for BasicAccess {
     fn get_client(&self) -> &str { self.client }
     fn get_addr(&self) -> &'static str { self.addr }
 }
+
+pub struct BusAccess {
+    pub client: &'static str,
+    pub inv_addr: &'static str,
+    pub bus_addr: &'static str,
+}
+
+impl Access for BusAccess {
+    fn get_client(&self) -> &str { self.client }
+    fn get_addr(&self) -> &'static str { self.inv_addr }
+}

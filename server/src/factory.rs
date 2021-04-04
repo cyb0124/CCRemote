@@ -153,15 +153,20 @@ impl Factory {
         }
     }
 
-    pub fn register_stored_item(&mut self, item: Rc<Item>, detail: Rc<Detail>) -> &mut ItemInfo {
+    pub fn register_stored_item(&mut self, item: Rc<Item>, detail: &Rc<Detail>) -> &mut ItemInfo {
         match self.items.entry(item) {
             Entry::Occupied(x) => x.into_mut().get_mut(),
             Entry::Vacant(x) => {
                 let item = x.key();
                 self.label_map.entry(detail.label.clone()).or_default().push(item.clone());
                 self.name_map.entry(item.name.clone()).or_default().push(item.clone());
-                x.insert(RefCell::new(ItemInfo { detail, n_stored: 0, n_backup: 0, providers: BinaryHeap::new() }))
-                    .get_mut()
+                x.insert(RefCell::new(ItemInfo {
+                    detail: detail.clone(),
+                    n_stored: 0,
+                    n_backup: 0,
+                    providers: BinaryHeap::new(),
+                }))
+                .get_mut()
             }
         }
     }
@@ -252,7 +257,7 @@ impl Factory {
         while stack.size > 0 {
             let mut best: Option<(&Rc<RefCell<dyn Storage>>, i32)> = None;
             for storage in &self.storages {
-                let priority = storage.borrow_mut().deposit_priority(&stack.item);
+                let priority = storage.borrow_mut().deposit_priority(&stack.item, &stack.detail);
                 if let Some(priority) = priority {
                     if let Some((_, best)) = best {
                         if priority <= best {
@@ -339,10 +344,7 @@ async fn factory_main(factory: Weak<RefCell<Factory>>) -> Result<(), String> {
 }
 
 async fn update_storages(factory: &Weak<RefCell<Factory>>) -> Result<(), String> {
-    let tasks = {
-        alive!(factory, this);
-        this.storages.iter().map(|storage| storage.borrow().update(this)).collect()
-    };
+    let tasks = alive(factory)?.borrow().storages.iter().map(|storage| storage.borrow().update()).collect();
     join_tasks(tasks).await?;
     alive!(factory, this);
     let mut n_total = 0;

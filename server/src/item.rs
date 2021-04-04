@@ -60,6 +60,7 @@ pub struct Detail {
     pub others: Table,
 }
 
+#[derive(Clone)]
 pub struct DetailStack {
     pub item: Rc<Item>,
     pub detail: Rc<Detail>,

@@ -107,6 +107,14 @@ pub fn make_local_one_shot<T>() -> (LocalSender<T>, LocalReceiver<T>) {
     (LocalSender(Some(Rc::downgrade(&state))), LocalReceiver(state))
 }
 
+macro_rules! upgrade {
+    ($e:expr, $v:ident) => {
+        let $v = $e.upgrade().unwrap();
+        let $v = $v.borrow();
+        let $v = &*$v;
+    };
+}
+
 macro_rules! upgrade_mut {
     ($e:expr, $v:ident) => {
         let $v = $e.upgrade().unwrap();

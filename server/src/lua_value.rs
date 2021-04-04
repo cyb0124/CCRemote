@@ -45,6 +45,10 @@ impl From<u8> for Value {
     fn from(number: u8) -> Value { Value::F(NotNan::from_u8(number).unwrap()) }
 }
 
+impl From<i32> for Value {
+    fn from(number: i32) -> Value { Value::F(NotNan::from_i32(number).unwrap()) }
+}
+
 impl From<&str> for Value {
     fn from(string: &str) -> Value { Value::S(string.to_owned()) }
 }
