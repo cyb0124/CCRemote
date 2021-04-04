@@ -1,3 +1,4 @@
+use futures_util::join;
 use std::{
     cell::RefCell,
     future::Future,
@@ -23,6 +24,37 @@ impl<T> AbortOnDrop<T> {
 
 pub fn spawn<T: 'static>(future: impl Future<Output = T> + 'static) -> AbortOnDrop<T> {
     AbortOnDrop(Some(spawn_local(future)))
+}
+
+pub async fn join_tasks(tasks: Vec<AbortOnDrop<Result<(), String>>>) -> Result<(), String> {
+    let mut result: Result<(), String> = Ok(());
+    for task in tasks {
+        if let Err(e) = task.into_future().await {
+            if let Err(ref mut result) = result {
+                result.push_str("; ");
+                result.push_str(&e)
+            } else {
+                result = Err(e)
+            }
+        }
+    }
+    result
+}
+
+pub async fn join_pair<A, B>(
+    a: impl Future<Output = Result<A, String>>,
+    b: impl Future<Output = Result<B, String>>,
+) -> Result<(A, B), String> {
+    match join!(a, b) {
+        (Ok(a), Ok(b)) => Ok((a, b)),
+        (Err(e), Ok(_)) => Err(e),
+        (Ok(_), Err(e)) => Err(e),
+        (Err(mut a), Err(b)) => {
+            a.push_str("; ");
+            a.push_str(&b);
+            Err(a)
+        }
+    }
 }
 
 struct LocalOneShotState<T> {
@@ -80,5 +112,15 @@ macro_rules! upgrade_mut {
         let $v = $e.upgrade().unwrap();
         let mut $v = $v.borrow_mut();
         let $v = &mut *$v;
+    };
+}
+
+pub fn alive<T>(weak: &Weak<T>) -> Result<Rc<T>, String> { weak.upgrade().ok_or_else(|| "shutdown".to_owned()) }
+
+macro_rules! alive {
+    ($e:expr, $v:ident) => {
+        let $v = alive(&$e)?;
+        let $v = $v.borrow();
+        let $v = &*$v;
     };
 }

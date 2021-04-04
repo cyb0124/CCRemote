@@ -41,6 +41,14 @@ pub enum Value {
     T(Table),
 }
 
+impl From<u8> for Value {
+    fn from(number: u8) -> Value { Value::F(NotNan::from_u8(number).unwrap()) }
+}
+
+impl From<&str> for Value {
+    fn from(string: &str) -> Value { Value::S(string.to_owned()) }
+}
+
 impl From<String> for Value {
     fn from(string: String) -> Value { Value::S(string) }
 }
@@ -63,6 +71,15 @@ impl TryFrom<Value> for NotNan<f64> {
 impl TryFrom<Value> for i32 {
     type Error = String;
     fn try_from(value: Value) -> Result<Self, String> { try_into_integer(NotNan::try_from(value)?.into_inner()) }
+}
+
+impl TryFrom<Value> for usize {
+    type Error = String;
+    fn try_from(value: Value) -> Result<Self, String> { try_into_integer(NotNan::try_from(value)?.into_inner()) }
+}
+
+impl From<usize> for Value {
+    fn from(number: usize) -> Value { Value::F(NotNan::from_usize(number).unwrap()) }
 }
 
 impl TryFrom<Value> for String {
@@ -109,6 +126,12 @@ pub fn table_to_vec(table: Table) -> Result<Vec<Value>, String> {
         }
     }
     Ok(result)
+}
+
+pub fn call_result<T: TryFrom<Value, Error = String>>(value: Value) -> Result<T, String> {
+    let mut value = Table::try_from(value)?;
+    let value = value.remove(&1.into()).ok_or_else(|| format!("invalid call result: {:?}", value))?;
+    T::try_from(value)
 }
 
 fn serialize_string(x: &str, out: &mut Vec<u8>) {

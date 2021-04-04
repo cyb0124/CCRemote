@@ -314,12 +314,12 @@ impl Server {
         }
     }
 
-    pub fn load_balance<'a, T: Access>(&self, iter: impl IntoIterator<Item = &'a T>) -> (usize, &'a T) {
-        let mut iter = iter.into_iter().enumerate();
+    pub fn load_balance<'a, T: Access>(&self, iter: impl IntoIterator<Item = &'a T>) -> &'a T {
+        let mut iter = iter.into_iter();
         let mut best_access = iter.next().unwrap();
-        let mut best_load = self.estimate_load(best_access.1.get_client());
+        let mut best_load = self.estimate_load(best_access.get_client());
         for access in iter {
-            let load = self.estimate_load(access.1.get_client());
+            let load = self.estimate_load(access.get_client());
             if load < best_load {
                 best_load = load;
                 best_access = access

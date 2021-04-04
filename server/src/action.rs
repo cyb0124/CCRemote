@@ -1,4 +1,4 @@
-use super::lua_value::Value;
+use super::lua_value::{vec_to_table, Table, Value};
 use std::{
     cell::RefCell,
     future::Future,
@@ -74,4 +74,43 @@ impl<T: Action> From<T> for ActionFuture<T> {
 
 impl<T: Action + 'static> From<ActionFuture<T>> for Rc<RefCell<dyn ActionRequest>> {
     fn from(future: ActionFuture<T>) -> Self { future.0 }
+}
+
+#[derive(Clone)]
+pub struct Log {
+    pub text: String,
+    pub color: u8,
+}
+
+impl Action for Log {
+    type Output = ();
+
+    fn build_request(self) -> Value {
+        let mut result = Table::new();
+        result.insert("op".into(), "log".into());
+        result.insert("color".into(), self.color.into());
+        result.insert("text".into(), self.text.into());
+        result.into()
+    }
+
+    fn parse_response(_response: Value) -> Result<(), String> { Ok(()) }
+}
+
+pub struct Call {
+    pub addr: &'static str,
+    pub args: Vec<Value>,
+}
+
+impl Action for Call {
+    type Output = Value;
+
+    fn build_request(self) -> Value {
+        let mut result = Table::new();
+        result.insert("op".into(), "call".into());
+        result.insert("p".into(), self.addr.into());
+        result.insert("v".into(), vec_to_table(self.args).into());
+        result.into()
+    }
+
+    fn parse_response(response: Value) -> Result<Value, String> { Ok(response) }
 }

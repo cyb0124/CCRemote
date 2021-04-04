@@ -5,6 +5,7 @@ pub mod util;
 pub mod access;
 pub mod action;
 pub mod detail_cache;
+pub mod inventory;
 pub mod item;
 pub mod lua_value;
 pub mod server;

@@ -10,7 +10,7 @@ local function log(packet)
   for _, term in ipairs(terms) do
     term.scroll(1)
     term.setCursorPos(1, term.height)
-    term.setTextColor(packet.color)
+    term.setTextColor(bit.blshift(1, packet.color))
     term.write(packet.text)
   end
 end
@@ -90,15 +90,15 @@ end
 while true do
   local id = os.startTimer(3)
   local url, socket, e, i, d = url .. '#' .. id
-  log { text = 'Connecting to ' .. clientName .. '@' .. url, color = colors.yellow }
+  log { text = 'Connecting to ' .. clientName .. '@' .. url, color = 4 }
   http.websocketAsync(url)
   while true do
     e, i, d = os.pullEvent()
     if e == 'timer' then
-      if i == id then log { text = 'Timed out', color = colors.red } break end
+      if i == id then log { text = 'Timed out', color = 14 } break end
     elseif e == 'websocket_failure' then
       if i == url then
-        log { text = d, color = colors.red }
+        log { text = d, color = 14 }
         while e ~= 'timer' or i ~= id do e, i = os.pullEvent() end
         break
       end
@@ -107,7 +107,7 @@ while true do
     end
   end
   if socket then
-    log { text = "Connected", color = colors.green }
+    log { text = "Connected", color = 13 }
     local h, q = dec(function(p)
       for _, p in ipairs(p) do
         local r if p.op == 'log' then log(p)
@@ -119,14 +119,14 @@ while true do
     while true do
       if #q > 0 then
         r, d = pcall(socket.send, q, true)
-        if not r then log { text = d, color = colors.red } break end
+        if not r then log { text = d, color = 14 } break end
         q = ''
       end
       e, i, d = os.pullEvent()
       if e == 'timer' then
         if i == id then id = nil end
       elseif e == 'websocket_closed' then
-        if i == url then log { text = 'Connection closed', color = colors.red } break end
+        if i == url then log { text = 'Connection closed', color = 14 } break end
       elseif e == 'websocket_message' then
         if i == url then h(d) end
       end
