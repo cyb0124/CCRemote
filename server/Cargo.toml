@@ -12,6 +12,7 @@ futures-util = "0"
 num-traits = "0"
 socket2 = "0"
 fnv = "1"
+hex = "0"
 
 [profile.dev]
 panic = "abort"

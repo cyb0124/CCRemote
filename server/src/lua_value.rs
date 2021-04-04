@@ -1,6 +1,6 @@
 use num_traits::cast::{AsPrimitive, FromPrimitive};
 use ordered_float::NotNan;
-use std::{collections::BTreeMap, io::Write, str::from_utf8};
+use std::{collections::BTreeMap, convert::TryFrom, io::Write, str::from_utf8};
 
 fn try_into_integer<I>(f: f64) -> Result<I, String>
 where
@@ -26,6 +26,10 @@ impl From<usize> for Key {
     fn from(number: usize) -> Key { Key::F(NotNan::from_usize(number).unwrap()) }
 }
 
+impl From<&str> for Key {
+    fn from(string: &str) -> Key { Key::S(string.to_owned()) }
+}
+
 pub type Table = BTreeMap<Key, Value>;
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug)]
@@ -43,6 +47,44 @@ impl From<String> for Value {
 
 impl From<Table> for Value {
     fn from(table: Table) -> Value { Value::T(table) }
+}
+
+impl TryFrom<Value> for NotNan<f64> {
+    type Error = String;
+    fn try_from(value: Value) -> Result<Self, String> {
+        if let Value::F(result) = value {
+            Ok(result)
+        } else {
+            Err(format!("non-numeric: {:?}", value))
+        }
+    }
+}
+
+impl TryFrom<Value> for i32 {
+    type Error = String;
+    fn try_from(value: Value) -> Result<Self, String> { try_into_integer(NotNan::try_from(value)?.into_inner()) }
+}
+
+impl TryFrom<Value> for String {
+    type Error = String;
+    fn try_from(value: Value) -> Result<Self, String> {
+        if let Value::S(result) = value {
+            Ok(result)
+        } else {
+            Err(format!("non-string: {:?}", value))
+        }
+    }
+}
+
+impl TryFrom<Value> for Table {
+    type Error = String;
+    fn try_from(value: Value) -> Result<Self, String> {
+        if let Value::T(result) = value {
+            Ok(result)
+        } else {
+            Err(format!("non-table: {:?}", value))
+        }
+    }
 }
 
 pub fn vec_to_table(vec: Vec<Value>) -> Table {
