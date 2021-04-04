@@ -100,9 +100,11 @@ where
     })
 }
 
+mod buffered;
 mod inputless;
 mod scattering;
 mod slotted;
+pub use buffered::*;
 pub use inputless::*;
 pub use scattering::*;
 pub use slotted::*;

@@ -148,6 +148,7 @@ impl SlottedProcess {
             }))
         }
         let weak = self.weak.clone();
+        let factory = factory.get_weak().clone();
         spawn(async move {
             let bus_slots = join_outputs(bus_slots).await;
             let slots_to_free = Rc::try_unwrap(slots_to_free)
@@ -183,8 +184,7 @@ impl SlottedProcess {
                     server.enqueue_request_group(access.client, group)
                 }
                 join_tasks(tasks).await?;
-                alive!(weak, this);
-                upgrade_mut!(this.factory, factory);
+                alive_mut!(factory, factory);
                 for slot_to_free in &slots_to_free {
                     factory.bus_free(*slot_to_free)
                 }
@@ -192,9 +192,7 @@ impl SlottedProcess {
             };
             let result = task.await;
             if result.is_err() {
-                alive!(weak, this);
-                upgrade_mut!(this.factory, factory);
-                factory.bus_deposit(slots_to_free);
+                alive(&factory)?.borrow_mut().bus_deposit(slots_to_free)
             }
             result
         })
