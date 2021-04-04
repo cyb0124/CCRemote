@@ -57,22 +57,7 @@ pub struct BufferedProcess {
 }
 
 impl_inventory!(BufferedProcess, BusAccess);
-
-impl IntoProcess for BufferedConfig {
-    type Output = BufferedProcess;
-    fn into_process(self, factory: &Factory) -> Rc<RefCell<Self::Output>> {
-        Rc::new_cyclic(|weak| {
-            RefCell::new(Self::Output {
-                weak: weak.clone(),
-                config: self,
-                detail_cache: factory.get_detail_cache().clone(),
-                factory: factory.get_weak().clone(),
-                server: factory.get_server().clone(),
-                size: None,
-            })
-        })
-    }
-}
+impl_into_process!(BufferedConfig, BufferedProcess);
 
 impl Process for BufferedProcess {
     fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>> {

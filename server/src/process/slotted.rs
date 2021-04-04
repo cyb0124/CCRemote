@@ -41,22 +41,7 @@ pub struct SlottedProcess {
 }
 
 impl_inventory!(SlottedProcess, BusAccess);
-
-impl IntoProcess for SlottedConfig {
-    type Output = SlottedProcess;
-    fn into_process(self, factory: &Factory) -> Rc<RefCell<Self::Output>> {
-        Rc::new_cyclic(|weak| {
-            RefCell::new(Self::Output {
-                weak: weak.clone(),
-                config: self,
-                detail_cache: factory.get_detail_cache().clone(),
-                factory: factory.get_weak().clone(),
-                server: factory.get_server().clone(),
-                size: None,
-            })
-        })
-    }
-}
+impl_into_process!(SlottedConfig, SlottedProcess);
 
 impl Process for SlottedProcess {
     fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>> {

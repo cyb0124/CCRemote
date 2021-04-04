@@ -15,6 +15,26 @@ pub trait IntoProcess {
     fn into_process(self, factory: &Factory) -> Rc<RefCell<Self::Output>>;
 }
 
+macro_rules! impl_into_process {
+    ($c:ident, $p:ident) => {
+        impl IntoProcess for $c {
+            type Output = $p;
+            fn into_process(self, factory: &Factory) -> Rc<RefCell<Self::Output>> {
+                Rc::new_cyclic(|weak| {
+                    RefCell::new(Self::Output {
+                        weak: weak.clone(),
+                        config: self,
+                        detail_cache: factory.get_detail_cache().clone(),
+                        factory: factory.get_weak().clone(),
+                        server: factory.get_server().clone(),
+                        size: None,
+                    })
+                })
+            }
+        }
+    }
+}
+
 pub type SlotFilter = Box<dyn Fn(usize) -> bool>;
 pub type ExtractFilter = Box<dyn Fn(usize, &DetailStack) -> bool>;
 pub fn extract_all() -> Option<ExtractFilter> { Some(Box::new(|_, _| true)) }

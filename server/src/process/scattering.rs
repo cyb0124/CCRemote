@@ -59,22 +59,7 @@ pub struct ScatteringProcess {
 }
 
 impl_inventory!(ScatteringProcess, BusAccess);
-
-impl IntoProcess for ScatteringConfig {
-    type Output = ScatteringProcess;
-    fn into_process(self, factory: &Factory) -> Rc<RefCell<Self::Output>> {
-        Rc::new_cyclic(|weak| {
-            RefCell::new(Self::Output {
-                weak: weak.clone(),
-                config: self,
-                detail_cache: factory.get_detail_cache().clone(),
-                factory: factory.get_weak().clone(),
-                server: factory.get_server().clone(),
-                size: None,
-            })
-        })
-    }
-}
+impl_into_process!(ScatteringConfig, ScatteringProcess);
 
 impl Process for ScatteringProcess {
     fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>> {
