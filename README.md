@@ -4,3 +4,11 @@ It is a direct port of the OpenComputers program [OCRemote](https://github.com/c
 Checkout [OCRemote](https://github.com/cyb0124/OCRemote) for more details.
 
 This project supports CC:Tweaked 1.15+
+
+### Notes
+- CC supports asynchronous peripheral task execution, so load-balancing between multiple computers is unnecessary.
+  However, this feature is still ported from OCRemote to allow redundancy.
+- There can be a race-condition caused by inventories being modified between calls to `list` and `getItemDetail`.
+  This situation will be detected as an error and will be recovered gracefully.
+- Because CC's wired network can transport items over any distance, the "bus" inventory is no longer necessary.
+  However, it is still ported from OCRemote to allow wireless transportation.
