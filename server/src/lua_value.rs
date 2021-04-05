@@ -143,6 +143,10 @@ pub fn call_result<T: TryFrom<Value, Error = String>>(value: Value) -> Result<T,
     T::try_from(value)
 }
 
+pub fn table_remove<T: TryFrom<Value, Error = String>>(table: &mut Table, key: &str) -> Result<T, String> {
+    T::try_from(table.remove(&key.into()).ok_or_else(|| format!("key not found: {}", key))?)
+}
+
 fn serialize_string(x: &str, out: &mut Vec<u8>) {
     out.push(b'@');
     for i in x.as_bytes() {

@@ -10,7 +10,7 @@ use std::{
 
 pub trait Action: 'static {
     type Output;
-    fn build_request(self) -> Value;
+    fn build_request(self, table: &mut Table);
     fn parse_response(response: Value) -> Result<Self::Output, String>;
 }
 
@@ -21,13 +21,13 @@ struct ActionState<T: Action> {
 }
 
 pub trait ActionRequest {
-    fn build_request(&mut self) -> Value;
+    fn build_request(&mut self, table: &mut Table);
     fn on_fail(&mut self, reason: String);
     fn on_response(&mut self, result: Value) -> Result<(), String>;
 }
 
 impl<T: Action> ActionRequest for ActionState<T> {
-    fn build_request(&mut self) -> Value { self.action.take().unwrap().build_request() }
+    fn build_request(&mut self, table: &mut Table) { self.action.take().unwrap().build_request(table) }
 
     fn on_fail(&mut self, reason: String) {
         self.result = Some(Err(reason));
@@ -86,12 +86,10 @@ pub struct Log {
 impl Action for Log {
     type Output = ();
 
-    fn build_request(self) -> Value {
-        let mut result = Table::new();
-        result.insert("op".into(), "log".into());
-        result.insert("color".into(), self.color.into());
-        result.insert("text".into(), self.text.into());
-        result.into()
+    fn build_request(self, table: &mut Table) {
+        table.insert("o".into(), "l".into());
+        table.insert("c".into(), self.color.into());
+        table.insert("t".into(), self.text.into());
     }
 
     fn parse_response(_response: Value) -> Result<(), String> { Ok(()) }
@@ -105,12 +103,10 @@ pub struct Call {
 impl Action for Call {
     type Output = Value;
 
-    fn build_request(self) -> Value {
-        let mut result = Table::new();
-        result.insert("op".into(), "call".into());
-        result.insert("p".into(), self.addr.into());
-        result.insert("v".into(), vec_to_table(self.args).into());
-        result.into()
+    fn build_request(self, table: &mut Table) {
+        table.insert("o".into(), "c".into());
+        table.insert("p".into(), self.addr.into());
+        table.insert("v".into(), vec_to_table(self.args).into());
     }
 
     fn parse_response(response: Value) -> Result<Value, String> { Ok(response) }
@@ -123,11 +119,9 @@ pub struct RedstoneInput {
 impl Action for RedstoneInput {
     type Output = u8;
 
-    fn build_request(self) -> Value {
-        let mut result = Table::new();
-        result.insert("op".into(), "ri".into());
-        result.insert("s".into(), self.side.into());
-        result.into()
+    fn build_request(self, table: &mut Table) {
+        table.insert("o".into(), "i".into());
+        table.insert("s".into(), self.side.into());
     }
 
     fn parse_response(response: Value) -> Result<u8, String> { response.try_into() }
@@ -141,12 +135,10 @@ pub struct RedstoneOutput {
 impl Action for RedstoneOutput {
     type Output = ();
 
-    fn build_request(self) -> Value {
-        let mut result = Table::new();
-        result.insert("op".into(), "ro".into());
-        result.insert("s".into(), self.side.into());
-        result.insert("v".into(), self.value.into());
-        result.into()
+    fn build_request(self, table: &mut Table) {
+        table.insert("o".into(), "o".into());
+        table.insert("s".into(), self.side.into());
+        table.insert("v".into(), self.value.into());
     }
 
     fn parse_response(_response: Value) -> Result<(), String> { Ok(()) }

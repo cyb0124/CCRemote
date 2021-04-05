@@ -10,8 +10,8 @@ local function log(packet)
   for _, term in ipairs(terms) do
     term.scroll(1)
     term.setCursorPos(1, term.height)
-    term.setTextColor(bit.blshift(1, packet.color))
-    term.write(packet.text)
+    term.setTextColor(bit.blshift(1, packet.c))
+    term.write(packet.t)
   end
 end
 
@@ -87,53 +87,72 @@ local function dec(h)
   return function(x) s(x) end
 end
 
+local function exec(p)
+  local d = {i = p.i}
+  if p.o == 'l' then log(p)
+  elseif p.o == 'c' then d.r = {peripheral.call(p.p, table.unpack(p.v))}
+  elseif p.o == 'i' then d.r = rs.getAnalogInput(p.s)
+  elseif p.o == 'o' then d.r = rs.setAnalogOutput(p.s, p.v)
+  else error('invalid op: ' .. tostring(p.o)) end
+  return d
+end
+
 while true do
-  local id = os.startTimer(3)
-  local url, socket, e, i, d = url .. '#' .. id
-  log { text = 'Connecting to ' .. clientName .. '@' .. url, color = 4 }
+  local tid = os.startTimer(3)
+  local url, socket = url .. '#' .. tid
+  log { t = 'Connecting to ' .. clientName .. '@' .. url, c = 4 }
   http.websocketAsync(url)
   while true do
-    e, i, d = os.pullEvent()
-    if e == 'timer' then
-      if i == id then log { text = 'Timed out', color = 14 } break end
-    elseif e == 'websocket_failure' then
-      if i == url then
-        log { text = d, color = 14 }
-        while e ~= 'timer' or i ~= id do e, i = os.pullEvent() end
+    local e = {os.pullEvent()}
+    if e[1] == 'timer' then
+      if e[2] == tid then log { t = 'Timed out', c = 14 } break end
+    elseif e[1] == 'websocket_failure' then
+      if e[2] == url then
+        log { t = e[3], c = 14 }
+        while e[1] ~= 'timer' or e[2] ~= tid do e = {os.pullEvent()} end
         break
       end
-    elseif e == 'websocket_success' then
-      if i == url then socket = d break end
+    elseif e[1] == 'websocket_success' then
+      if e[2] == url then socket = e[3] break end
     end
   end
   if socket then
-    log { text = "Connected", color = 13 }
-    local q = enc(clientName)
-    local h = dec(function(p)
+    log { t = 'Connected', c = 13 }
+    local out, tasks = enc(clientName), {}
+    local handler = dec(function(p)
       for _, p in ipairs(p) do
-        local r if p.op == 'log' then log(p)
-        elseif p.op == 'call' then r = {peripheral.call(p.p, table.unpack(p.v))}
-        elseif p.op == 'ri' then r = rs.getAnalogInput(p.s)
-        elseif p.op == 'ro' then r = rs.setAnalogOutput(p.s, p.v)
-        else error('invalid op: ' .. tostring(p.op)) end
-        q = q .. enc(r)
+        local task = coroutine.create(exec)
+        local e, d = coroutine.resume(task, p)
+        if not e then error(d) end
+        if type(d) == 'table' then out = out .. enc(d)
+        else tasks[#tasks + 1] = { task = task, filter = d } end
       end
     end)
     while true do
-      if #q > 0 then
-        r, d = pcall(socket.send, q, true)
-        if not r then log { text = d, color = 14 } break end
-        q = ''
+      if #out > 0 then
+        local e, d = pcall(socket.send, out, true)
+        if not e then log { t = d, c = 14 } break end
+        out = ''
       end
-      e, i, d = os.pullEvent()
-      if e == 'timer' then
-        if i == id then id = nil end
-      elseif e == 'websocket_closed' then
-        if i == url then log { text = 'Connection closed', color = 14 } break end
-      elseif e == 'websocket_message' then
-        if i == url then h(d) end
+      local e = {os.pullEvent()}
+      if e[1] == 'timer' then
+        if e[2] == tid then tid = nil end
+      elseif e[1] == 'websocket_closed' then
+        if e[2] == url then log { t = 'Connection closed', c = 14 } break end
+      elseif e[1] == 'websocket_message' then
+        if e[2] == url then handler(e[3]) end
       end
+      local newTasks = {}
+      for _, v in ipairs(tasks) do
+        if not v.filter or v.filter == e[1] then
+          local e, d = coroutine.resume(v.task, table.unpack(e))
+          if not e then error(d) end
+          if type(d) == 'table' then out = out .. enc(d)
+          else newTasks[#newTasks + 1] = { task = v.task, filter = d } end
+        else newTasks[#newTasks + 1] = v end
+      end
+      tasks = newTasks
     end
-    if id then while e ~= 'timer' or i ~= id do e, i = os.pullEvent() end end
+    if tid then while e[1] ~= 'timer' or e[2] ~= tid do e = {os.pullEvent()} end end
   end
 end

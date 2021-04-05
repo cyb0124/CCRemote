@@ -1,6 +1,6 @@
 use super::access::GetClient;
 use super::action::ActionRequest;
-use super::lua_value::{serialize, vec_to_table, Parser, Value};
+use super::lua_value::{serialize, table_remove, vec_to_table, Parser, Table, Value};
 use super::util::{spawn, AbortOnDrop};
 use fnv::FnvHashMap;
 use futures_util::{
@@ -11,6 +11,7 @@ use socket2::{Domain, SockAddr, Socket, Type};
 use std::{
     cell::RefCell,
     collections::VecDeque,
+    convert::TryInto,
     fmt::Display,
     mem::replace,
     net::{Ipv6Addr, SocketAddr},
@@ -58,7 +59,8 @@ struct Client {
     _reader: AbortOnDrop<()>,
     request_queue: VecDeque<Vec<Rc<RefCell<dyn ActionRequest>>>>,
     request_queue_size: usize,
-    response_queue: VecDeque<Rc<RefCell<dyn ActionRequest>>>,
+    next_request_id: usize,
+    response_queue: FnvHashMap<usize, Rc<RefCell<dyn ActionRequest>>>,
     writer: WriterState,
     timeout: Option<AbortOnDrop<()>>,
 }
@@ -73,7 +75,7 @@ impl Drop for Client {
             }
         }
         for x in &self.response_queue {
-            x.borrow_mut().on_fail(self.name.clone())
+            x.1.borrow_mut().on_fail(self.name.clone())
         }
     }
 }
@@ -99,11 +101,16 @@ impl Client {
 
     fn on_packet(&mut self, value: Value) -> Result<(), String> {
         if let Some(_) = &self.login {
-            if let Some(x) = self.response_queue.pop_front() {
+            let mut table: Table = value.try_into()?;
+            let id = table_remove(&mut table, "i")?;
+            let value = table.remove(&"r".into()).unwrap_or(Value::N);
+            if !table.is_empty() {
+                Err(format!("garbage in packet: {:?}", table))
+            } else if let Some(request) = self.response_queue.remove(&id) {
                 self.update_timeout(true);
-                x.borrow_mut().on_response(value)
+                request.borrow_mut().on_response(value)
             } else {
-                Err(format!("unexpected packet: {:?}", value))
+                Err(format!("unexpected response: {:?}", value))
             }
         } else if let Value::S(login) = value {
             upgrade_mut!(self.server, server);
@@ -157,9 +164,14 @@ async fn writer_main(client: Weak<RefCell<Client>>, mut sink: SplitSink<WebSocke
             if let Some(group) = this.request_queue.pop_front() {
                 this.request_queue_size -= group.len();
                 let mut value = Vec::new();
-                for x in group {
-                    value.push(x.borrow_mut().build_request());
-                    this.response_queue.push_back(x)
+                for request in group {
+                    let id = this.next_request_id;
+                    this.next_request_id += 1;
+                    let mut table = Table::new();
+                    table.insert("i".into(), id.into());
+                    request.borrow_mut().build_request(&mut table);
+                    value.push(table.into());
+                    this.response_queue.insert(id, request);
                 }
                 serialize(&vec_to_table(value).into(), &mut data)
             } else {
@@ -263,7 +275,8 @@ async fn acceptor_main(server: Weak<RefCell<Server>>, listener: TcpListener) {
                         _reader: spawn(handshake_main(weak.clone(), stream)),
                         request_queue: VecDeque::new(),
                         request_queue_size: 0,
-                        response_queue: VecDeque::new(),
+                        next_request_id: 0,
+                        response_queue: FnvHashMap::default(),
                         writer: WriterState::Invalid,
                         timeout: None,
                     };

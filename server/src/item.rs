@@ -1,10 +1,6 @@
-use super::lua_value::{Table, Value};
+use super::lua_value::{table_remove, Table, Value};
 use hex::FromHex;
-use std::{
-    cmp::min,
-    convert::{TryFrom, TryInto},
-    rc::Rc,
-};
+use std::{cmp::min, convert::TryFrom, rc::Rc};
 
 #[derive(PartialEq, Eq, Hash)]
 pub struct Item {
@@ -15,10 +11,6 @@ pub struct Item {
 pub struct ItemStack {
     pub item: Rc<Item>,
     pub size: i32,
-}
-
-fn get<T: TryFrom<Value, Error = String>>(table: &mut Table, key: &str) -> Result<T, String> {
-    table.remove(&key.into()).ok_or_else(|| format!("key not found: {}", key))?.try_into()
 }
 
 fn get_nbt_hash(table: &mut Table) -> Result<Option<[u8; 16]>, String> {
@@ -34,14 +26,14 @@ fn get_nbt_hash(table: &mut Table) -> Result<Option<[u8; 16]>, String> {
 
 impl ItemStack {
     fn parse_ref(table: &mut Table) -> Result<Self, String> {
-        let name = get(table, "name")?;
-        let size = get(table, "count")?;
+        let name = table_remove(table, "name")?;
+        let size = table_remove(table, "count")?;
         let nbt_hash = get_nbt_hash(table)?;
         Ok(Self { item: Rc::new(Item { name, nbt_hash }), size })
     }
 
     pub fn parse(value: Value) -> Result<Self, String> {
-        let mut table = value.try_into()?;
+        let mut table = Table::try_from(value)?;
         let result = Self::parse_ref(&mut table)?;
         if table.is_empty() {
             Ok(result)
@@ -71,8 +63,8 @@ pub struct DetailStack {
 impl DetailStack {
     pub fn parse(mut table: Table) -> Result<Self, String> {
         let stack = ItemStack::parse_ref(&mut table)?;
-        let label = get(&mut table, "displayName")?;
-        let max_size = get(&mut table, "maxCount")?;
+        let label = table_remove(&mut table, "displayName")?;
+        let max_size = table_remove(&mut table, "maxCount")?;
         Ok(stack.with_detail(Rc::new(Detail { label, max_size, others: table })))
     }
 }
