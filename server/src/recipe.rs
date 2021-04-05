@@ -155,3 +155,22 @@ impl SlottedInput {
 }
 
 impl_input!(SlottedInput);
+
+pub struct NonConsumable {
+    pub storage_slot: usize,
+    pub crafting_grid_slot: usize,
+}
+
+pub struct CraftingGridRecipe {
+    pub outputs: Vec<Output>,
+    // slots:
+    //   0, 1, 2
+    //   3, 4, 5
+    //   6, 7, 8
+    pub inputs: Vec<SlottedInput>,
+    // can't craft more than one stack at a time.
+    pub max_sets: i32,
+    pub non_consumables: Vec<NonConsumable>,
+}
+
+impl_recipe!(CraftingGridRecipe, SlottedInput);
