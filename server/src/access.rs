@@ -34,3 +34,16 @@ impl_get_client!(BusAccess);
 impl GetAddr for BusAccess {
     fn get_addr(&self) -> &'static str { self.inv_addr }
 }
+
+pub struct SideAccess {
+    pub client: &'static str,
+    pub side: &'static str,
+}
+
+impl_get_client!(SideAccess);
+pub const BOTTOM: &str = "bottom";
+pub const TOP: &str = "top";
+pub const BACK: &str = "back";
+pub const FRONT: &str = "front";
+pub const RIGHT: &str = "right";
+pub const LEFT: &str = "left";

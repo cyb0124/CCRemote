@@ -112,6 +112,8 @@ while true do
       for _, p in ipairs(p) do
         local r if p.op == 'log' then log(p)
         elseif p.op == 'call' then r = {peripheral.call(p.p, table.unpack(p.v))}
+        elseif p.op == 'ri' then r = rs.getAnalogInput(p.s)
+        elseif p.op == 'ro' then r = rs.setAnalogOutput(p.s, p.v)
         else error('invalid op: ' .. tostring(p.op)) end
         q = q .. enc(r)
       end

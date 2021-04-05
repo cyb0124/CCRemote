@@ -1,6 +1,7 @@
 use super::lua_value::{vec_to_table, Table, Value};
 use std::{
     cell::RefCell,
+    convert::TryInto,
     future::Future,
     pin::Pin,
     rc::Rc,
@@ -113,4 +114,40 @@ impl Action for Call {
     }
 
     fn parse_response(response: Value) -> Result<Value, String> { Ok(response) }
+}
+
+pub struct RedstoneInput {
+    pub side: &'static str,
+}
+
+impl Action for RedstoneInput {
+    type Output = u8;
+
+    fn build_request(self) -> Value {
+        let mut result = Table::new();
+        result.insert("op".into(), "ri".into());
+        result.insert("s".into(), self.side.into());
+        result.into()
+    }
+
+    fn parse_response(response: Value) -> Result<u8, String> { response.try_into() }
+}
+
+pub struct RedstoneOutput {
+    pub side: &'static str,
+    pub value: u8,
+}
+
+impl Action for RedstoneOutput {
+    type Output = ();
+
+    fn build_request(self) -> Value {
+        let mut result = Table::new();
+        result.insert("op".into(), "ro".into());
+        result.insert("s".into(), self.side.into());
+        result.insert("v".into(), self.value.into());
+        result.into()
+    }
+
+    fn parse_response(_response: Value) -> Result<(), String> { Ok(()) }
 }

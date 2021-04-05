@@ -122,9 +122,13 @@ where
 
 mod buffered;
 mod inputless;
+mod misc;
+mod redstone;
 mod scattering;
 mod slotted;
 pub use buffered::*;
 pub use inputless::*;
+pub use misc::*;
+pub use redstone::*;
 pub use scattering::*;
 pub use slotted::*;
