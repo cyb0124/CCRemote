@@ -82,6 +82,9 @@ impl Client {
     fn log(&self, x: &(impl Display + ?Sized)) { println!("{}: {}", self.name, x) }
 
     fn disconnect_by_server(&mut self, server: &mut Server) {
+        if let Some(login) = &self.login {
+            server.logins.remove(login);
+        }
         if let Some(next) = self.next.as_ref() {
             next.borrow_mut().prev = self.prev.clone()
         }

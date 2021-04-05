@@ -108,7 +108,8 @@ while true do
   end
   if socket then
     log { text = "Connected", color = 13 }
-    local h, q = dec(function(p)
+    local q = enc(clientName)
+    local h = dec(function(p)
       for _, p in ipairs(p) do
         local r if p.op == 'log' then log(p)
         elseif p.op == 'call' then r = {peripheral.call(p.p, table.unpack(p.v))}
@@ -117,7 +118,7 @@ while true do
         else error('invalid op: ' .. tostring(p.op)) end
         q = q .. enc(r)
       end
-    end), enc(clientName)
+    end)
     while true do
       if #q > 0 then
         r, d = pcall(socket.send, q, true)
