@@ -38,8 +38,10 @@ macro_rules! impl_inventory {
 fn fetch_detail<T: Inventory>(this: &T, slot: usize) -> impl Future<Output = Result<DetailStack, String>> {
     let server = this.get_server().borrow();
     let access = server.load_balance(this.get_accesses());
-    let action =
-        ActionFuture::from(Call { addr: access.get_addr(), args: vec!["getItemDetail".into(), (slot + 1).into()] });
+    let action = ActionFuture::from(Call {
+        addr: access.get_addr(),
+        args: vec![if cfg!(feature = "plethora") { "getItemMeta" } else { "getItemDetail" }.into(), (slot + 1).into()],
+    });
     server.enqueue_request_group(access.get_client(), vec![action.clone().into()]);
     async move { DetailStack::parse(call_result(action.await?)?) }
 }

@@ -43,6 +43,7 @@ impl_recipe!(ScatteringRecipe, ScatteringInput);
 pub struct ScatteringConfig {
     pub name: &'static str,
     pub accesses: Vec<BusAccess>,
+    // plant_sower: 6, 7, .., 14
     pub input_slots: Vec<usize>,
     pub to_extract: Option<ExtractFilter>,
     pub recipes: Vec<ScatteringRecipe>,

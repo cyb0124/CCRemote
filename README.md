@@ -3,7 +3,7 @@ CCRemote is an ComputerCraft program by cyb0124 for item-storage and auto-crafti
 It is a direct port of the OpenComputers program [OCRemote](https://github.com/cyb0124/OCRemote).
 Checkout [OCRemote](https://github.com/cyb0124/OCRemote) for more details.
 
-This project supports CC:Tweaked 1.15+
+This project requires either Plethora or generic peripherals (available in CC:Tweaked 1.15+).
 
 ### Notes
 - CC supports asynchronous peripheral task execution, so load-balancing between multiple computers is unnecessary.

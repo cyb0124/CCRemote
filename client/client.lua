@@ -153,6 +153,6 @@ while true do
       end
       tasks = newTasks
     end
-    if tid then while e[1] ~= 'timer' or e[2] ~= tid do e = {os.pullEvent()} end end
+    if tid then repeat local e = {os.pullEvent()} until e[1] ~= 'timer' or e[2] ~= tid end
   end
 end

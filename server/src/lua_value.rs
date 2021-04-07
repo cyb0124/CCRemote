@@ -77,6 +77,11 @@ impl TryFrom<Value> for u8 {
     fn try_from(value: Value) -> Result<Self, String> { try_into_integer(NotNan::try_from(value)?.into_inner()) }
 }
 
+impl TryFrom<Value> for i16 {
+    type Error = String;
+    fn try_from(value: Value) -> Result<Self, String> { try_into_integer(NotNan::try_from(value)?.into_inner()) }
+}
+
 impl TryFrom<Value> for i32 {
     type Error = String;
     fn try_from(value: Value) -> Result<Self, String> { try_into_integer(NotNan::try_from(value)?.into_inner()) }

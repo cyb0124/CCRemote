@@ -6,6 +6,8 @@ use std::{cmp::min, convert::TryFrom, rc::Rc};
 pub struct Item {
     pub name: String,
     pub nbt_hash: Option<[u8; 16]>,
+    #[cfg(feature = "plethora")]
+    pub damage: i16,
 }
 
 pub struct ItemStack {
@@ -15,7 +17,7 @@ pub struct ItemStack {
 
 fn get_nbt_hash(table: &mut Table) -> Result<Option<[u8; 16]>, String> {
     table
-        .remove(&"nbt".into())
+        .remove(&if cfg!(feature = "plethora") { "nbtHash" } else { "nbt" }.into())
         .map(String::try_from)
         .transpose()?
         .as_ref()
@@ -26,10 +28,15 @@ fn get_nbt_hash(table: &mut Table) -> Result<Option<[u8; 16]>, String> {
 
 impl ItemStack {
     fn parse_ref(table: &mut Table) -> Result<Self, String> {
-        let name = table_remove(table, "name")?;
-        let size = table_remove(table, "count")?;
-        let nbt_hash = get_nbt_hash(table)?;
-        Ok(Self { item: Rc::new(Item { name, nbt_hash }), size })
+        Ok(Self {
+            item: Rc::new(Item {
+                name: table_remove(table, "name")?,
+                nbt_hash: get_nbt_hash(table)?,
+                #[cfg(feature = "plethora")]
+                damage: table_remove(table, "damage")?,
+            }),
+            size: table_remove(table, "count")?,
+        })
     }
 
     pub fn parse(value: Value) -> Result<Self, String> {
@@ -90,7 +97,7 @@ impl Filter {
 pub fn jammer() -> DetailStack {
     thread_local!(static STACK: DetailStack = DetailStack {
         size: 1,
-        item: Rc::new(Item { name: String::new(), nbt_hash: None }),
+        item: Rc::new(Item { name: String::new(), nbt_hash: None, #[cfg(feature = "plethora")] damage: 0 }),
         detail: Rc::new(Detail { label: String::new(), max_size: 1, others: Table::new() })
     });
     STACK.with(|stack| stack.clone())
