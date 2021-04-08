@@ -143,3 +143,20 @@ impl Action for RedstoneOutput {
 
     fn parse_response(_response: Value) -> Result<(), String> { Ok(()) }
 }
+
+pub struct TurtleCall {
+    pub func: &'static str,
+    pub args: Vec<Value>,
+}
+
+impl Action for TurtleCall {
+    type Output = Value;
+
+    fn build_request(self, table: &mut Table) {
+        table.insert("o".into(), "t".into());
+        table.insert("f".into(), self.func.into());
+        table.insert("v".into(), vec_to_table(self.args).into());
+    }
+
+    fn parse_response(response: Value) -> Result<Value, String> { Ok(response) }
+}

@@ -121,6 +121,7 @@ where
 }
 
 mod buffered;
+mod crafty;
 mod inputless;
 mod misc;
 mod redstone;
@@ -128,6 +129,7 @@ mod scattering;
 mod slotted;
 mod workbench;
 pub use buffered::*;
+pub use crafty::*;
 pub use inputless::*;
 pub use misc::*;
 pub use redstone::*;

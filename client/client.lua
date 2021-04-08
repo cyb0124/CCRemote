@@ -92,7 +92,8 @@ local function exec(p)
   if p.o == 'l' then log(p)
   elseif p.o == 'c' then d.r = {peripheral.call(p.p, table.unpack(p.v))}
   elseif p.o == 'i' then d.r = rs.getAnalogInput(p.s)
-  elseif p.o == 'o' then d.r = rs.setAnalogOutput(p.s, p.v)
+  elseif p.o == 'o' then rs.setAnalogOutput(p.s, p.v)
+  elseif p.o == 't' then d.r = {turtle[p.f](table.unpack(p.v))}
   else error('invalid op: ' .. tostring(p.o)) end
   return d
 end

@@ -12,3 +12,6 @@ This project requires either Plethora or generic peripherals (available in CC:Tw
   This situation will be detected as an error and will be recovered gracefully.
 - Because CC's wired network can transport items over any distance, the "bus" inventory is no longer necessary.
   However, it is still ported from OCRemote to allow wireless transportation.
+- CraftyProcess may enter invalid state if Internet connection breaks or server exits during its execution.
+  This is due to CraftyProcess requiring synchronization between multiple clients.
+  All other processes still guarantees state validity when Internet connection breaks or server exits.

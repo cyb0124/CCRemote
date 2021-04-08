@@ -134,7 +134,7 @@ fn load_input(group: &mut Vec<Call>, access: &BusAccess, bus_slot: usize, inv_sl
             size.into(),
             (inv_slot + 1).into(),
         ],
-    });
+    })
 }
 
 fn load_non_consumable(group: &mut Vec<Call>, access: &BusAccess, non_consumable: &NonConsumable) {
@@ -154,7 +154,7 @@ fn store_output(group: &mut Vec<Call>, access: &BusAccess, bus_slot: usize) {
     group.push(Call {
         addr: access.inv_addr,
         args: vec!["pushItems".into(), access.bus_addr.into(), 10.into(), 64.into(), (bus_slot + 1).into()],
-    });
+    })
 }
 
 fn store_non_consumable(group: &mut Vec<Call>, access: &BusAccess, non_consumable: &NonConsumable) {
@@ -167,5 +167,5 @@ fn store_non_consumable(group: &mut Vec<Call>, access: &BusAccess, non_consumabl
             64.into(),
             (non_consumable.storage_slot + 11).into(),
         ],
-    });
+    })
 }
