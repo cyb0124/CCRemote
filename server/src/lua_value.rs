@@ -1,6 +1,6 @@
 use num_traits::cast::{AsPrimitive, FromPrimitive};
 use ordered_float::NotNan;
-use std::{collections::BTreeMap, convert::TryFrom, io::Write, str::from_utf8};
+use std::{collections::BTreeMap, convert::TryFrom, io::Write};
 
 fn try_into_integer<I>(f: f64) -> Result<I, String>
 where
@@ -154,9 +154,11 @@ pub fn table_remove<T: TryFrom<Value, Error = String>>(table: &mut Table, key: &
 
 fn serialize_string(x: &str, out: &mut Vec<u8>) {
     out.push(b'@');
-    for i in x.as_bytes() {
-        out.push(*i);
-        if *i == b'@' {
+    for i in x.chars() {
+        // Treat anything unrepresentable in CC's charset as '?'.
+        let i = u8::try_from(u32::from(i)).unwrap_or(b'?');
+        out.push(i);
+        if i == b'@' {
             out.push(b'.')
         }
     }
@@ -199,8 +201,8 @@ pub fn serialize(x: &Value, out: &mut Vec<u8>) {
 enum State {
     V,
     T { result: Table, key: Option<Key> },
-    F(Vec<u8>),
-    S { result: Vec<u8>, escape: bool },
+    F(String),
+    S { result: String, escape: bool },
 }
 
 pub struct Parser {
@@ -255,8 +257,8 @@ impl Parser {
                     data = rem;
                     match x {
                         b'!' => self.reduce(Value::N, handler)?,
-                        b'#' => self.stack.push(State::F(Vec::new())),
-                        b'@' => self.stack.push(State::S { result: Vec::new(), escape: false }),
+                        b'#' => self.stack.push(State::F(String::new())),
+                        b'@' => self.stack.push(State::S { result: String::new(), escape: false }),
                         b'+' => self.reduce(Value::B(true), handler)?,
                         b'-' => self.reduce(Value::B(false), handler)?,
                         b'=' => {
@@ -271,17 +273,13 @@ impl Parser {
                         data = rem;
                         if *x == b'@' {
                             self.reduce(
-                                Value::F(
-                                    from_utf8(&result)
-                                        .map_err(|e| format!("non utf-8 serialized number: {}", e))?
-                                        .parse()
-                                        .map_err(|e| format!("invalid serialized number: {}", e))?,
-                                ),
+                                Value::F(result.parse().map_err(|e| format!("invalid serialized number: {}", e))?),
                                 handler,
                             )?;
                             continue 'outer;
                         } else {
-                            result.push(*x)
+                            // Code-point can approximate CC's custom charset.
+                            result.push((*x).into())
                         }
                     }
                     self.stack.push(State::F(result))
@@ -292,16 +290,11 @@ impl Parser {
                         if escape {
                             match *x {
                                 b'.' => {
-                                    result.push(b'@');
+                                    result.push('@');
                                     escape = false
                                 }
                                 b'~' => {
-                                    self.reduce(
-                                        String::from_utf8(result)
-                                            .map_err(|e| format!("non utf-8 serialized string: {}", e))?
-                                            .into(),
-                                        handler,
-                                    )?;
+                                    self.reduce(result.into(), handler)?;
                                     continue 'outer;
                                 }
                                 x => return Err(format!("unknown escape: {}", x)),
@@ -309,7 +302,8 @@ impl Parser {
                         } else if *x == b'@' {
                             escape = true
                         } else {
-                            result.push(*x)
+                            // Code-point can approximate CC's custom charset.
+                            result.push((*x).into())
                         }
                     }
                     self.stack.push(State::S { result, escape })
