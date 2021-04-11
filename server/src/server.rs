@@ -150,7 +150,9 @@ async fn writer_main(client: Weak<RefCell<Client>>, mut sink: SplitSink<WebSocke
                     value.push(table.into());
                     this.response_queue.insert(id, request);
                 }
-                serialize(&vec_to_table(value).into(), &mut data)
+                serialize(&vec_to_table(value).into(), &mut data);
+                #[cfg(feature = "dump_traffic")]
+                this.log(&format!("out: {}", data.iter().map(|x| char::from(*x)).collect::<String>()));
             } else {
                 this.writer = WriterState::NotWriting(sink);
                 break;
@@ -207,6 +209,8 @@ async fn reader_main(client: Weak<RefCell<Client>>, mut stream: SplitStream<WebS
                     break;
                 }
                 Some(Ok(Message::Binary(data))) => {
+                    #[cfg(feature = "dump_traffic")]
+                    this.borrow().log(&format!("in: {}", data.iter().map(|x| char::from(*x)).collect::<String>()));
                     if let Err(e) = parser.shift(&data, &mut |x| on_packet(&this, x)) {
                         this.borrow_mut().log_and_disconnect(&format!("error decoding packet: {}", e));
                         break;
