@@ -98,7 +98,7 @@ impl Process for WorkbenchProcess {
                             for non_consumable in &recipe.non_consumables {
                                 load_non_consumable(&mut group, access, non_consumable)
                             }
-                            store_output(&mut group, access, slots_to_free[0]);
+                            store_output(&mut group, access, slots_to_free[0], n_sets);
                             for non_consumable in &recipe.non_consumables {
                                 store_non_consumable(&mut group, access, non_consumable)
                             }
@@ -150,11 +150,13 @@ fn load_non_consumable(group: &mut Vec<Call>, access: &BusAccess, non_consumable
     })
 }
 
-fn store_output(group: &mut Vec<Call>, access: &BusAccess, bus_slot: usize) {
-    group.push(Call {
-        addr: access.inv_addr,
-        args: vec!["pushItems".into(), access.bus_addr.into(), 10.into(), 64.into(), (bus_slot + 1).into()],
-    })
+fn store_output(group: &mut Vec<Call>, access: &BusAccess, bus_slot: usize, n_sets: i32) {
+    for _ in 0..n_sets {
+        group.push(Call {
+            addr: access.inv_addr,
+            args: vec!["pushItems".into(), access.bus_addr.into(), 10.into(), 64.into(), (bus_slot + 1).into()],
+        })
+    }
 }
 
 fn store_non_consumable(group: &mut Vec<Call>, access: &BusAccess, non_consumable: &NonConsumable) {
