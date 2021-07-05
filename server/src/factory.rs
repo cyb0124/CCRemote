@@ -387,7 +387,11 @@ async fn bus_main(factory: Weak<RefCell<Factory>>) -> Result<(), String> {
 }
 
 async fn bus_update(factory: &Weak<RefCell<Factory>>) -> Result<bool, String> {
-    let stacks = list_inventory(&*alive(factory)?.borrow());
+    let stacks = {
+        alive_mut!(factory, this);
+        this.n_bus_updates += 1;
+        list_inventory(this)
+    };
     let stacks = stacks.await?;
     let mut tasks = Vec::new();
     {
