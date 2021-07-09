@@ -77,6 +77,15 @@ impl Process for BufferedProcess {
                 let mut remaining_size = this.config.max_recipe_inputs;
                 let mut existing_size = FnvHashMap::<Rc<Item>, i32>::default();
                 'slot: for (slot, stack) in stacks.iter_mut().enumerate() {
+                    if let Some(ref to_extract) = this.config.to_extract {
+                        if let Some(some_stack) = stack {
+                            if to_extract(slot, some_stack) {
+                                tasks.push(extract_output(this, factory, slot, some_stack.detail.max_size));
+                                *stack = Some(jammer());
+                                continue 'slot;
+                            }
+                        }
+                    }
                     if let Some(ref slot_filter) = this.config.slot_filter {
                         if !slot_filter(slot) {
                             *stack = Some(jammer());
@@ -90,19 +99,7 @@ impl Process for BufferedProcess {
                                 continue 'slot;
                             }
                         }
-                        remaining_size -= stack.size;
-                        if let Some(ref to_extract) = this.config.to_extract {
-                            for recipe in &this.config.recipes {
-                                for input in &recipe.inputs {
-                                    if input.item.apply(&stack.item, &stack.detail) {
-                                        continue 'slot;
-                                    }
-                                }
-                            }
-                            if to_extract(slot, stack) {
-                                tasks.push(extract_output(this, factory, slot, stack.detail.max_size))
-                            }
-                        }
+                        remaining_size -= stack.size
                     }
                 }
                 for stock in &this.config.stocks {
