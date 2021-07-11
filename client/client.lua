@@ -124,8 +124,8 @@ while true do
       for _, p in ipairs(p) do
         local task = coroutine.create(exec)
         local e, d = coroutine.resume(task, p)
-        if not e then error(d) end
-        if type(d) == 'table' then out = out .. enc(d)
+        if not e then out = out .. enc(d)
+        elseif type(d) == 'table' then out = out .. enc(d)
         else tasks[#tasks + 1] = { task = task, filter = d } end
       end
     end)
@@ -147,8 +147,8 @@ while true do
       for _, v in ipairs(tasks) do
         if not v.filter or v.filter == e[1] then
           local e, d = coroutine.resume(v.task, table.unpack(e))
-          if not e then error(d) end
-          if type(d) == 'table' then out = out .. enc(d)
+          if not e then out = out .. enc(d)
+          elseif type(d) == 'table' then out = out .. enc(d)
           else newTasks[#newTasks + 1] = { task = v.task, filter = d } end
         else newTasks[#newTasks + 1] = v end
       end
