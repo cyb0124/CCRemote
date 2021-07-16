@@ -91,8 +91,12 @@ local function exec(p)
   local d = {i = p.i}
   if p.o == 'l' then log(p)
   elseif p.o == 'c' then d.r = {peripheral.call(p.p, table.unpack(p.v))}
-  elseif p.o == 'i' then d.r = rs.getAnalogInput(p.s)
-  elseif p.o == 'o' then rs.setAnalogOutput(p.s, p.v)
+  elseif p.o == 'i' then
+    if p.p then d.r = peripheral.call(p.p, "getAnalogInput", p.s)
+    else d.r = rs.getAnalogInput(p.s) end
+  elseif p.o == 'o' then
+    if p.p then peripheral.call(p.p, "setAnalogOutput", p.s, p.v)
+    else rs.setAnalogOutput(p.s, p.v) end
   elseif p.o == 't' then d.r = {turtle[p.f](table.unpack(p.v))}
   else error('invalid op: ' .. tostring(p.o)) end
   return d

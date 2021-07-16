@@ -35,9 +35,10 @@ impl GetAddr for BusAccess {
     fn get_addr(&self) -> &'static str { self.inv_addr }
 }
 
-impl_get_client!(SideAccess);
-pub struct SideAccess {
+impl_get_client!(RedstoneAccess);
+pub struct RedstoneAccess {
     pub client: &'static str,
+    pub addr: Option<&'static str>,
     pub side: &'static str,
 }
 
@@ -47,6 +48,10 @@ pub const BACK: &str = "back";
 pub const FRONT: &str = "front";
 pub const RIGHT: &str = "right";
 pub const LEFT: &str = "left";
+pub const NORTH: &str = "north";
+pub const SOUTH: &str = "south";
+pub const WEST: &str = "west";
+pub const EAST: &str = "east";
 
 impl_get_client!(CraftyAccess);
 pub struct CraftyAccess {
