@@ -1,4 +1,4 @@
-use super::super::access::SideAccess;
+use super::super::access::RedstoneAccess;
 use super::super::action::{ActionFuture, Log, RedstoneInput, RedstoneOutput};
 use super::super::factory::Factory;
 use super::super::inventory::Inventory;
@@ -23,7 +23,7 @@ pub fn emit_when_want_item(name: &'static str, item: Filter, n_wanted: i32) -> R
 }
 
 pub struct RedstoneEmitterConfig {
-    pub accesses: Vec<SideAccess>,
+    pub accesses: Vec<RedstoneAccess>,
     pub output: RedstoneFn,
 }
 
@@ -48,7 +48,7 @@ impl Process for RedstoneEmitterProcess {
         } else {
             let server = factory.get_server().borrow();
             let access = server.load_balance(&self.config.accesses);
-            let action = ActionFuture::from(RedstoneOutput { side: access.side, value });
+            let action = ActionFuture::from(RedstoneOutput { side: access.side, addr: access.addr, value });
             server.enqueue_request_group(access.client, vec![action.clone().into()]);
             let weak = self.weak.clone();
             spawn(async move {
@@ -63,7 +63,7 @@ impl Process for RedstoneEmitterProcess {
 
 pub struct RedstoneConditionalConfig<T: IntoProcess> {
     pub name: Option<&'static str>,
-    pub accesses: Vec<SideAccess>,
+    pub accesses: Vec<RedstoneAccess>,
     pub condition: Box<dyn Fn(u8) -> bool>,
     pub child: T,
 }
@@ -71,7 +71,7 @@ pub struct RedstoneConditionalConfig<T: IntoProcess> {
 pub struct RedstoneConditionalProcess<T: Process> {
     weak: Weak<RefCell<RedstoneConditionalProcess<T>>>,
     name: Option<&'static str>,
-    accesses: Vec<SideAccess>,
+    accesses: Vec<RedstoneAccess>,
     condition: Box<dyn Fn(u8) -> bool>,
     child: Rc<RefCell<T>>,
 }
@@ -95,7 +95,7 @@ impl<T: Process> Process for RedstoneConditionalProcess<T> {
     fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>> {
         let server = factory.get_server().borrow();
         let access = server.load_balance(&self.accesses);
-        let action = ActionFuture::from(RedstoneInput { side: access.side });
+        let action = ActionFuture::from(RedstoneInput { side: access.side, addr: access.addr });
         server.enqueue_request_group(access.client, vec![action.clone().into()]);
         let weak = self.weak.clone();
         let factory = factory.get_weak().clone();
