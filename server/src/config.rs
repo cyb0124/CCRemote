@@ -10,7 +10,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         server: Server::new(1847),
         min_cycle_time: Duration::from_secs(1),
         log_clients: vec!["1a"],
-        bus_accesses: vec![BasicAccess { client: "1a", addr: "immersiveengineering:woodencrate_2" }],
+        bus_accesses: vec![BasicAccess { client: "1a", addr: "minecraft:ender chest_0" }],
         backups: vec![
             (Filter::Label("Seeds"), 32),
             (Filter::Label("Potato"), 32),
@@ -19,6 +19,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             (Filter::Label("Sugar Canes"), 32),
             (Filter::Label("Cactus"), 32),
             (Filter::Label("Nether Wart"), 32),
+            (Filter::Label("Netherrack"), 32),
             (Filter::Name("minecraft:brown_mushroom"), 32),
             (Filter::Name("minecraft:red_mushroom"), 32),
         ],
@@ -28,14 +29,16 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "storagedrawers:controller_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             filters: vec![
-                Filter::Label("Coal"),
                 Filter::Label("Flint"),
                 Filter::Label("Wheat"),
                 Filter::Label("Coal Coke"),
+                Filter::Label("Grain Bait"),
+                Filter::Label("Lapis Lazuli"),
                 Filter::Label("Blaze Powder"),
+                Filter::Label("Nickel Ingot"),
                 Filter::Label("Nether Quartz"),
                 Filter::Label("Birch Sapling"),
                 Filter::Label("Tin Ore Piece"),
@@ -43,6 +46,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 Filter::Label("Gold Ore Piece"),
                 Filter::Label("Lead Ore Piece"),
                 Filter::Label("Sky Stone Dust"),
+                Filter::Label("Pulverized Gold"),
                 Filter::Label("Boron Ore Piece"),
                 Filter::Label("Osmium Ore Piece"),
                 Filter::Label("Nickel Ore Piece"),
@@ -57,32 +61,45 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 Filter::Label("Certus Quartz Crystal"),
             ],
         });
+        factory.add_process(BufferedConfig {
+            name: "output",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "minecraft:ender chest_1",
+                bus_addr: "minecraft:ender chest_0",
+            }],
+            slot_filter: None,
+            to_extract: extract_all(),
+            recipes: vec![],
+            max_recipe_inputs: 0,
+            stocks: vec![],
+        });
         factory.add_storage(ChestConfig {
             accesses: vec![BusAccess {
                 client: "1a",
-                inv_addr: "actuallyadditions:giantchestmedium_3",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                inv_addr: "actuallyadditions:giantchestlarge_3",
+                bus_addr: "minecraft:ender chest_0",
             }],
         });
         factory.add_storage(ChestConfig {
             accesses: vec![BusAccess {
                 client: "1a",
-                inv_addr: "actuallyadditions:giantchestmedium_2",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                inv_addr: "actuallyadditions:giantchestlarge_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
         });
         factory.add_storage(ChestConfig {
             accesses: vec![BusAccess {
                 client: "1a",
-                inv_addr: "actuallyadditions:giantchestmedium_1",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                inv_addr: "actuallyadditions:giantchestlarge_1",
+                bus_addr: "minecraft:ender chest_0",
             }],
         });
         factory.add_storage(ChestConfig {
             accesses: vec![BusAccess {
                 client: "1a",
-                inv_addr: "actuallyadditions:giantchestmedium_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                inv_addr: "actuallyadditions:giantchestlarge_0",
+                bus_addr: "minecraft:ender chest_0",
             }],
         });
         factory.add_process(BufferedConfig {
@@ -90,7 +107,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "immersiveengineering:woodencrate_3",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: extract_all(),
@@ -103,7 +120,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "immersiveengineering:woodencrate_10",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: extract_all(),
@@ -116,7 +133,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "immersiveengineering:woodencrate_11",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: extract_all(),
@@ -129,7 +146,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "immersiveengineering:woodencrate_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: extract_all(),
@@ -142,7 +159,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "immersiveengineering:woodencrate_7",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: extract_all(),
@@ -155,7 +172,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "immersiveengineering:woodencrate_12",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: extract_all(),
@@ -168,7 +185,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "immersiveengineering:woodencrate_4",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: extract_all(),
@@ -181,7 +198,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "immersiveengineering:woodencrate_5",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: extract_all(),
@@ -194,7 +211,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "actuallyadditions:rangedcollector_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: extract_all(),
@@ -203,11 +220,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             stocks: vec![],
         });
         factory.add_process(BufferedConfig {
-            name: "pureDaisyOutput",
+            name: "blockTransmuteOutput",
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "actuallyadditions:rangedcollector_1",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: extract_all(),
@@ -220,7 +237,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "immersiveengineering:woodencrate_13",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: extract_all(),
@@ -233,20 +250,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermalexpansion:device_item_buffer_2",
-                bus_addr: "immersiveengineering:woodencrate_2",
-            }],
-            slot_filter: None,
-            to_extract: extract_all(),
-            recipes: vec![],
-            max_recipe_inputs: 0,
-            stocks: vec![],
-        });
-        factory.add_process(BufferedConfig {
-            name: "lavaBarrelOutput",
-            accesses: vec![BusAccess {
-                client: "1a",
-                inv_addr: "thermalexpansion:device_item_buffer_5",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: extract_all(),
@@ -259,7 +263,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "industrialforegoing:item_splitter_tile_3",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -293,7 +297,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "industrialforegoing:item_splitter_tile_4",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -317,7 +321,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "industrialforegoing:item_splitter_tile_2",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -341,7 +345,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "industrialforegoing:item_splitter_tile_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -365,12 +369,22 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "industrialforegoing:item_splitter_tile_1",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: None,
             max_recipe_inputs: 16,
             recipes: vec![
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Name("minecraft:netherbrick"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Netherrack"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Starmetal Ingot"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Stardust"), 1)],
+                    max_inputs: i32::MAX,
+                },
                 BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Stone"), n_wanted: 64 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Cobblestone"), 1)],
@@ -387,7 +401,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Baked Potato"), n_wanted: 64 }],
+                    outputs: vec![Output { item: Filter::Label("Baked Potato"), n_wanted: 16 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Potato"), 1)],
                     max_inputs: i32::MAX,
                 },
@@ -404,6 +418,16 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Silver Ingot"), n_wanted: 64 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Pulverized Silver"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Cobalt Ingot"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Cobalt Ore Dust"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Ardite Ingot"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Ardite Ore Dust"), 1)],
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
@@ -437,11 +461,6 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Nickel Ingot"), n_wanted: 64 }],
-                    inputs: vec![BufferedInput::new(Filter::Label("Pulverized Nickel"), 1)],
-                    max_inputs: i32::MAX,
-                },
-                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Black Quartz"), n_wanted: 64 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Crushed Black Quartz"), 1)],
                     max_inputs: i32::MAX,
@@ -464,7 +483,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "immersiveengineering:woodencrate_6",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -506,6 +525,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Stardust"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Starmetal Ore"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Pulverized Iron"), n_wanted: 64 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Iron Ore"), 1)],
                     max_inputs: i32::MAX,
@@ -516,18 +540,8 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Pulverized Nickel"), n_wanted: 64 }],
-                    inputs: vec![BufferedInput::new(Filter::Label("Nickel Ore"), 1)],
-                    max_inputs: i32::MAX,
-                },
-                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Pulverized Copper"), n_wanted: 64 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Copper Ore"), 1)],
-                    max_inputs: i32::MAX,
-                },
-                BufferedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Pulverized Gold"), n_wanted: 64 }],
-                    inputs: vec![BufferedInput::new(Filter::Label("Gold Ore"), 1)],
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
@@ -589,11 +603,117 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             stocks: vec![],
         });
         factory.add_process(SlottedConfig {
+            name: "compactor",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "thermalexpansion:machine_compactor_0",
+                bus_addr: "minecraft:ender chest_0",
+            }],
+            input_slots: vec![0],
+            to_extract: None,
+            recipes: vec![SlottedRecipe {
+                outputs: vec![Output { item: Filter::Label("Blaze Rod"), n_wanted: 16 }],
+                inputs: vec![SlottedInput::new(Filter::Label("Blaze Powder"), 5, vec![0])],
+                max_per_slot: 40,
+            }],
+        });
+        factory.add_process(SlottedConfig {
+            name: "centrifugal",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "thermalexpansion:machine_centrifuge_0",
+                bus_addr: "minecraft:ender chest_0",
+            }],
+            input_slots: vec![0],
+            to_extract: None,
+            recipes: vec![
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Sugar"), n_wanted: 16 }],
+                    inputs: vec![SlottedInput::new(Filter::Label("Sugar Canes"), 1, vec![0])],
+                    max_per_slot: 8,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Silken Tofu"), n_wanted: 16 }],
+                    inputs: vec![SlottedInput::new(Filter::Label("Soybean"), 1, vec![0])],
+                    max_per_slot: 8,
+                },
+                SlottedRecipe {
+                    outputs: vec![
+                        Output { item: Filter::Label("Firm Tofu"), n_wanted: 16 },
+                        Output { item: Filter::Label("Soy Milk"), n_wanted: 16 },
+                    ],
+                    inputs: vec![SlottedInput::new(Filter::Label("Silken Tofu"), 1, vec![0])],
+                    max_per_slot: 8,
+                },
+            ],
+        });
+        factory.add_process(SlottedConfig {
+            name: "pulverizer",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "thermalexpansion:machine_pulverizer_0",
+                bus_addr: "minecraft:ender chest_0",
+            }],
+            input_slots: vec![0],
+            to_extract: None,
+            recipes: vec![
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Flour"), n_wanted: 16 }],
+                    inputs: vec![SlottedInput::new(Filter::Label("Wheat"), 1, vec![0])],
+                    max_per_slot: 8,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Sulfur"), n_wanted: 64 }],
+                    inputs: vec![SlottedInput::new(Filter::Label("Blaze Rod"), 1, vec![0])],
+                    max_per_slot: 8,
+                },
+                SlottedRecipe {
+                    outputs: vec![
+                        Output { item: Filter::Label("Pulverized Gold"), n_wanted: 64 },
+                        Output { item: Filter::Label("Cinnabar"), n_wanted: 64 },
+                    ],
+                    inputs: vec![SlottedInput::new(Filter::Label("Gold Ore"), 1, vec![0])],
+                    max_per_slot: 8,
+                },
+            ],
+        });
+        factory.add_process(SlottedConfig {
+            name: "inductionSmelter",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "thermalexpansion:machine_smelter_0",
+                bus_addr: "minecraft:ender chest_0",
+            }],
+            input_slots: vec![0, 1],
+            to_extract: None,
+            recipes: vec![
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Black Iron Ingot"), n_wanted: 64 }],
+                    inputs: vec![
+                        SlottedInput::new(Filter::Label("Block of Invar"), 1, vec![0]),
+                        SlottedInput::new(Filter::Label("Tough Alloy"), 1, vec![1]),
+                    ],
+                    max_per_slot: 8,
+                },
+                SlottedRecipe {
+                    outputs: vec![
+                        Output { item: Filter::Label("Nickel Ingot"), n_wanted: 64 },
+                        Output { item: Filter::Label("Platinum Ingot"), n_wanted: 64 },
+                    ],
+                    inputs: vec![
+                        SlottedInput::new(Filter::Label("Cinnabar"), 1, vec![0]),
+                        SlottedInput::new(Filter::Label("Nickel Ore"), 1, vec![1]),
+                    ],
+                    max_per_slot: 8,
+                },
+            ],
+        });
+        factory.add_process(SlottedConfig {
             name: "pressurizer",
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "nuclearcraft:pressurizer_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             input_slots: vec![0],
             to_extract: Some(Box::new(|slot, _| slot == 1)),
@@ -608,6 +728,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     inputs: vec![SlottedInput::new(Filter::Label("Obsidian Plate"), 9, vec![0])],
                     max_per_slot: 63,
                 },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Lapis Lazuli Plate"), n_wanted: 64 }],
+                    inputs: vec![SlottedInput::new(Filter::Label("Lapis Lazuli"), 1, vec![0])],
+                    max_per_slot: 8,
+                },
             ],
         });
         factory.add_process(SlottedConfig {
@@ -615,7 +740,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "nuclearcraft:melter_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -627,11 +752,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: "lightwell",
-            accesses: vec![BusAccess {
-                client: "1a",
-                inv_addr: "xu2:tileuse_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
-            }],
+            accesses: vec![BusAccess { client: "1a", inv_addr: "xu2:tileuse_0", bus_addr: "minecraft:ender chest_0" }],
             input_slots: vec![0],
             to_extract: None,
             recipes: vec![SlottedRecipe {
@@ -641,11 +762,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             }],
         });
         factory.add_process(SlottedConfig {
-            name: "creosote",
+            name: "cokeOven",
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermalexpansion:machine_furnace_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             input_slots: vec![0],
             to_extract: extract_all(),
@@ -655,12 +776,16 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 max_per_slot: 64,
             }],
         });
+        factory.add_process(RedstoneEmitterConfig {
+            accesses: vec![RedstoneAccess { client: "1a", addr: Some("redstone_integrator_2"), side: NORTH }],
+            output: emit_when_want_item("cokeOven", Filter::Label("Coal Coke"), 64),
+        });
         factory.add_process(SlottedConfig {
             name: "compressor",
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "ic2:compressor_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             input_slots: vec![6],
             to_extract: Some(Box::new(|slot, _| slot == 1)),
@@ -687,7 +812,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "ic2:metal_former_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             input_slots: vec![6],
             to_extract: Some(Box::new(|slot, _| slot == 1)),
@@ -708,8 +833,8 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             name: "fission",
             accesses: vec![BusAccess {
                 client: "1a",
-                inv_addr: "nuclearcraft:fission_controller_new_1",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                inv_addr: "nuclearcraft:fission_controller_new_3",
+                bus_addr: "minecraft:ender chest_0",
             }],
             input_slots: vec![0],
             to_extract: Some(Box::new(|slot, _| slot == 1)),
@@ -724,7 +849,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "storagedrawers:compdrawers_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             input_slots: vec![0],
             to_extract: Some(Box::new(|_, item| Filter::Label("Pink Slime").apply(&item.item, &item.detail))),
@@ -739,7 +864,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "immersiveengineering:woodencrate_8",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -752,7 +877,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermalexpansion:device_item_buffer_16",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -765,7 +890,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermalexpansion:device_item_buffer_18",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -778,13 +903,30 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermalexpansion:device_item_buffer_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: None,
             recipes: vec![BufferedRecipe {
-                outputs: vec![Output { item: Filter::Label("Aluminium Wire"), n_wanted: 64 }],
+                outputs: vec![Output { item: Filter::Label("Aluminium Wire"), n_wanted: 16 }],
                 inputs: vec![BufferedInput::new(Filter::Label("Aluminum Ingot"), 1)],
+                max_inputs: i32::MAX,
+            }],
+            max_recipe_inputs: 8,
+            stocks: vec![],
+        });
+        factory.add_process(BufferedConfig {
+            name: "rodPress",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "thermalexpansion:device_item_buffer_24",
+                bus_addr: "minecraft:ender chest_0",
+            }],
+            slot_filter: None,
+            to_extract: None,
+            recipes: vec![BufferedRecipe {
+                outputs: vec![Output { item: Filter::Label("Ardite Tool Rod"), n_wanted: 16 }],
+                inputs: vec![BufferedInput::new(Filter::Label("Ardite Ingot"), 1)],
                 max_inputs: i32::MAX,
             }],
             max_recipe_inputs: 8,
@@ -795,7 +937,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermalexpansion:device_item_buffer_17",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -812,7 +954,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermalexpansion:device_item_buffer_19",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -843,7 +985,15 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Seeds"), n_wanted: 64 }],
+                    outputs: vec![Output { item: Filter::Label("Soybean"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Soybean Seed"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![
+                        Output { item: Filter::Label("Seeds"), n_wanted: 64 },
+                        Output { item: Filter::Label("Wheat"), n_wanted: 64 },
+                    ],
                     inputs: vec![BufferedInput::new(Filter::Label("Seeds"), 1).allow_backup()],
                     max_inputs: i32::MAX,
                 },
@@ -867,6 +1017,26 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     inputs: vec![BufferedInput::new(Filter::Label("Nether Wart"), 1).allow_backup()],
                     max_inputs: i32::MAX,
                 },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Name("minecraft:brown_mushroom"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Name("minecraft:brown_mushroom"), 1).allow_backup()],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Name("minecraft:red_mushroom"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Name("minecraft:red_mushroom"), 1).allow_backup()],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("§eInferium Essence"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Inferium Seeds"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Dye Essence"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Dye Seeds"), 1)],
+                    max_inputs: i32::MAX,
+                },
             ],
             max_recipe_inputs: 16,
             stocks: vec![],
@@ -876,7 +1046,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermalexpansion:device_item_buffer_15",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -893,7 +1063,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermalexpansion:device_item_buffer_7",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -933,6 +1103,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     inputs: vec![BufferedInput::new(Filter::Label("Invar Ingot"), 4)],
                     max_inputs: i32::MAX,
                 },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Silver Gear"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Silver Ingot"), 4)],
+                    max_inputs: i32::MAX,
+                },
             ],
             max_recipe_inputs: 32,
             stocks: vec![],
@@ -942,7 +1117,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermalexpansion:device_item_buffer_4",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -955,35 +1130,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             stocks: vec![],
         });
         factory.add_process(BufferedConfig {
-            name: "lavaBarrel",
-            accesses: vec![BusAccess {
-                client: "1a",
-                inv_addr: "thermalexpansion:device_item_buffer_6",
-                bus_addr: "immersiveengineering:woodencrate_2",
-            }],
-            slot_filter: None,
-            to_extract: None,
-            recipes: vec![
-                BufferedRecipe {
-                    outputs: vec![Output { item: Filter::Label("End Stone"), n_wanted: 64 }],
-                    inputs: vec![BufferedInput::new(Filter::Label("Glowstone Dust"), 1)],
-                    max_inputs: i32::MAX,
-                },
-                BufferedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Netherrack"), n_wanted: 64 }],
-                    inputs: vec![BufferedInput::new(Filter::Label("Redstone"), 1)],
-                    max_inputs: i32::MAX,
-                },
-            ],
-            max_recipe_inputs: 8,
-            stocks: vec![],
-        });
-        factory.add_process(BufferedConfig {
             name: "platePress",
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermalexpansion:device_item_buffer_3",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1049,11 +1200,6 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Lapis Lazuli Plate"), n_wanted: 64 }],
-                    inputs: vec![BufferedInput::new(Filter::Label("Lapis Lazuli"), 1)],
-                    max_inputs: i32::MAX,
-                },
-                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Aluminum Plate"), n_wanted: 64 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Aluminum Ingot"), 1)],
                     max_inputs: i32::MAX,
@@ -1072,7 +1218,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "forestry:squeezer_1",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -1087,7 +1233,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "forestry:carpenter_1",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             input_slots: vec![12],
             to_extract: Some(Box::new(|slot, _| slot == 10)),
@@ -1102,7 +1248,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "forestry:carpenter_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             input_slots: vec![12, 13],
             to_extract: Some(Box::new(|slot, _| slot == 10)),
@@ -1119,7 +1265,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "nuclearcraft:cobblestone_generator_1",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             outputs: vec![Output { item: Filter::Label("Cobblestone"), n_wanted: 64 }],
@@ -1128,7 +1274,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "industrialforegoing:latex_processing_unit_tile_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             outputs: vec![Output { item: Filter::Label("Tiny Dry Rubber"), n_wanted: 64 }],
@@ -1136,8 +1282,8 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         factory.add_process(InputlessConfig {
             accesses: vec![BusAccess {
                 client: "1a",
-                inv_addr: "thermalexpansion:device_item_buffer_1",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                inv_addr: "thermalexpansion:device_item_buffer_23",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             outputs: vec![Output { item: Filter::Label("Obsidian"), n_wanted: 64 }],
@@ -1145,8 +1291,8 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         factory.add_process(InputlessConfig {
             accesses: vec![BusAccess {
                 client: "1a",
-                inv_addr: "thermalexpansion:machine_precipitator_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                inv_addr: "thermalexpansion:machine_precipitator_1",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             outputs: vec![Output { item: Filter::Label("Snowball"), n_wanted: 64 }],
@@ -1156,11 +1302,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "excompressum:auto_compressor_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: Some(Box::new(|slot| slot < 12)),
             to_extract: Some(Box::new(|slot, _| slot >= 12)),
-            max_recipe_inputs: i32::MAX,
+            max_recipe_inputs: 128,
             stocks: vec![],
             recipes: vec![
                 BufferedRecipe {
@@ -1169,7 +1315,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Green Slime Block"), n_wanted: 64 }],
+                    outputs: vec![Output { item: Filter::Label("Green Slime Block"), n_wanted: 16 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Rice Slimeball"), 9)],
                     max_inputs: i32::MAX,
                 },
@@ -1179,12 +1325,32 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Block of Black Quartz"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Black Quartz"), 4)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Block of Black Iron"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Black Iron Ingot"), 9)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Block of Invar"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Invar Ingot"), 9)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Block of Coal"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Coal"), 9)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Lapis Lazuli Block"), n_wanted: 16 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Lapis Lazuli"), 9)],
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Block of Quartz"), n_wanted: 64 }],
+                    outputs: vec![Output { item: Filter::Label("Block of Quartz"), n_wanted: 16 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Nether Quartz"), 4)],
                     max_inputs: i32::MAX,
                 },
@@ -1335,7 +1501,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "excompressum:auto_heavy_sieve_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             input_slots: vec![0],
             to_extract: Some(Box::new(|slot, _| slot < 21)),
@@ -1360,7 +1526,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "excompressum:auto_heavy_sieve_1",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             input_slots: vec![0],
             to_extract: Some(Box::new(|slot, _| slot < 21)),
@@ -1406,6 +1572,14 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     inputs: vec![SlottedInput::new(Filter::Label("Compressed Nether Gravel"), 1, vec![0])],
                     max_per_slot: 8,
                 },
+                SlottedRecipe {
+                    outputs: vec![
+                        Output { item: Filter::Label("Ruby"), n_wanted: 64 },
+                        Output { item: Filter::Label("Malachite"), n_wanted: 64 },
+                    ],
+                    inputs: vec![SlottedInput::new(Filter::Label("Compressed Ender Gravel"), 1, vec![0])],
+                    max_per_slot: 8,
+                },
             ],
         });
         factory.add_process(SlottedConfig {
@@ -1413,7 +1587,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "excompressum:auto_heavy_sieve_2",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             input_slots: vec![0],
             to_extract: Some(Box::new(|slot, _| slot < 21)),
@@ -1438,7 +1612,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "excompressum:auto_compressed_hammer_json_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             input_slots: vec![0],
             to_extract: Some(Box::new(|slot, _| slot < 21)),
@@ -1465,22 +1639,29 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "nuclearcraft:isotope_separator_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             input_slots: vec![0],
             to_extract: extract_all(),
-            recipes: vec![SlottedRecipe {
-                outputs: vec![Output { item: Filter::Label("Thorium-232"), n_wanted: 16 }],
-                inputs: vec![SlottedInput::new(Filter::Label("Thorium Dust"), 1, vec![0])],
-                max_per_slot: 8,
-            }],
+            recipes: vec![
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Thorium-232"), n_wanted: 16 }],
+                    inputs: vec![SlottedInput::new(Filter::Label("Thorium Dust"), 1, vec![0])],
+                    max_per_slot: 8,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Uranium-238"), n_wanted: 16 }],
+                    inputs: vec![SlottedInput::new(Filter::Label("Uranium Grit"), 1, vec![0])],
+                    max_per_slot: 8,
+                },
+            ],
         });
         factory.add_process(SlottedConfig {
             name: "oxidizer",
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "nuclearcraft:infuser_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             input_slots: vec![0],
             to_extract: extract_all(),
@@ -1495,7 +1676,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "nuclearcraft:infuser_1",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             input_slots: vec![0],
             to_extract: extract_all(),
@@ -1517,10 +1698,10 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "nuclearcraft:infuser_3",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             input_slots: vec![0],
-            to_extract: extract_all(),
+            to_extract: None,
             recipes: vec![SlottedRecipe {
                 outputs: vec![Output { item: Filter::Label("Treated Wood Planks"), n_wanted: 64 }],
                 inputs: vec![SlottedInput::new(Filter::Label("Birch Wood Planks"), 1, vec![0])],
@@ -1532,13 +1713,13 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "nuclearcraft:alloy_furnace_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             input_slots: vec![0, 1],
             to_extract: extract_all(),
             recipes: vec![
                 SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Fused Quartz"), n_wanted: 64 }],
+                    outputs: vec![Output { item: Filter::Label("Fused Quartz"), n_wanted: 16 }],
                     inputs: vec![
                         SlottedInput::new(Filter::Label("Nether Quartz"), 4, vec![0]),
                         SlottedInput::new(Filter::Label("Block of Quartz"), 1, vec![1]),
@@ -1597,7 +1778,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     outputs: vec![Output { item: Filter::Label("Invar Ingot"), n_wanted: 64 }],
                     inputs: vec![
                         SlottedInput::new(Filter::Label("Pulverized Iron"), 2, vec![0]),
-                        SlottedInput::new(Filter::Label("Pulverized Nickel"), 1, vec![1]),
+                        SlottedInput::new(Filter::Label("Nickel Ingot"), 1, vec![1]),
                     ],
                     max_per_slot: 16,
                 },
@@ -1613,7 +1794,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     outputs: vec![Output { item: Filter::Label("Constantan Ingot"), n_wanted: 64 }],
                     inputs: vec![
                         SlottedInput::new(Filter::Label("Pulverized Copper"), 1, vec![0]),
-                        SlottedInput::new(Filter::Label("Pulverized Nickel"), 1, vec![1]),
+                        SlottedInput::new(Filter::Label("Nickel Ingot"), 1, vec![1]),
                     ],
                     max_per_slot: 8,
                 },
@@ -1624,7 +1805,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "rftools:crafter3_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: Some(Box::new(|slot| slot < 26)),
             to_extract: Some(Box::new(|slot, _| slot >= 26)),
@@ -1634,7 +1815,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 BufferedRecipe {
                     outputs: vec![Output { item: Filter::Name("minecraft:clay_ball"), n_wanted: 64 }],
                     inputs: vec![BufferedInput::new(Filter::Name("minecraft:clay"), 1)],
-                    max_inputs: i32::MAX,
+                    max_inputs: 16,
                 },
                 BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("String"), n_wanted: 64 }],
@@ -1644,7 +1825,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Enori Crystal"), n_wanted: 64 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Enori Crystal Block"), 1)],
-                    max_inputs: i32::MAX,
+                    max_inputs: 8,
                 },
                 BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Lead Sheetmetal"), n_wanted: 16 }],
@@ -1689,7 +1870,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "rftools:crafter3_1",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: Some(Box::new(|slot| slot < 26)),
             to_extract: Some(Box::new(|slot, _| slot >= 26)),
@@ -1766,7 +1947,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "rftools:crafter3_2",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: Some(Box::new(|slot| slot < 26)),
             to_extract: Some(Box::new(|slot, _| slot >= 26)),
@@ -1799,7 +1980,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Palis Crystal"), n_wanted: 64 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Palis Crystal Block"), 1)],
-                    max_inputs: i32::MAX,
+                    max_inputs: 8,
                 },
                 BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Steel Sheetmetal"), n_wanted: 16 }],
@@ -1839,12 +2020,17 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "actuallyadditions:dropper_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: None,
             max_recipe_inputs: 8,
             recipes: vec![
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Void Crystal Block"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Block of Coal"), 1)],
+                    max_inputs: i32::MAX,
+                },
                 BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Enori Crystal Block"), n_wanted: 16 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Block of Iron"), 1)],
@@ -1856,8 +2042,13 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Soul Sand"), n_wanted: 16 }],
+                    outputs: vec![Output { item: Filter::Label("Soul Sand"), n_wanted: 64 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Sand"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Rhodochrosite"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Ruby"), 1)],
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
@@ -1878,7 +2069,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "actuallyadditions:dropper_2",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1891,24 +2082,104 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             stocks: vec![],
         });
         factory.add_process(BufferedConfig {
-            name: "endoflame",
+            name: "conjuration",
             accesses: vec![BusAccess {
                 client: "1a",
-                inv_addr: "actuallyadditions:dropper_1",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                inv_addr: "actuallyadditions:dropper_3",
+                bus_addr: "minecraft:ender chest_0",
+            }],
+            slot_filter: None,
+            to_extract: None,
+            max_recipe_inputs: 8,
+            recipes: vec![
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Netherrack"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Netherrack"), 1).allow_backup()],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Manasteel Ingot"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Iron Ingot"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Mana Diamond"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Diamond"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Mana Pearl"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Ender Pearl"), 1)],
+                    max_inputs: i32::MAX,
+                },
+            ],
+            stocks: vec![],
+        });
+        factory.add_process(BufferedConfig {
+            name: "elven",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "actuallyadditions:dropper_4",
+                bus_addr: "minecraft:ender chest_0",
+            }],
+            slot_filter: None,
+            to_extract: None,
+            max_recipe_inputs: 8,
+            recipes: vec![BufferedRecipe {
+                outputs: vec![Output { item: Filter::Label("Elementium Ingot"), n_wanted: 64 }],
+                inputs: vec![BufferedInput::new(Filter::Label("Manasteel Ingot"), 2)],
+                max_inputs: i32::MAX,
+            }],
+            stocks: vec![],
+        });
+        factory.add_process(ConditionalConfig {
+            condition: Box::new(|factory| factory.search_n_stored(&Filter::Label("Terrasteel Ingot")) < 64),
+            child: RedstoneConditionalConfig {
+                name: Some("terrasteel"),
+                accesses: vec![RedstoneAccess { client: "1a", addr: Some("redstone_integrator_3"), side: NORTH }],
+                condition: Box::new(|x| x <= 0),
+                child: BufferedConfig {
+                    name: "terrasteel",
+                    accesses: vec![BusAccess {
+                        client: "1a",
+                        inv_addr: "actuallyadditions:dropper_5",
+                        bus_addr: "minecraft:ender chest_0",
+                    }],
+                    slot_filter: None,
+                    to_extract: None,
+                    max_recipe_inputs: i32::MAX,
+                    recipes: vec![BufferedRecipe {
+                        outputs: vec![Output { item: Filter::Label("Terrasteel Ingot"), n_wanted: 64 }],
+                        inputs: vec![
+                            BufferedInput::new(Filter::Label("Manasteel Ingot"), 1),
+                            BufferedInput::new(Filter::Label("Mana Diamond"), 1),
+                            BufferedInput::new(Filter::Label("Mana Pearl"), 1),
+                        ],
+                        max_inputs: 3,
+                    }],
+                    stocks: vec![],
+                },
+            },
+        });
+        factory.add_process(BufferedConfig {
+            name: "kekimurus",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "actuallyadditions:placer_1",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: None,
             max_recipe_inputs: 0,
             recipes: vec![],
-            stocks: vec![BufferedInput::new(Filter::Label("Charcoal"), 64)],
+            stocks: vec![BufferedInput::new(Filter::Label("Cake"), 9)],
         });
         factory.add_process(BufferedConfig {
             name: "infuserStock",
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermalexpansion:device_item_buffer_8",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1924,7 +2195,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "actuallyadditions:placer_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1940,6 +2211,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     inputs: vec![BufferedInput::new(Filter::Label("Steel Sheetmetal"), 1)],
                     max_inputs: i32::MAX,
                 },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Aluminium Rod"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Aluminium Sheetmetal"), 1)],
+                    max_inputs: i32::MAX,
+                },
             ],
             stocks: vec![],
         });
@@ -1948,7 +2224,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "forestry:fabricator_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             input_slots: vec![0, 3, 4],
             to_extract: extract_all(),
@@ -1967,7 +2243,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "forestry:fabricator_1",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             input_slots: vec![0, 3, 4, 5, 6, 7, 8],
             to_extract: extract_all(),
@@ -1993,7 +2269,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "rftools:crafter3_3",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: Some(Box::new(|slot| slot < 26)),
             to_extract: Some(Box::new(|slot, _| slot >= 26)),
@@ -2065,35 +2341,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             ],
         });
         factory.add_process(BufferedConfig {
-            name: "sporesRecreator",
-            accesses: vec![BusAccess {
-                client: "1a",
-                inv_addr: "industrialforegoing:spores_recreator_tile_1",
-                bus_addr: "immersiveengineering:woodencrate_2",
-            }],
-            slot_filter: Some(Box::new(|slot| slot >= 6 && slot < 9)),
-            to_extract: Some(Box::new(|slot, _| slot >= 9)),
-            max_recipe_inputs: 8,
-            stocks: vec![],
-            recipes: vec![
-                BufferedRecipe {
-                    outputs: vec![Output { item: Filter::Name("minecraft:brown_mushroom"), n_wanted: 64 }],
-                    inputs: vec![BufferedInput::new(Filter::Name("minecraft:brown_mushroom"), 1).allow_backup()],
-                    max_inputs: i32::MAX,
-                },
-                BufferedRecipe {
-                    outputs: vec![Output { item: Filter::Name("minecraft:red_mushroom"), n_wanted: 64 }],
-                    inputs: vec![BufferedInput::new(Filter::Name("minecraft:red_mushroom"), 1).allow_backup()],
-                    max_inputs: i32::MAX,
-                },
-            ],
-        });
-        factory.add_process(BufferedConfig {
             name: "crafterE",
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "rftools:crafter3_4",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: Some(Box::new(|slot| slot < 26)),
             to_extract: Some(Box::new(|slot, _| slot >= 26)),
@@ -2133,7 +2385,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                         BufferedInput::new(Filter::Label("Rich Slag"), 1),
                         BufferedInput::new(Filter::Label("Niter"), 1),
                     ],
-                    max_inputs: i32::MAX,
+                    max_inputs: 12,
                 },
                 BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Rice Dough"), n_wanted: 64 }],
@@ -2162,7 +2414,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "rftools:crafter3_5",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: Some(Box::new(|slot| slot < 26)),
             to_extract: Some(Box::new(|slot, _| slot >= 26)),
@@ -2215,6 +2467,20 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     ],
                     max_inputs: i32::MAX,
                 },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Quartz Sliver"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Nether Quartz"), 1)],
+                    max_inputs: 8,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Network Cable"), n_wanted: 16 }],
+                    inputs: vec![
+                        BufferedInput::new(Filter::Label("Lapis Lazuli Plate"), 4),
+                        BufferedInput::new(Filter::Label("Gold Plate"), 1),
+                        BufferedInput::new(Filter::Label("Redstone"), 4),
+                    ],
+                    max_inputs: 18,
+                },
             ],
         });
         factory.add_process(BufferedConfig {
@@ -2222,7 +2488,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermalexpansion:machine_crafter_0",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: Some(Box::new(|slot| slot < 18)),
             to_extract: Some(Box::new(|slot, _| slot == 18)),
@@ -2239,18 +2505,41 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "immersiveengineering:woodencrate_15",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             input_slots: vec![0, 1, 2, 3, 4],
             to_extract: None,
-            recipes: vec![],
+            recipes: vec![
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Empowered Void Crystal Block"), n_wanted: 16 }],
+                    inputs: vec![
+                        SlottedInput::new(Filter::Label("Void Crystal Block"), 1, vec![0]),
+                        SlottedInput::new(Filter::Label("Block of Black Iron"), 1, vec![1]),
+                        SlottedInput::new(Filter::Label("Block of Black Quartz"), 1, vec![2]),
+                        SlottedInput::new(Filter::Label("Ink Sac"), 1, vec![3]),
+                        SlottedInput::new(Filter::Label("Basalt"), 1, vec![4]),
+                    ],
+                    max_per_slot: 1,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Empowered Restonia Crystal Block"), n_wanted: 16 }],
+                    inputs: vec![
+                        SlottedInput::new(Filter::Label("Restonia Crystal Block"), 1, vec![0]),
+                        SlottedInput::new(Filter::Label("Redstone Reception Coil"), 1, vec![1]),
+                        SlottedInput::new(Filter::Label("Rhodochrosite"), 1, vec![2]),
+                        SlottedInput::new(Filter::Label("Ardite Tool Rod"), 1, vec![3]),
+                        SlottedInput::new(Filter::Label("Red Nether Brick"), 1, vec![4]),
+                    ],
+                    max_per_slot: 1,
+                },
+            ],
         });
         factory.add_process(BufferedConfig {
-            name: "pureDaisy",
+            name: "blockTransmute",
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "immersiveengineering:woodencrate_14",
-                bus_addr: "immersiveengineering:woodencrate_2",
+                bus_addr: "minecraft:ender chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -2265,9 +2554,171 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     inputs: vec![BufferedInput::new(Filter::Label("Arcane Stone"), 1)],
                     max_inputs: i32::MAX,
                 },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("End Stone"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Sandstone"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Starmetal Ore"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Iron Ore"), 1)],
+                    max_inputs: i32::MAX,
+                },
             ],
             max_recipe_inputs: 16,
             stocks: vec![],
+        });
+        factory.add_process(BufferedConfig {
+            name: "terraVisCrystal",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "immersiveengineering:woodencrate_16",
+                bus_addr: "minecraft:ender chest_0",
+            }],
+            slot_filter: None,
+            to_extract: None,
+            max_recipe_inputs: i32::MAX,
+            recipes: vec![BufferedRecipe {
+                outputs: vec![Output { item: Filter::Label("Terra Vis Crystal"), n_wanted: 64 }],
+                inputs: vec![BufferedInput::new(Filter::Label("Quartz Sliver"), 1)],
+                max_inputs: 1,
+            }],
+            stocks: vec![
+                BufferedInput::new(Filter::Label("Charcoal"), 64),
+                BufferedInput::new(Filter::Label("Stone"), 64),
+            ],
+        });
+        factory.add_process(BufferedConfig {
+            name: "crafterG",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "rftools:crafter3_6",
+                bus_addr: "minecraft:ender chest_0",
+            }],
+            slot_filter: Some(Box::new(|slot| slot < 26)),
+            to_extract: None,
+            max_recipe_inputs: i32::MAX,
+            stocks: vec![],
+            recipes: vec![
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Arcane Stone"), n_wanted: 64 }],
+                    inputs: vec![
+                        BufferedInput::new(Filter::Label("Stone"), 8),
+                        BufferedInput::new(Filter::Label("Terra Vis Crystal"), 1),
+                    ],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Leadstone Fluxduct"), n_wanted: 16 }],
+                    inputs: vec![
+                        BufferedInput::new(Filter::Label("Redstone"), 6),
+                        BufferedInput::new(Filter::Label("Network Cable"), 2),
+                        BufferedInput::new(Filter::Label("Glass"), 1),
+                    ],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Hardened Fluxduct"), n_wanted: 16 }],
+                    inputs: vec![
+                        BufferedInput::new(Filter::Label("Leadstone Fluxduct"), 3),
+                        BufferedInput::new(Filter::Label("Redstone"), 3),
+                        BufferedInput::new(Filter::Label("Invar Ingot"), 1),
+                    ],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Basalt"), n_wanted: 64 }],
+                    inputs: vec![
+                        BufferedInput::new(Filter::Label("Cobblestone"), 4),
+                        BufferedInput::new(Filter::Label("Coal"), 4),
+                    ],
+                    max_inputs: 64,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Dandelion Yellow"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Dye Essence"), 3)],
+                    max_inputs: 48,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Empowered Void Crystal"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Empowered Void Crystal Block"), 1)],
+                    max_inputs: 8,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Cake"), n_wanted: 16 }],
+                    inputs: vec![
+                        BufferedInput::new(Filter::Label("Raw Tofeeg"), 1),
+                        BufferedInput::new(Filter::Label("Soy Milk"), 3),
+                        BufferedInput::new(Filter::Label("Flour"), 3),
+                        BufferedInput::new(Filter::Label("Sugar"), 2),
+                    ],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Copper Solenoid"), n_wanted: 16 }],
+                    inputs: vec![
+                        BufferedInput::new(Filter::Label("Mixed Metal Ingot"), 1),
+                        BufferedInput::new(Filter::Label("Copper Plate"), 4),
+                        BufferedInput::new(Filter::Label("Aluminium Rod"), 2),
+                        BufferedInput::new(Filter::Label("Copper Item Casing"), 2),
+                    ],
+                    max_inputs: i32::MAX,
+                },
+            ],
+        });
+        factory.add_process(BufferedConfig {
+            name: "crafterH",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "rftools:crafter3_7",
+                bus_addr: "minecraft:ender chest_0",
+            }],
+            slot_filter: Some(Box::new(|slot| slot < 26)),
+            to_extract: None,
+            max_recipe_inputs: i32::MAX,
+            stocks: vec![],
+            recipes: vec![
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Ink Sac"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Dye Essence"), 3)],
+                    max_inputs: 48,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Raw Tofeeg"), n_wanted: 16 }],
+                    inputs: vec![
+                        BufferedInput::new(Filter::Label("Firm Tofu"), 1),
+                        BufferedInput::new(Filter::Label("Dandelion Yellow"), 1),
+                    ],
+                    max_inputs: 64,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Aluminium Sheetmetal"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Aluminum Plate"), 4)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Advanced Plating"), n_wanted: 16 }],
+                    inputs: vec![
+                        BufferedInput::new(Filter::Label("Tough Alloy"), 4),
+                        BufferedInput::new(Filter::Label("Basic Plating"), 1),
+                        BufferedInput::new(Filter::Label("Redstone"), 4),
+                    ],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Red Nether Brick"), n_wanted: 64 }],
+                    inputs: vec![
+                        BufferedInput::new(Filter::Label("Nether Wart"), 2),
+                        BufferedInput::new(Filter::Name("minecraft:netherbrick"), 2),
+                    ],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Empowered Restonia Crystal"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Empowered Restonia Crystal Block"), 1)],
+                    max_inputs: 8,
+                },
+            ],
         });
     })
 }
