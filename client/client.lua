@@ -133,12 +133,16 @@ while true do
       end
     end)
     while true do
-      if #out > 0 then
-        local e, d = pcall(socket.send, out, true)
+      local e = true
+      while #out > 0 do
+        local n = math.min(#out, 65536)
+        local d = out:sub(1, n)
+        e, d = pcall(socket.send, d, true)
         if not e then log { t = d, c = 14 } break end
-        out = ''
+        out = out:sub(n + 1)
       end
-      local e = {os.pullEvent()}
+      if not e then break end
+      e = {os.pullEvent()}
       if e[1] == 'timer' then
         if e[2] == tid then tid = nil end
       elseif e[1] == 'websocket_closed' then
