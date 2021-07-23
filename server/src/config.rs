@@ -55,6 +55,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 Filter::Label("Gold Ore Piece"),
                 Filter::Label("Lead Ore Piece"),
                 Filter::Label("Sky Stone Dust"),
+                Filter::Label("Redstone Seeds"),
                 Filter::Label("Pulverized Gold"),
                 Filter::Label("Boron Ore Piece"),
                 Filter::Label("Osmium Ore Piece"),
@@ -315,6 +316,21 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     inputs: vec![BufferedInput::new(Filter::Label("Diamond"), 1)],
                     max_inputs: i32::MAX,
                 },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Pure Certus Quartz Crystal"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Certus Quartz Seed"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Pure Nether Quartz Crystal"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Nether Quartz Seed"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Pure Fluix Crystal"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Fluix Seed"), 1)],
+                    max_inputs: i32::MAX,
+                },
             ],
             stocks: vec![],
         });
@@ -541,6 +557,16 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Nether Quartz Dust"), n_wanted: 64 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Nether Quartz"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Certus Quartz Dust"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Certus Quartz Crystal"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Fluix Dust"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Fluix Crystal"), 1)],
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
@@ -3952,6 +3978,30 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                         BufferedInput::new(Filter::Label("Advanced Control Circuit"), 1),
                     ],
                     max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Nether Quartz Seed"), n_wanted: 16 }],
+                    inputs: vec![
+                        BufferedInput::new(Filter::Label("Nether Quartz Dust"), 1),
+                        BufferedInput::new(Filter::Label("Sand"), 1),
+                    ],
+                    max_inputs: 64,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Certus Quartz Seed"), n_wanted: 16 }],
+                    inputs: vec![
+                        BufferedInput::new(Filter::Label("Certus Quartz Dust"), 1),
+                        BufferedInput::new(Filter::Label("Sand"), 1),
+                    ],
+                    max_inputs: 64,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Fluix Seed"), n_wanted: 16 }],
+                    inputs: vec![
+                        BufferedInput::new(Filter::Label("Fluix Dust"), 1),
+                        BufferedInput::new(Filter::Label("Sand"), 1),
+                    ],
+                    max_inputs: 64,
                 },
             ],
         });
