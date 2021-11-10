@@ -5,6 +5,7 @@ authors = ["Yibo Cao <cyb@ieee.org>"]
 edition = "2018"
 
 [features]
+default = ["plethora"]
 plethora = []
 dump_traffic = []
 
