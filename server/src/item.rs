@@ -71,7 +71,10 @@ impl DetailStack {
     pub fn parse(mut table: Table) -> Result<Self, String> {
         let stack = ItemStack::parse_ref(&mut table)?;
         let label = table_remove(&mut table, "displayName")?;
-        let max_size = table_remove(&mut table, "maxCount")?;
+        let mut max_size = table_remove(&mut table, "maxCount")?;
+        if label == "Energy Crystal" || label == "Lapotron Crystal" {
+            max_size = 1
+        }
         Ok(stack.with_detail(Rc::new(Detail { label, max_size, others: table })))
     }
 }
