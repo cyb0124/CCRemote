@@ -117,3 +117,82 @@ impl<T: Process> Process for RedstoneConditionalProcess<T> {
         })
     }
 }
+
+pub struct RedstoneSequentialConfig<T: IntoProcess> {
+    pub name: &'static str,
+    pub accesses_in: Vec<RedstoneAccess>,
+    pub accesses_out: Vec<RedstoneAccess>,
+    pub child: T,
+}
+
+pub struct RedstoneSequentialProcess<T: Process> {
+    weak: Weak<RefCell<RedstoneSequentialProcess<T>>>,
+    name: &'static str,
+    accesses_in: Vec<RedstoneAccess>,
+    accesses_out: Vec<RedstoneAccess>,
+    waiting_for_low: bool,
+    child: Rc<RefCell<T>>,
+}
+
+impl<T: IntoProcess> IntoProcess for RedstoneSequentialConfig<T> {
+    type Output = RedstoneSequentialProcess<T::Output>;
+    fn into_process(self, factory: &Factory) -> Rc<RefCell<Self::Output>> {
+        Rc::new_cyclic(|weak| {
+            RefCell::new(Self::Output {
+                weak: weak.clone(),
+                name: self.name,
+                accesses_in: self.accesses_in,
+                accesses_out: self.accesses_out,
+                waiting_for_low: false,
+                child: self.child.into_process(factory),
+            })
+        })
+    }
+}
+
+impl<T: Process> Process for RedstoneSequentialProcess<T> {
+    fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>> {
+        let server = factory.get_server().borrow();
+        let access = server.load_balance(&self.accesses_in);
+        let action = ActionFuture::from(RedstoneInput { side: access.side, addr: access.addr });
+        server.enqueue_request_group(access.client, vec![action.clone().into()]);
+        let weak = self.weak.clone();
+        let factory = factory.get_weak().clone();
+        spawn(async move {
+            let is_high = action.await? > 0;
+            let task = {
+                alive!(weak, this);
+                upgrade!(factory, factory);
+                if this.waiting_for_low {
+                    if is_high {
+                        return Ok(());
+                    } else {
+                        factory.log(Log { text: format!("{}: leave", this.name), color: 10 });
+                        spawn(async { Ok(()) })
+                    }
+                } else {
+                    if is_high {
+                        factory.log(Log { text: format!("{}: enter", this.name), color: 10 });
+                        this.child.borrow().run(factory)
+                    } else {
+                        return Ok(());
+                    }
+                }
+            };
+            task.into_future().await?;
+            let task = {
+                alive!(weak, this);
+                upgrade!(factory, factory);
+                let server = factory.get_server().borrow();
+                let access = server.load_balance(&this.accesses_out);
+                let value = if is_high { 15 } else { 0 };
+                let action = ActionFuture::from(RedstoneOutput { side: access.side, addr: access.addr, value });
+                server.enqueue_request_group(access.client, vec![action.clone().into()]);
+                action
+            };
+            task.await?;
+            alive(&weak)?.borrow_mut().waiting_for_low = is_high;
+            Ok(())
+        })
+    }
+}
