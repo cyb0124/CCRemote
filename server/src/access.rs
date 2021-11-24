@@ -40,6 +40,7 @@ pub struct RedstoneAccess {
     pub client: &'static str,
     pub addr: Option<&'static str>,
     pub side: &'static str,
+    pub bit: Option<u8>, // for bundled cable only
 }
 
 pub const BOTTOM: &str = "bottom";

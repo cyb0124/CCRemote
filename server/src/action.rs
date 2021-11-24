@@ -115,6 +115,7 @@ impl Action for Call {
 pub struct RedstoneInput {
     pub side: &'static str,
     pub addr: Option<&'static str>,
+    pub bit: Option<u8>,
 }
 
 impl Action for RedstoneInput {
@@ -126,6 +127,9 @@ impl Action for RedstoneInput {
         if let Some(addr) = self.addr {
             table.insert("p".into(), addr.into());
         }
+        if let Some(bit) = self.bit {
+            table.insert("b".into(), (1 << bit).into());
+        }
     }
 
     fn parse_response(response: Value) -> Result<u8, String> { response.try_into() }
@@ -134,6 +138,7 @@ impl Action for RedstoneInput {
 pub struct RedstoneOutput {
     pub side: &'static str,
     pub addr: Option<&'static str>,
+    pub bit: Option<u8>,
     pub value: u8,
 }
 
@@ -146,6 +151,9 @@ impl Action for RedstoneOutput {
         table.insert("v".into(), self.value.into());
         if let Some(addr) = self.addr {
             table.insert("p".into(), addr.into());
+        }
+        if let Some(bit) = self.bit {
+            table.insert("b".into(), (1 << bit).into());
         }
     }
 

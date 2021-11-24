@@ -48,7 +48,8 @@ impl Process for RedstoneEmitterProcess {
         } else {
             let server = factory.get_server().borrow();
             let access = server.load_balance(&self.config.accesses);
-            let action = ActionFuture::from(RedstoneOutput { side: access.side, addr: access.addr, value });
+            let action =
+                ActionFuture::from(RedstoneOutput { side: access.side, addr: access.addr, bit: access.bit, value });
             server.enqueue_request_group(access.client, vec![action.clone().into()]);
             let weak = self.weak.clone();
             spawn(async move {
@@ -95,7 +96,7 @@ impl<T: Process> Process for RedstoneConditionalProcess<T> {
     fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>> {
         let server = factory.get_server().borrow();
         let access = server.load_balance(&self.accesses);
-        let action = ActionFuture::from(RedstoneInput { side: access.side, addr: access.addr });
+        let action = ActionFuture::from(RedstoneInput { side: access.side, addr: access.addr, bit: access.bit });
         server.enqueue_request_group(access.client, vec![action.clone().into()]);
         let weak = self.weak.clone();
         let factory = factory.get_weak().clone();
@@ -154,7 +155,7 @@ impl<T: Process> Process for RedstoneSequentialProcess<T> {
     fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>> {
         let server = factory.get_server().borrow();
         let access = server.load_balance(&self.accesses_in);
-        let action = ActionFuture::from(RedstoneInput { side: access.side, addr: access.addr });
+        let action = ActionFuture::from(RedstoneInput { side: access.side, addr: access.addr, bit: access.bit });
         server.enqueue_request_group(access.client, vec![action.clone().into()]);
         let weak = self.weak.clone();
         let factory = factory.get_weak().clone();
@@ -186,7 +187,8 @@ impl<T: Process> Process for RedstoneSequentialProcess<T> {
                 let server = factory.get_server().borrow();
                 let access = server.load_balance(&this.accesses_out);
                 let value = if is_high { 15 } else { 0 };
-                let action = ActionFuture::from(RedstoneOutput { side: access.side, addr: access.addr, value });
+                let action =
+                    ActionFuture::from(RedstoneOutput { side: access.side, addr: access.addr, bit: access.bit, value });
                 server.enqueue_request_group(access.client, vec![action.clone().into()]);
                 action
             };
