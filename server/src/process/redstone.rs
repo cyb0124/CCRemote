@@ -3,6 +3,7 @@ use super::super::action::{ActionFuture, Log, RedstoneInput, RedstoneOutput};
 use super::super::factory::Factory;
 use super::super::inventory::Inventory;
 use super::super::item::Filter;
+use super::super::server::Server;
 use super::super::util::{alive, spawn, AbortOnDrop};
 use super::{IntoProcess, Process};
 use std::{
@@ -131,6 +132,7 @@ pub struct RedstoneSequentialProcess<T: Process> {
     name: &'static str,
     accesses_in: Vec<RedstoneAccess>,
     accesses_out: Vec<RedstoneAccess>,
+    initialized: bool,
     waiting_for_low: bool,
     child: Rc<RefCell<T>>,
 }
@@ -144,6 +146,7 @@ impl<T: IntoProcess> IntoProcess for RedstoneSequentialConfig<T> {
                 name: self.name,
                 accesses_in: self.accesses_in,
                 accesses_out: self.accesses_out,
+                initialized: false,
                 waiting_for_low: false,
                 child: self.child.into_process(factory),
             })
@@ -151,9 +154,21 @@ impl<T: IntoProcess> IntoProcess for RedstoneSequentialConfig<T> {
     }
 }
 
-impl<T: Process> Process for RedstoneSequentialProcess<T> {
-    fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>> {
-        let server = factory.get_server().borrow();
+impl<T: Process> RedstoneSequentialProcess<T> {
+    fn initialize(&self, server: &Server) -> AbortOnDrop<Result<(), String>> {
+        let access = server.load_balance(&self.accesses_out);
+        let action =
+            ActionFuture::from(RedstoneOutput { side: access.side, addr: access.addr, bit: access.bit, value: 0 });
+        server.enqueue_request_group(access.client, vec![action.clone().into()]);
+        let weak = self.weak.clone();
+        spawn(async move {
+            action.await?;
+            alive(&weak)?.borrow_mut().initialized = true;
+            Ok(())
+        })
+    }
+
+    fn run_initialized(&self, factory: &Factory, server: &Server) -> AbortOnDrop<Result<(), String>> {
         let access = server.load_balance(&self.accesses_in);
         let action = ActionFuture::from(RedstoneInput { side: access.side, addr: access.addr, bit: access.bit });
         server.enqueue_request_group(access.client, vec![action.clone().into()]);
@@ -196,5 +211,16 @@ impl<T: Process> Process for RedstoneSequentialProcess<T> {
             alive(&weak)?.borrow_mut().waiting_for_low = is_high;
             Ok(())
         })
+    }
+}
+
+impl<T: Process> Process for RedstoneSequentialProcess<T> {
+    fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>> {
+        let server = factory.get_server().borrow();
+        if self.initialized {
+            self.run_initialized(factory, &*server)
+        } else {
+            self.initialize(&*server)
+        }
     }
 }
