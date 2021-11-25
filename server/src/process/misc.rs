@@ -109,7 +109,7 @@ impl SyncAndRestockProcess {
                 upgrade_mut!(this.factory, factory);
                 let stocks = (this.config.stocks)(factory);
                 let mut remaining_stocks: Vec<_> = stocks.iter().map(|x| x.get_size()).collect();
-                for (slot, stack) in stacks.iter_mut().enumerate() {
+                'slot: for (slot, stack) in stacks.iter_mut().enumerate() {
                     if let Some(some_stack) = stack {
                         for (stock, remaining) in stocks.iter().zip(&mut remaining_stocks) {
                             if stock.get_item().apply(&some_stack.item, &some_stack.detail) {
@@ -123,9 +123,11 @@ impl SyncAndRestockProcess {
                                 if some_stack.size <= 0 {
                                     *stack = Some(jammer())
                                 }
-                                break;
+                                continue 'slot;
                             }
                         }
+                        tasks.push(extract_output(this, factory, slot, some_stack.detail.max_size));
+                        *stack = Some(jammer());
                     }
                 }
                 for (stock, remaining) in stocks.iter().zip(&mut remaining_stocks) {
