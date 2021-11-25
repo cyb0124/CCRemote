@@ -46,7 +46,7 @@ pub struct SyncAndRestockConfig {
     pub accesses: Vec<BusAccess>,
     pub accesses_in: Vec<RedstoneAccess>,
     pub accesses_out: Vec<RedstoneAccess>,
-    pub stocks: Vec<BufferedInput>,
+    pub stocks: Box<dyn Fn(&Factory) -> Vec<BufferedInput>>,
     pub hold_if_not_stocked: bool,
 }
 
@@ -107,10 +107,11 @@ impl SyncAndRestockProcess {
             {
                 alive!(weak, this);
                 upgrade_mut!(this.factory, factory);
-                let mut remaining_stocks: Vec<_> = this.config.stocks.iter().map(|x| x.get_size()).collect();
+                let stocks = (this.config.stocks)(factory);
+                let mut remaining_stocks: Vec<_> = stocks.iter().map(|x| x.get_size()).collect();
                 for (slot, stack) in stacks.iter_mut().enumerate() {
                     if let Some(some_stack) = stack {
-                        for (stock, remaining) in this.config.stocks.iter().zip(&mut remaining_stocks) {
+                        for (stock, remaining) in stocks.iter().zip(&mut remaining_stocks) {
                             if stock.get_item().apply(&some_stack.item, &some_stack.detail) {
                                 let to_keep = some_stack.size.min(*remaining);
                                 *remaining -= to_keep;
@@ -127,7 +128,7 @@ impl SyncAndRestockProcess {
                         }
                     }
                 }
-                for (stock, remaining) in this.config.stocks.iter().zip(&mut remaining_stocks) {
+                for (stock, remaining) in stocks.iter().zip(&mut remaining_stocks) {
                     if let Some((item, info)) = factory.search_item(&stock.get_item()) {
                         let info = info.borrow();
                         let to_insert =
