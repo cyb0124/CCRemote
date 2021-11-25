@@ -62,14 +62,15 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 Filter::Label("Cyanite Ingot"),
                 Filter::Label("Iridium Ingot"),
                 Filter::Label("Tin Ore Piece"),
-                Filter::Label("Iron Ore Piece"),
                 Filter::Label("Gold Ore Piece"),
                 Filter::Label("Lead Ore Piece"),
                 Filter::Label("Platinum Ingot"),
                 Filter::Label("Glowstone Dust"),
                 Filter::Label("Boron Ore Piece"),
+                Filter::Label("Californium RTG"),
                 Filter::Label("Pulverized Gold"),
                 Filter::Label("Experience Seeds"),
+                Filter::Label("Poisonous Potato"),
                 Filter::Label("Silver Ore Piece"),
                 Filter::Label("Nickel Ore Piece"),
                 Filter::Label("Copper Ore Piece"),
@@ -5208,7 +5209,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(RedstoneEmitterConfig {
             accesses: vec![RedstoneAccess { client: "1a", addr: Some("redstone_integrator_9"), side: WEST }],
-            output: emit_when_want_item("fissionLECf", Filter::Label("Californium-250"), 16),
+            output: emit_when_want_item("fissionLECf", Filter::Label("Californium RTG"), 16),
         });
         factory.add_process(SlottedConfig {
             name: "fissionIC2",
@@ -5959,6 +5960,15 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             max_recipe_inputs: i32::MAX,
             recipes: vec![
                 BufferedRecipe {
+                    outputs: vec![],
+                    inputs: vec![
+                        BufferedInput::new(Filter::Label("Advanced Plating"), 4),
+                        BufferedInput::new(Filter::Label("Californium-250"), 1),
+                        BufferedInput::new(Filter::Label("Graphite Ingot"), 4),
+                    ],
+                    max_inputs: 144,
+                },
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Transparent Fission Reactor Casing"), n_wanted: 16 }],
                     inputs: vec![
                         BufferedInput::new(Filter::Label("Glass"), 4),
@@ -6011,15 +6021,6 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     inputs: vec![
                         BufferedInput::new(Filter::Label("Californium-249"), 1),
                         BufferedInput::new(Filter::Label("Californium-252"), 8),
-                    ],
-                    max_inputs: 144,
-                },
-                BufferedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Californium RTG"), n_wanted: 16 }],
-                    inputs: vec![
-                        BufferedInput::new(Filter::Label("Advanced Plating"), 4),
-                        BufferedInput::new(Filter::Label("Californium-250"), 1),
-                        BufferedInput::new(Filter::Label("Graphite Ingot"), 4),
                     ],
                     max_inputs: 144,
                 },
