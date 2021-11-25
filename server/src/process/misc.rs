@@ -47,7 +47,7 @@ pub struct SyncAndRestockConfig {
     pub accesses_in: Vec<RedstoneAccess>,
     pub accesses_out: Vec<RedstoneAccess>,
     pub stocks: Box<dyn Fn(&Factory) -> Vec<BufferedInput>>,
-    pub hold_if_not_stocked: bool,
+    pub hold_if_unfilled: bool,
 }
 
 pub struct SyncAndRestockProcess {
@@ -152,7 +152,7 @@ impl SyncAndRestockProcess {
                         unfilled = true
                     }
                 }
-                unfilled = unfilled && this.config.hold_if_not_stocked;
+                unfilled = unfilled && this.config.hold_if_unfilled;
             }
             join_tasks(tasks).await?;
             Ok(unfilled)
