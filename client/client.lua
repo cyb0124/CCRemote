@@ -87,16 +87,25 @@ local function dec(h)
   return function(x) s(x) end
 end
 
+local function callRS(p, f, ...)
+  if p then return peripheral.call(p, f, ...)
+  else return rs[f](...) end
+end
+
 local function exec(p)
   local d = {i = p.i}
   if p.o == 'l' then log(p)
   elseif p.o == 'c' then d.r = {peripheral.call(p.p, table.unpack(p.v))}
   elseif p.o == 'i' then
-    if p.p then d.r = peripheral.call(p.p, "getAnalogInput", p.s)
-    else d.r = rs.getAnalogInput(p.s) end
+    if p.b then
+      if bit.band(callRS(p.p, 'getBundledInput', p.s), p.b) ~= 0 then d.r = 15 else d.r = 0 end
+    else d.r = callRS(p.p, 'getAnalogInput', p.s) end
   elseif p.o == 'o' then
-    if p.p then peripheral.call(p.p, "setAnalogOutput", p.s, p.v)
-    else rs.setAnalogOutput(p.s, p.v) end
+    if p.b then
+      local v = callRS(p.p, 'getBundledOutput', p.s)
+      if p.v ~= 0 then v = bit.bor(v, p.b) else v = bit.band(v, bit.bnot(p.b)) end
+      callRS(p.p, 'setBundledOutput', p.s, v)
+    else callRS(p.p, 'setAnalogOutput', p.s, p.v) end
   elseif p.o == 't' then d.r = {turtle[p.f](table.unpack(p.v))}
   else error('invalid op: ' .. tostring(p.o)) end
   return d
