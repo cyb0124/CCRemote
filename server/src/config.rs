@@ -77,7 +77,6 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 Filter::Label("Osmium Ore Piece"),
                 Filter::Label("Cobalt Ore Piece"),
                 Filter::Label("Ardite Ore Piece"),
-                Filter::Label("Lithium Ore Piece"),
                 Filter::Label("Dimensional Shard"),
                 Filter::Label("Mana Infused Ingot"),
                 Filter::Label("Aluminium Ore Piece"),
@@ -217,6 +216,19 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             recipes: vec![],
         });
         factory.add_process(BufferedConfig {
+            name: "rubberOutput",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "industrialforegoing:latex_processing_unit_tile_0",
+                bus_addr: "ic2:iridium_storage_box_0",
+            }],
+            slot_filter: None,
+            to_extract: extract_all(),
+            stocks: vec![],
+            max_recipe_inputs: 0,
+            recipes: vec![],
+        });
+        factory.add_process(BufferedConfig {
             name: "transmutationOutput",
             accesses: vec![BusAccess {
                 client: "1a",
@@ -329,6 +341,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Pulverized Coal"), n_wanted: 16 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Coal"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Pulverized Iron"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Iron Ingot"), 1)],
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
@@ -492,6 +509,14 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 ScatteringRecipe::new(vec![], ScatteringInput::new(Filter::Label("Pulverized Platinum"))),
                 ScatteringRecipe::new(vec![], ScatteringInput::new(Filter::Label("Pulverized Iridium"))),
                 ScatteringRecipe::new(
+                    vec![Output { item: Filter::Label("Manganese Oxide Dust"), n_wanted: 16 }],
+                    ScatteringInput::new(Filter::Label("Crushed Rhodochrosite")),
+                ),
+                ScatteringRecipe::new(
+                    vec![Output { item: Filter::Label("HOP Graphite Ingot"), n_wanted: 16 }],
+                    ScatteringInput::new(Filter::Label("HOP Graphite Dust")),
+                ),
+                ScatteringRecipe::new(
                     vec![Output { item: Filter::Label("Cactus Green"), n_wanted: 16 }],
                     ScatteringInput::new(Filter::Label("Cactus")),
                 ),
@@ -556,12 +581,20 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     ScatteringInput::new(Filter::Label("Thorium Dust")),
                 ),
                 ScatteringRecipe::new(
-                    vec![Output { item: Filter::Label("Copper Ingot"), n_wanted: 16 }],
-                    ScatteringInput::new(Filter::Label("Pulverized Copper")),
+                    vec![Output { item: Filter::Label("Lithium Ingot"), n_wanted: 16 }],
+                    ScatteringInput::new(Filter::Label("Lithium Dust")),
                 ),
                 ScatteringRecipe::new(
-                    vec![Output { item: Filter::Label("Iron Ingot"), n_wanted: 16 }],
-                    ScatteringInput::new(Filter::Label("Pulverized Iron")),
+                    vec![Output { item: Filter::Label("Beryllium Ingot"), n_wanted: 16 }],
+                    ScatteringInput::new(Filter::Label("Beryllium Dust")),
+                ),
+                ScatteringRecipe::new(
+                    vec![Output { item: Filter::Label("Zirconium Ingot"), n_wanted: 16 }],
+                    ScatteringInput::new(Filter::Label("Zirconium Dust")),
+                ),
+                ScatteringRecipe::new(
+                    vec![Output { item: Filter::Label("Copper Ingot"), n_wanted: 16 }],
+                    ScatteringInput::new(Filter::Label("Pulverized Copper")),
                 ),
                 ScatteringRecipe::new(
                     vec![Output { item: Filter::Label("Gold Ingot"), n_wanted: 16 }],
@@ -712,9 +745,19 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             to_extract: None,
             recipes: vec![
                 SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("HOP Graphite Dust"), n_wanted: 16 }],
+                    inputs: vec![SlottedInput::new(Filter::Label("Coke Dust"), 8, vec![0])],
+                    max_per_slot: 64,
+                },
+                SlottedRecipe {
                     outputs: vec![Output { item: Filter::Label("Bioplastic"), n_wanted: 16 }],
                     inputs: vec![SlottedInput::new(Filter::Label("Sugar Canes"), 2, vec![0])],
                     max_per_slot: 64,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Grains of the End"), n_wanted: 16 }],
+                    inputs: vec![SlottedInput::new(Filter::Label("Ender Crystal"), 1, vec![0])],
+                    max_per_slot: 32,
                 },
                 SlottedRecipe {
                     outputs: vec![Output { item: Filter::Label("Bone Meal"), n_wanted: 16 }],
@@ -811,8 +854,16 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 SlottedRecipe {
                     outputs: vec![Output { item: Filter::Label("Steel Ingot"), n_wanted: 16 }],
                     inputs: vec![
-                        SlottedInput::new(Filter::Label("Pulverized Iron"), 1, vec![0]),
+                        SlottedInput::new(Filter::Label("Iron Ingot"), 1, vec![0]),
                         SlottedInput::new(Filter::Label("Graphite Ingot"), 1, vec![1]),
+                    ],
+                    max_per_slot: 16,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Conductive Iron Ingot"), n_wanted: 16 }],
+                    inputs: vec![
+                        SlottedInput::new(Filter::Label("Iron Ingot"), 1, vec![0]),
+                        SlottedInput::new(Filter::Label("Redstone"), 1, vec![1]),
                     ],
                     max_per_slot: 16,
                 },
@@ -867,7 +918,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 SlottedRecipe {
                     outputs: vec![Output { item: Filter::Label("Invar Ingot"), n_wanted: 16 }],
                     inputs: vec![
-                        SlottedInput::new(Filter::Label("Pulverized Iron"), 2, vec![0]),
+                        SlottedInput::new(Filter::Label("Iron Ingot"), 2, vec![0]),
                         SlottedInput::new(Filter::Label("Nickel Ingot"), 1, vec![1]),
                     ],
                     max_per_slot: 32,
@@ -935,6 +986,14 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                         SlottedInput::new(Filter::Label("Vibrant Alloy Nugget"), 8, vec![1]),
                     ],
                     max_per_slot: 64,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Lithium Manganese Dioxide Alloy"), n_wanted: 16 }],
+                    inputs: vec![
+                        SlottedInput::new(Filter::Label("Manganese Dioxide Dust"), 1, vec![0]),
+                        SlottedInput::new(Filter::Label("Lithium Dust"), 1, vec![1]),
+                    ],
+                    max_per_slot: 16,
                 },
             ],
         });
@@ -1158,6 +1217,21 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             }],
         });
         factory.add_process(SlottedConfig {
+            name: "oxygenInfuser",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "nuclearcraft:infuser_5",
+                bus_addr: "ic2:iridium_storage_box_0",
+            }],
+            input_slots: vec![0],
+            to_extract: Some(Box::new(|slot, _| slot == 1)),
+            recipes: vec![SlottedRecipe {
+                outputs: vec![Output { item: Filter::Label("Manganese Dioxide Dust"), n_wanted: 16 }],
+                inputs: vec![SlottedInput::new(Filter::Label("Manganese Oxide Dust"), 1, vec![0])],
+                max_per_slot: 16,
+            }],
+        });
+        factory.add_process(SlottedConfig {
             name: "waterInfuser",
             accesses: vec![BusAccess {
                 client: "1a",
@@ -1204,17 +1278,29 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 max_per_slot: 8,
             }],
         });
-        for inv_addr in
-            ["excompressum:auto_compressor_0", "excompressum:auto_compressor_1", "excompressum:auto_compressor_2"]
-        {
+        for (inv_addr, extract) in [
+            ("excompressum:auto_compressor_0", true),
+            ("excompressum:auto_compressor_1", true),
+            ("excompressum:auto_compressor_2", false),
+        ] {
             factory.add_process(BufferedConfig {
                 name: "autoCompressor",
                 accesses: vec![BusAccess { client: "1a", inv_addr, bus_addr: "ic2:iridium_storage_box_0" }],
                 slot_filter: Some(Box::new(|slot| slot < 12)),
-                to_extract: Some(Box::new(|slot, _| slot >= 12)),
+                to_extract: if extract { Some(Box::new(|slot, _| slot >= 12)) } else { None },
                 stocks: vec![],
                 max_recipe_inputs: 128,
                 recipes: vec![
+                    BufferedRecipe {
+                        outputs: vec![],
+                        inputs: vec![BufferedInput::new(Filter::Label("Iron Ore Piece"), 4)],
+                        max_inputs: i32::MAX,
+                    },
+                    BufferedRecipe {
+                        outputs: vec![],
+                        inputs: vec![BufferedInput::new(Filter::Label("Tiny Dry Rubber"), 9)],
+                        max_inputs: i32::MAX,
+                    },
                     BufferedRecipe {
                         outputs: vec![],
                         inputs: vec![BufferedInput::new(Filter::Label("Tiny Clump of Thorium-230"), 9)],
@@ -1353,11 +1439,6 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     BufferedRecipe {
                         outputs: vec![Output { item: Filter::Label("Nether Star Shard"), n_wanted: 16 }],
                         inputs: vec![BufferedInput::new(Filter::Label("Nether Star Essence"), 9)],
-                        max_inputs: i32::MAX,
-                    },
-                    BufferedRecipe {
-                        outputs: vec![Output { item: Filter::Label("Dry Rubber"), n_wanted: 16 }],
-                        inputs: vec![BufferedInput::new(Filter::Label("Tiny Dry Rubber"), 9)],
                         max_inputs: i32::MAX,
                     },
                     BufferedRecipe {
@@ -1519,11 +1600,6 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                         max_inputs: i32::MAX,
                     },
                     BufferedRecipe {
-                        outputs: vec![Output { item: Filter::Label("Iron Ore"), n_wanted: 16 }],
-                        inputs: vec![BufferedInput::new(Filter::Label("Iron Ore Piece"), 4)],
-                        max_inputs: i32::MAX,
-                    },
-                    BufferedRecipe {
                         outputs: vec![Output { item: Filter::Label("Lead Ore"), n_wanted: 16 }],
                         inputs: vec![BufferedInput::new(Filter::Label("Lead Ore Piece"), 4)],
                         max_inputs: i32::MAX,
@@ -1556,6 +1632,23 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 ],
             });
         }
+        factory.add_process(BufferedConfig {
+            name: "lavaWell",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "randomthings:irondropper_3",
+                bus_addr: "ic2:iridium_storage_box_0",
+            }],
+            slot_filter: None,
+            to_extract: None,
+            stocks: vec![],
+            max_recipe_inputs: 8,
+            recipes: vec![BufferedRecipe {
+                outputs: vec![Output { item: Filter::Label("Demon Ingot"), n_wanted: 16 }],
+                inputs: vec![BufferedInput::new(Filter::Label("Gold Ingot"), 1)],
+                max_inputs: i32::MAX,
+            }],
+        });
         factory.add_process(BufferedConfig {
             name: "atomic",
             accesses: vec![BusAccess {
@@ -1720,6 +1813,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 SlottedRecipe {
                     outputs: vec![Output { item: Filter::Label("Vibrant Alloy Nugget"), n_wanted: 16 }],
                     inputs: vec![SlottedInput::new(Filter::Label("Vibrant Alloy Ingot"), 1, vec![0])],
+                    max_per_slot: 8,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Awakened Draconium Ingot"), n_wanted: 16 }],
+                    inputs: vec![SlottedInput::new(Filter::Label("Awakened Draconium Block"), 1, vec![0])],
                     max_per_slot: 8,
                 },
             ],
@@ -2027,10 +2125,10 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     Output { item: Filter::Label("Nickel Ore Piece"), n_wanted: 16 },
                     Output { item: Filter::Label("Copper Ore Piece"), n_wanted: 16 },
                     Output { item: Filter::Label("Silver Ore Piece"), n_wanted: 16 },
-                    Output { item: Filter::Label("Iron Ore Piece"), n_wanted: 16 },
                     Output { item: Filter::Label("Lead Ore Piece"), n_wanted: 16 },
                     Output { item: Filter::Label("Tin Ore Piece"), n_wanted: 16 },
                     Output { item: Filter::Label("Lapis Lazuli"), n_wanted: 16 },
+                    Output { item: Filter::Label("Iron Ore"), n_wanted: 16 },
                     Output { item: Filter::Label("Coal"), n_wanted: 16 },
                 ],
                 inputs: vec![SlottedInput::new(Filter::Label("Compressed Gravel"), 1, vec![0])],
@@ -2158,6 +2256,25 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 inputs: vec![
                     SlottedInput::new(Filter::Label("Sand"), 1, vec![0]),
                     SlottedInput::new(Filter::Label("Tin Ingot"), 10, vec![3]),
+                    SlottedInput::new(Filter::Label("Redstone"), 4, vec![4]),
+                ],
+                max_per_slot: 40,
+            }],
+        });
+        factory.add_process(SlottedConfig {
+            name: "apatineElectronTube",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "forestry:fabricator_6",
+                bus_addr: "ic2:iridium_storage_box_0",
+            }],
+            input_slots: vec![0, 3, 4],
+            to_extract: None,
+            recipes: vec![SlottedRecipe {
+                outputs: vec![Output { item: Filter::Label("Apatine Electron Tube"), n_wanted: 16 }],
+                inputs: vec![
+                    SlottedInput::new(Filter::Label("Sand"), 1, vec![0]),
+                    SlottedInput::new(Filter::Label("Apatite"), 10, vec![3]),
                     SlottedInput::new(Filter::Label("Redstone"), 4, vec![4]),
                 ],
                 max_per_slot: 40,
@@ -2319,15 +2436,6 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             stocks: vec![BufferedInput::new(Filter::Label("Oak Wood"), 64)],
             max_recipe_inputs: 0,
             recipes: vec![],
-        });
-        factory.add_process(InputlessConfig {
-            accesses: vec![BusAccess {
-                client: "1a",
-                inv_addr: "industrialforegoing:latex_processing_unit_tile_0",
-                bus_addr: "ic2:iridium_storage_box_0",
-            }],
-            slot_filter: None,
-            outputs: vec![Output { item: Filter::Label("Tiny Dry Rubber"), n_wanted: 64 }],
         });
         factory.add_process(SlottedConfig {
             name: "compressor",
@@ -2511,10 +2619,6 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 ScatteringRecipe::new(
                     vec![Output { item: Filter::Label("Pulverized Lead"), n_wanted: 16 }],
                     ScatteringInput::new(Filter::Label("Lead Ore")),
-                ),
-                ScatteringRecipe::new(
-                    vec![Output { item: Filter::Label("Pulverized Iron"), n_wanted: 16 }],
-                    ScatteringInput::new(Filter::Label("Iron Ore")),
                 ),
                 ScatteringRecipe::new(
                     vec![Output { item: Filter::Label("Pulverized Tin"), n_wanted: 16 }],
@@ -3092,6 +3196,14 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             to_extract: None,
             recipes: vec![
                 SlottedRecipe {
+                    outputs: vec![],
+                    inputs: vec![
+                        SlottedInput::new(Filter::Label("Iron Ore"), 1, vec![0]).extra_backup(64),
+                        SlottedInput::new(Filter::Label("Sand"), 1, vec![1]),
+                    ],
+                    max_per_slot: 8,
+                },
+                SlottedRecipe {
                     outputs: vec![Output { item: Filter::Label("Rich Slag"), n_wanted: 16 }],
                     inputs: vec![
                         SlottedInput::new(Filter::Label("Clock"), 1, vec![0]),
@@ -3291,8 +3403,18 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Iron Essence"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Iron Seeds"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Sulfur Essence"), n_wanted: 64 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Sulfur Seeds"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Apatite Essence"), n_wanted: 64 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Apatite Seeds"), 1)],
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
@@ -3378,7 +3500,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             }],
         });
         factory.add_process(RedstoneEmitterConfig {
-            accesses: vec![RedstoneAccess { client: "1a", addr: Some("redstone_integrator_1"), side: EAST }],
+            accesses: vec![RedstoneAccess { client: "1a", addr: Some("redstone_integrator_1"), side: EAST, bit: None }],
             output: emit_when_want_item("cokeFurnace", Filter::Label("Coal Coke"), 16),
         });
         factory.add_process(SlottedConfig {
@@ -3404,6 +3526,15 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             }],
             slot_filter: None,
             outputs: vec![Output { item: Filter::Label("Obsidian"), n_wanted: 64 }],
+        });
+        factory.add_process(InputlessConfig {
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "ic2:replicator_1",
+                bus_addr: "ic2:iridium_storage_box_0",
+            }],
+            slot_filter: None,
+            outputs: vec![Output { item: Filter::Label("Dragon Heart"), n_wanted: 64 }],
         });
         factory.add_process(BufferedConfig {
             name: "pureDaisy",
@@ -4068,6 +4199,28 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             ],
         });
         factory.add_process(SlottedConfig {
+            name: "fusionCrafting",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "ic2:wooden_storage_box_36",
+                bus_addr: "ic2:iridium_storage_box_0",
+            }],
+            input_slots: vec![0, 1, 2, 3, 4, 5],
+            to_extract: None,
+            recipes: vec![SlottedRecipe {
+                outputs: vec![Output { item: Filter::Label("Awakened Draconium Block"), n_wanted: 16 }],
+                inputs: vec![
+                    SlottedInput::new(Filter::Label("Charged Draconium Block"), 4, vec![0]),
+                    SlottedInput::new(Filter::Label("Draconic Core"), 4, vec![1]),
+                    SlottedInput::new(Filter::Label("Dragon Heart"), 1, vec![2]),
+                    SlottedInput::new(Filter::Label("Dragonstone"), 1, vec![3]),
+                    SlottedInput::new(Filter::Label("Grains of the End"), 1, vec![4]),
+                    SlottedInput::new(Filter::Label("Grains of Infinity"), 1, vec![5]),
+                ],
+                max_per_slot: 4,
+            }],
+        });
+        factory.add_process(SlottedConfig {
             name: "combinationCrafting",
             accesses: vec![BusAccess {
                 client: "1a",
@@ -4702,7 +4855,12 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             recipes: vec![],
         });
         factory.add_process(RedstoneEmitterConfig {
-            accesses: vec![RedstoneAccess { client: "1a", addr: Some("redstone_integrator_3"), side: SOUTH }],
+            accesses: vec![RedstoneAccess {
+                client: "1a",
+                addr: Some("redstone_integrator_3"),
+                side: SOUTH,
+                bit: None,
+            }],
             output: Box::new(|factory| {
                 if factory.search_n_stored(&Filter::Label("Bone")) < 16
                     || factory.search_n_stored(&Filter::Label("Wither Skeleton Skull")) < 16
@@ -4715,7 +4873,12 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             }),
         });
         factory.add_process(RedstoneEmitterConfig {
-            accesses: vec![RedstoneAccess { client: "1a", addr: Some("redstone_integrator_3"), side: NORTH }],
+            accesses: vec![RedstoneAccess {
+                client: "1a",
+                addr: Some("redstone_integrator_3"),
+                side: NORTH,
+                bit: None,
+            }],
             output: emit_when_want_item("shulker", Filter::Label("Shulker Shell"), 16),
         });
         factory.add_process(BufferedConfig {
@@ -4971,6 +5134,105 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             }],
         });
         factory.add_process(BufferedConfig {
+            name: "ultimateIngot",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "ic2:iridium_storage_box_1",
+                bus_addr: "ic2:iridium_storage_box_0",
+            }],
+            slot_filter: None,
+            to_extract: None,
+            stocks: vec![],
+            max_recipe_inputs: i32::MAX,
+            recipes: vec![BufferedRecipe {
+                outputs: vec![Output { item: Filter::Label("Ultimate Ingot"), n_wanted: 16 }],
+                inputs: vec![
+                    BufferedInput::new(Filter::Label("Thorium Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Boron Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Iron Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Gold Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Titanium Aluminide Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Titanium Iridium Alloy Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Carbon Brick"), 1),
+                    BufferedInput::new(Filter::Label("Starmetal Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Manasteel Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Terrasteel Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Elementium Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Draconium Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Awakened Draconium Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Black Iron Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Crystaltine Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Demon Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Enchanted Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Evil Infused Iron Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Cyanite Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Blutonium Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Ludicrite Ingot"), 1),
+                    BufferedInput::new(Filter::Label("HOP Graphite Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Uranium Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Refined Obsidian Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Osmium Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Glowstone Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Lead Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Aluminum Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Nickel Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Platinum Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Iridium Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Mana Infused Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Steel Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Electrum Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Lithium Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Magnesium Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Graphite Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Beryllium Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Zirconium Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Tough Alloy"), 1),
+                    BufferedInput::new(Filter::Label("Hard Carbon Alloy"), 1),
+                    BufferedInput::new(Filter::Label("Magnesium Diboride Alloy"), 1),
+                    BufferedInput::new(Filter::Label("Lithium Manganese Dioxide Alloy"), 1),
+                    BufferedInput::new(Filter::Label("Ferroboron Alloy"), 1),
+                    BufferedInput::new(Filter::Label("Alumite Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Osgloglas Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Osmiridium Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Mirion Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Psimetal Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Ebony Psimetal Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Ivory Psimetal Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Fluxed Electrum Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Ironwood Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Fiery Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Knightmetal Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Copper Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Tin Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Invar Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Bronze Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Constantan Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Signalum Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Lumium Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Enderium Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Cobalt Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Ardite Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Manyullyn Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Knightslime Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Pigiron Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Aluminum Brass Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Silicon Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Titanium Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Ender Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Enhanced Ender Ingot"), 1),
+                    BufferedInput::new(Filter::Label("End Steel Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Soularium Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Vibrant Alloy Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Electrical Steel Ingot"), 1),
+                    BufferedInput::new(Filter::Label("§5Insanium Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Alchemical Brass Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Thaumium Ingot"), 1),
+                    BufferedInput::new(Filter::Label("Void Metal Ingot"), 1),
+                ],
+                max_inputs: 81,
+            }],
+        });
+        factory.add_process(BufferedConfig {
             name: "crafterR",
             accesses: vec![BusAccess {
                 client: "1a",
@@ -5157,19 +5419,34 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             ],
         });
         factory.add_process(RedstoneEmitterConfig {
-            accesses: vec![RedstoneAccess { client: "1a", addr: Some("redstone_integrator_1"), side: NORTH }],
+            accesses: vec![RedstoneAccess {
+                client: "1a",
+                addr: Some("redstone_integrator_1"),
+                side: NORTH,
+                bit: None,
+            }],
             output: emit_when_want_item("fissionIC2", Filter::Label("Tiny Pile of Plutonium"), 16),
         });
         factory.add_process(RedstoneEmitterConfig {
-            accesses: vec![RedstoneAccess { client: "1a", addr: Some("redstone_integrator_5"), side: WEST }],
+            accesses: vec![RedstoneAccess { client: "1a", addr: Some("redstone_integrator_5"), side: WEST, bit: None }],
             output: emit_when_want_item("fissionBR", Filter::Label("Cyanite Ingot"), 16),
         });
         factory.add_process(RedstoneEmitterConfig {
-            accesses: vec![RedstoneAccess { client: "1a", addr: Some("redstone_integrator_8"), side: SOUTH }],
+            accesses: vec![RedstoneAccess {
+                client: "1a",
+                addr: Some("redstone_integrator_8"),
+                side: SOUTH,
+                bit: None,
+            }],
             output: emit_when_want_item("fissionTBU", Filter::Label("Uranium-233"), 16),
         });
         factory.add_process(RedstoneEmitterConfig {
-            accesses: vec![RedstoneAccess { client: "1a", addr: Some("redstone_integrator_7"), side: SOUTH }],
+            accesses: vec![RedstoneAccess {
+                client: "1a",
+                addr: Some("redstone_integrator_7"),
+                side: SOUTH,
+                bit: None,
+            }],
             output: Box::new(move |factory| {
                 if factory.search_n_stored(&Filter::Label("Plutonium-241")) < 16
                     || factory.search_n_stored(&Filter::Label("Plutonium-242")) < 16
@@ -5182,7 +5459,12 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             }),
         });
         factory.add_process(RedstoneEmitterConfig {
-            accesses: vec![RedstoneAccess { client: "1a", addr: Some("redstone_integrator_8"), side: NORTH }],
+            accesses: vec![RedstoneAccess {
+                client: "1a",
+                addr: Some("redstone_integrator_8"),
+                side: NORTH,
+                bit: None,
+            }],
             output: Box::new(move |factory| {
                 if factory.search_n_stored(&Filter::Label("Curium-246")) < 16
                     || factory.search_n_stored(&Filter::Label("Curium-247")) < 16
@@ -5195,7 +5477,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             }),
         });
         factory.add_process(RedstoneEmitterConfig {
-            accesses: vec![RedstoneAccess { client: "1a", addr: Some("redstone_integrator_9"), side: EAST }],
+            accesses: vec![RedstoneAccess { client: "1a", addr: Some("redstone_integrator_9"), side: EAST, bit: None }],
             output: Box::new(move |factory| {
                 if factory.search_n_stored(&Filter::Label("Californium-249")) < 16
                     || factory.search_n_stored(&Filter::Label("Californium-252")) < 16
@@ -5208,7 +5490,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             }),
         });
         factory.add_process(RedstoneEmitterConfig {
-            accesses: vec![RedstoneAccess { client: "1a", addr: Some("redstone_integrator_9"), side: WEST }],
+            accesses: vec![RedstoneAccess { client: "1a", addr: Some("redstone_integrator_9"), side: WEST, bit: None }],
             output: emit_when_want_item("fissionLECf", Filter::Label("Californium RTG"), 16),
         });
         factory.add_process(SlottedConfig {
@@ -5379,7 +5661,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             name: "waterCarpenter",
             accesses: vec![BusAccess {
                 client: "1a",
-                inv_addr: "minecraft:tileiteminputbus_1",
+                inv_addr: "minecraft:tileiteminputbus_4",
                 bus_addr: "ic2:iridium_storage_box_0",
             }],
             slot_filter: None,
@@ -5601,6 +5883,14 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     inputs: vec![BufferedInput::new(Filter::Label("Advanced Circuit Plate"), 1)],
                     max_inputs: 8,
                 },
+                BufferedRecipe {
+                    outputs: vec![Output {
+                        item: Filter::Both { label: "Basic Circuit", name: "advancedrocketry:ic" },
+                        n_wanted: 16,
+                    }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Basic Circuit Plate"), 1)],
+                    max_inputs: 8,
+                },
             ],
         });
         factory.add_process(BufferedConfig {
@@ -5703,7 +5993,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 outputs: vec![Output { item: Filter::Label("Alumite Ingot"), n_wanted: 16 }],
                 inputs: vec![
                     BufferedInput::new(Filter::Label("Pulverized Aluminum"), 5),
-                    BufferedInput::new(Filter::Label("Pulverized Iron"), 2),
+                    BufferedInput::new(Filter::Label("Iron Ingot"), 2),
                     BufferedInput::new(Filter::Label("Obsidian"), 2),
                 ],
                 max_inputs: 9,
@@ -5857,15 +6147,26 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             to_extract: None,
             stocks: vec![],
             max_recipe_inputs: i32::MAX,
-            recipes: vec![BufferedRecipe {
-                outputs: vec![Output { item: Filter::Label("Advanced Circuit Plate"), n_wanted: 16 }],
-                inputs: vec![
-                    BufferedInput::new(Filter::Label("Intricate Circuit Board"), 1),
-                    BufferedInput::new(Filter::Label("Redstone Alloy Grinding Ball"), 1),
-                    BufferedInput::new(Filter::Label("Silicon Wafer"), 1),
-                ],
-                max_inputs: 12,
-            }],
+            recipes: vec![
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Advanced Circuit Plate"), n_wanted: 16 }],
+                    inputs: vec![
+                        BufferedInput::new(Filter::Label("Intricate Circuit Board"), 1),
+                        BufferedInput::new(Filter::Label("Redstone Alloy Grinding Ball"), 1),
+                        BufferedInput::new(Filter::Label("Silicon Wafer"), 1),
+                    ],
+                    max_inputs: 12,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Basic Circuit Plate"), n_wanted: 16 }],
+                    inputs: vec![
+                        BufferedInput::new(Filter::Label("Apatine Electron Tube"), 1),
+                        BufferedInput::new(Filter::Label("Conductive Iron Grinding Ball"), 1),
+                        BufferedInput::new(Filter::Label("Silicon Wafer"), 1),
+                    ],
+                    max_inputs: 12,
+                },
+            ],
         });
         factory.add_process(BufferedConfig {
             name: "crafterW",
@@ -6118,6 +6419,15 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     ],
                     max_per_slot: 16,
                 },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("End Steel Ingot"), n_wanted: 16 }],
+                    inputs: vec![
+                        SlottedInput::new(Filter::Label("Obsidian"), 1, vec![0]),
+                        SlottedInput::new(Filter::Label("End Stone"), 1, vec![1]),
+                        SlottedInput::new(Filter::Label("Dark Steel Ingot"), 1, vec![2]),
+                    ],
+                    max_per_slot: 16,
+                },
             ],
         });
         factory.add_process(BufferedConfig {
@@ -6281,6 +6591,132 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                         BufferedInput::new(Filter::Label("Fused Quartz"), 3),
                     ],
                     max_inputs: 64,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Iron Ingot"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Iron Essence"), 8)],
+                    max_inputs: 16,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Apatite"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Apatite Essence"), 3)],
+                    max_inputs: 3,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Conductive Iron Grinding Ball"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Conductive Iron Ingot"), 5)],
+                    max_inputs: 5,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Carbon Brick"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Charcoal"), 6)],
+                    max_inputs: 96,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Ender Ingot"), n_wanted: 16 }],
+                    inputs: vec![
+                        BufferedInput::new(Filter::Label("Iron Ingot"), 1),
+                        BufferedInput::new(Filter::Label("Ender Pearl"), 1),
+                    ],
+                    max_inputs: 32,
+                },
+            ],
+        });
+        factory.add_process(SlottedConfig {
+            name: "endermanSoulVial",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "enderio:tile_powered_spawner_0",
+                bus_addr: "ic2:iridium_storage_box_0",
+            }],
+            input_slots: vec![0],
+            to_extract: None,
+            recipes: vec![SlottedRecipe {
+                outputs: vec![],
+                inputs: vec![SlottedInput::new(Filter::Label("Soul Vial"), 1, vec![0])],
+                max_per_slot: 16,
+            }],
+        });
+        factory.add_process(SlottedConfig {
+            name: "endermanSoulBinder",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "enderio:tile_soul_binder_0",
+                bus_addr: "ic2:iridium_storage_box_0",
+            }],
+            input_slots: vec![1],
+            to_extract: Some(Box::new(|slot, _| slot >= 2)),
+            recipes: vec![SlottedRecipe {
+                outputs: vec![Output { item: Filter::Label("Ender Crystal"), n_wanted: 16 }],
+                inputs: vec![SlottedInput::new(Filter::Label("Vibrant Crystal"), 1, vec![1])],
+                max_per_slot: 1,
+            }],
+        });
+        factory.add_process(BufferedConfig {
+            name: "enderStar",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "ic2:wooden_storage_box_37",
+                bus_addr: "ic2:iridium_storage_box_0",
+            }],
+            slot_filter: None,
+            to_extract: None,
+            stocks: vec![],
+            max_recipe_inputs: i32::MAX,
+            recipes: vec![BufferedRecipe {
+                outputs: vec![Output { item: Filter::Label("Ender Star"), n_wanted: 16 }],
+                inputs: vec![
+                    BufferedInput::new(Filter::Label("Eye of Ender"), 4),
+                    BufferedInput::new(Filter::Label("Nether Star"), 1),
+                ],
+                max_inputs: 10,
+            }],
+        });
+        factory.add_process(BufferedConfig {
+            name: "enhancedEnderIngot",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "ic2:wooden_storage_box_38",
+                bus_addr: "ic2:iridium_storage_box_0",
+            }],
+            slot_filter: None,
+            to_extract: None,
+            stocks: vec![],
+            max_recipe_inputs: i32::MAX,
+            recipes: vec![BufferedRecipe {
+                outputs: vec![Output { item: Filter::Label("Enhanced Ender Ingot"), n_wanted: 16 }],
+                inputs: vec![
+                    BufferedInput::new(Filter::Label("Ender Ingot"), 4),
+                    BufferedInput::new(Filter::Label("Ender Star"), 1),
+                ],
+                max_inputs: 10,
+            }],
+        });
+        factory.add_process(SlottedConfig {
+            name: "enchanter",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "xu2:tilemachinereceiver_4",
+                bus_addr: "ic2:iridium_storage_box_0",
+            }],
+            input_slots: vec![0, 1],
+            to_extract: extract_all(),
+            recipes: vec![
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Enchanted Ingot"), n_wanted: 16 }],
+                    inputs: vec![
+                        SlottedInput::new(Filter::Label("Gold Ingot"), 1, vec![0]),
+                        SlottedInput::new(Filter::Label("Lapis Lazuli"), 1, vec![1]),
+                    ],
+                    max_per_slot: 8,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Evil Infused Iron Ingot"), n_wanted: 16 }],
+                    inputs: vec![
+                        SlottedInput::new(Filter::Label("Iron Ingot"), 8, vec![0]),
+                        SlottedInput::new(Filter::Label("Nether Star"), 1, vec![1]),
+                    ],
+                    max_per_slot: 16,
                 },
             ],
         });
