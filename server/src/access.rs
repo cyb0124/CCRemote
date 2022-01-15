@@ -61,3 +61,10 @@ pub struct CraftyAccess {
     pub turtle_addr: &'static str,
     pub bus_addr: &'static str,
 }
+
+impl_get_client!(MultiInvAccess);
+pub struct MultiInvAccess {
+    pub client: &'static str,
+    pub inv_addrs: Vec<&'static str>,
+    pub bus_addr: &'static str,
+}
