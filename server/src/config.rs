@@ -43,8 +43,10 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
        4: Sapphire
 
        Chaos
-       0x Igneous
-       2x Herbal
+       1: Metallurgic
+       2: Crystalline
+       3: Herbal
+       4: Herbal
     */
     FactoryConfig {
         detail_cache: DetailCache::new(),
@@ -55,6 +57,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         backups: vec![
             (Filter::Label("Pure Certus Quartz Crystal"), 16),
             (Filter::Label("Pure Nether Quartz Crystal"), 16),
+            (Filter::Label("Pure Fluix Crystal"), 16),
             (Filter::Name("kubejs:ender_slimy_fern_leaf"), 16),
             (Filter::Name("kubejs:earth_slimy_fern_leaf"), 16),
             (Filter::Name("kubejs:sky_slimy_fern_leaf"), 16),
@@ -96,6 +99,8 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 Filter::Label("Beetroot"),
                 Filter::Label("Beetroot Seeds"),
                 Filter::Label("Buddybeans"),
+                Filter::Label("Ash"),
+                Filter::Label("Clay Ball"),
             ],
         });
         for inv_addr in [
@@ -182,8 +187,8 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_per_slot: 9,
                 },
                 SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Red Sandstone"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Red Sand"), 4, vec![0])],
+                    outputs: vec![Output { item: Filter::Label("Sandstone"), n_wanted: 16 }],
+                    inputs: vec![SlottedInput::new(Filter::Label("Sand"), 4, vec![0])],
                     max_per_slot: 16,
                 },
                 SlottedRecipe {
@@ -194,6 +199,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 SlottedRecipe {
                     outputs: vec![Output { item: Filter::Label("Emerald"), n_wanted: 16 }],
                     inputs: vec![SlottedInput::new(Filter::Label("Emerald Dust"), 1, vec![0])],
+                    max_per_slot: 16,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Diamond"), n_wanted: 16 }],
+                    inputs: vec![SlottedInput::new(Filter::Label("Diamond Dust"), 1, vec![0])],
                     max_per_slot: 16,
                 },
             ],
@@ -223,7 +233,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 SlottedRecipe {
                     outputs: vec![Output { item: Filter::Label("Phyto-Gro"), n_wanted: 16 }],
                     inputs: vec![
-                        SlottedInput::new(Filter::Label("Red Sand"), 1, vec![0]),
+                        SlottedInput::new(Filter::Label("Sand"), 1, vec![0]),
                         SlottedInput::new(Filter::Label("Apatite Dust"), 2, vec![1]),
                         SlottedInput::new(Filter::Label("Niter"), 1, vec![2]),
                     ],
@@ -254,7 +264,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             recipes: vec![
                 BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Glass"), n_wanted: 16 }],
-                    inputs: vec![BufferedInput::new(Filter::Label("Red Sand"), 16)],
+                    inputs: vec![BufferedInput::new(Filter::Label("Sand"), 16)],
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
@@ -290,6 +300,16 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Silica Steel"), n_wanted: 16 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Silica Steel Mix"), 16)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Nether Brick"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Netherrack"), 16)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Seared Brick"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Grout"), 16)],
                     max_inputs: i32::MAX,
                 },
             ],
@@ -411,11 +431,6 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Gold Dust"), n_wanted: 16 }],
-                    inputs: vec![BufferedInput::new(Filter::Label("Gold Ingot"), 1)],
-                    max_inputs: i32::MAX,
-                },
-                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Name("kubejs:zinc_dust"), n_wanted: 16 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Zinc Ingot"), 1)],
                     max_inputs: i32::MAX,
@@ -448,6 +463,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Certus Quartz Dust"), n_wanted: 16 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Pure Certus Quartz Crystal"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Fluix Dust"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Fluix Crystal"), 1)],
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
@@ -606,6 +626,21 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     inputs: vec![BufferedInput::new(Filter::Name("kubejs:small_nether_crystal"), 1)],
                     max_inputs: i32::MAX,
                 },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Name("kubejs:tiny_fluix_crystal"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Fluix Seed"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Name("kubejs:small_fluix_crystal"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Name("kubejs:tiny_fluix_crystal"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Pure Fluix Crystal"), n_wanted: 32 }],
+                    inputs: vec![BufferedInput::new(Filter::Name("kubejs:small_fluix_crystal"), 1)],
+                    max_inputs: i32::MAX,
+                },
             ],
         });
         factory.add_process(SlottedConfig {
@@ -728,7 +763,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             name: "buyLead",
             accesses: vec![BusAccess {
                 client: "1a",
-                inv_addr: "thermal:machine_press_13",
+                inv_addr: "thermal:machine_press_15",
                 bus_addr: "minecraft:barrel_38",
             }],
             input_slots: vec![0],
@@ -845,6 +880,19 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             max_recipe_inputs: 0,
             recipes: vec![],
         });
+        factory.add_process(BufferedConfig {
+            name: "liquidGold",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "minecraft:barrel_66",
+                bus_addr: "minecraft:barrel_38",
+            }],
+            slot_filter: None,
+            to_extract: None,
+            stocks: vec![BufferedInput::new(Filter::Label("Gold Dust"), 64)],
+            max_recipe_inputs: 0,
+            recipes: vec![],
+        });
         factory.add_process(InputlessConfig {
             accesses: vec![BusAccess {
                 client: "1a",
@@ -890,6 +938,67 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             slot_filter: None,
             outputs: vec![Output { item: Filter::Label("Signalum Ingot"), n_wanted: 16 }],
         });
+        factory.add_process(InputlessConfig {
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "thermal:machine_refinery_4",
+                bus_addr: "minecraft:barrel_38",
+            }],
+            slot_filter: None,
+            outputs: vec![Output { item: Filter::Label("Lumium Ingot"), n_wanted: 16 }],
+        });
+        factory.add_process(InputlessConfig {
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "storagedrawers:standard_drawers_1_7",
+                bus_addr: "minecraft:barrel_38",
+            }],
+            slot_filter: None,
+            outputs: vec![Output { item: Filter::Label("Printed Calculation Circuit"), n_wanted: 16 }],
+        });
+        factory.add_process(InputlessConfig {
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "storagedrawers:standard_drawers_1_11",
+                bus_addr: "minecraft:barrel_38",
+            }],
+            slot_filter: None,
+            outputs: vec![Output { item: Filter::Label("Printed Logic Circuit"), n_wanted: 16 }],
+        });
+        factory.add_process(InputlessConfig {
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "storagedrawers:standard_drawers_1_9",
+                bus_addr: "minecraft:barrel_38",
+            }],
+            slot_filter: None,
+            outputs: vec![Output { item: Filter::Label("Printed Engineering Circuit"), n_wanted: 16 }],
+        });
+        factory.add_process(InputlessConfig {
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "storagedrawers:standard_drawers_1_10",
+                bus_addr: "minecraft:barrel_38",
+            }],
+            slot_filter: None,
+            outputs: vec![Output { item: Filter::Label("Gold Nugget"), n_wanted: 16 }],
+        });
+        factory.add_process(InputlessConfig {
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "storagedrawers:controller_2",
+                bus_addr: "minecraft:barrel_38",
+            }],
+            slot_filter: None,
+            outputs: vec![
+                Output { item: Filter::Name("kubejs:three"), n_wanted: 16 },
+                Output { item: Filter::Name("kubejs:eight"), n_wanted: 16 },
+                Output { item: Filter::Name("kubejs:plus"), n_wanted: 16 },
+                Output { item: Filter::Name("kubejs:minus"), n_wanted: 16 },
+                Output { item: Filter::Name("kubejs:multiply"), n_wanted: 16 },
+                Output { item: Filter::Name("kubejs:divide"), n_wanted: 16 },
+            ],
+        });
         factory.add_process(BufferedConfig {
             name: "1x1",
             accesses: vec![BusAccess {
@@ -913,6 +1022,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Fluix Seed"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Pure Fluix Crystal"), 1).allow_backup()],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Name("kubejs:radiant_coil"), n_wanted: 16 }],
                     inputs: vec![BufferedInput::new(Filter::Name("kubejs:radiant_sheet"), 1)],
                     max_inputs: i32::MAX,
@@ -925,6 +1039,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Certus Quartz Crystal"), n_wanted: 16 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Certus Quartz Block"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Fluix Crystal"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Fluix Block"), 1)],
                     max_inputs: i32::MAX,
                 },
             ],
@@ -1016,6 +1135,21 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     inputs: vec![BufferedInput::new(Filter::Label("Brass Ingot"), 1)],
                     max_inputs: i32::MAX,
                 },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Constantan Plate"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Constantan Ingot"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Lumium Plate"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Lumium Ingot"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Lead Plate"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Lead Ingot"), 1)],
+                    max_inputs: i32::MAX,
+                },
             ],
         });
         factory.add_process(BufferedConfig {
@@ -1059,7 +1193,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             to_extract: None,
             recipes: vec![SlottedRecipe {
                 outputs: vec![],
-                inputs: vec![SlottedInput::new(Filter::Label("Cobblestone"), 1, vec![0])],
+                inputs: vec![SlottedInput::new(Filter::Label("Diorite Cobblestone"), 1, vec![0])],
                 max_per_slot: 16,
             }],
         });
@@ -1441,7 +1575,37 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             to_extract: None,
             recipes: vec![SlottedRecipe {
                 outputs: vec![],
-                inputs: vec![SlottedInput::new(Filter::Label("Red Sand"), 1, vec![0])],
+                inputs: vec![SlottedInput::new(Filter::Label("Sand"), 1, vec![0])],
+                max_per_slot: 64,
+            }],
+        });
+        factory.add_process(SlottedConfig {
+            name: "liquidGlowstone",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "thermal:machine_crucible_1",
+                bus_addr: "minecraft:barrel_38",
+            }],
+            input_slots: vec![0],
+            to_extract: None,
+            recipes: vec![SlottedRecipe {
+                outputs: vec![],
+                inputs: vec![SlottedInput::new(Filter::Label("Glowstone Dust"), 1, vec![0])],
+                max_per_slot: 64,
+            }],
+        });
+        factory.add_process(SlottedConfig {
+            name: "liquidDiamond",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "thermal:machine_crucible_3",
+                bus_addr: "minecraft:barrel_38",
+            }],
+            input_slots: vec![0],
+            to_extract: None,
+            recipes: vec![SlottedRecipe {
+                outputs: vec![],
+                inputs: vec![SlottedInput::new(Filter::Label("Diamond"), 1, vec![0])],
                 max_per_slot: 64,
             }],
         });
@@ -1456,7 +1620,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             to_extract: None,
             recipes: vec![
                 SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_obsidian"), n_wanted: 16 }],
+                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_obsidian"), n_wanted: 129 }],
                     inputs: vec![SlottedInput::new(Filter::Label("Powdered Obsidian"), 1, vec![0])],
                     max_per_slot: 16,
                 },
@@ -1501,13 +1665,8 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_per_slot: 16,
                 },
                 SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_iron"), n_wanted: 16 }],
+                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_iron"), n_wanted: 129 }],
                     inputs: vec![SlottedInput::new(Filter::Label("Iron Dust"), 1, vec![0])],
-                    max_per_slot: 16,
-                },
-                SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_gold"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Gold Dust"), 1, vec![0])],
                     max_per_slot: 16,
                 },
                 SlottedRecipe {
@@ -1536,7 +1695,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_per_slot: 16,
                 },
                 SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_niter"), n_wanted: 16 }],
+                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_niter"), n_wanted: 65 }],
                     inputs: vec![SlottedInput::new(Filter::Label("Niter Dust"), 1, vec![0])],
                     max_per_slot: 16,
                 },
@@ -1569,12 +1728,25 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             to_extract: None,
             recipes: vec![
                 SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Constantan Ingot"), n_wanted: 16 }],
+                    inputs: vec![
+                        SlottedInput::new(Filter::Label("Nickel Ingot"), 1, vec![0]),
+                        SlottedInput::new(Filter::Label("Copper Ingot"), 1, vec![1]),
+                    ],
+                    max_per_slot: 16,
+                },
+                SlottedRecipe {
                     outputs: vec![Output { item: Filter::Label("Hardened Glass"), n_wanted: 16 }],
                     inputs: vec![
                         SlottedInput::new(Filter::Label("Nether Quartz Dust"), 1, vec![0]),
                         SlottedInput::new(Filter::Label("Obsidian"), 1, vec![1]),
-                        SlottedInput::new(Filter::Label("Red Sand"), 1, vec![2]),
+                        SlottedInput::new(Filter::Label("Sand"), 1, vec![2]),
                     ],
+                    max_per_slot: 16,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Quartz Glass"), n_wanted: 16 }],
+                    inputs: vec![SlottedInput::new(Filter::Label("Nether Quartz Dust"), 1, vec![0])],
                     max_per_slot: 16,
                 },
                 SlottedRecipe {
@@ -1619,6 +1791,15 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                         SlottedInput::new(Filter::Name("kubejs:substrate_volatile"), 1, vec![0]),
                         SlottedInput::new(Filter::Name("kubejs:substrate_blue"), 2, vec![1]),
                         SlottedInput::new(Filter::Name("kubejs:substrate_cobblestone"), 1, vec![2]),
+                    ],
+                    max_per_slot: 16,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_gold"), n_wanted: 16 }],
+                    inputs: vec![
+                        SlottedInput::new(Filter::Name("kubejs:substrate_metal"), 1, vec![0]),
+                        SlottedInput::new(Filter::Name("kubejs:substrate_quartz"), 2, vec![1]),
+                        SlottedInput::new(Filter::Name("kubejs:substrate_blaze"), 1, vec![2]),
                     ],
                     max_per_slot: 16,
                 },
@@ -1676,7 +1857,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_per_slot: 16,
                 },
                 SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_sapphire"), n_wanted: 16 }],
+                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_sapphire"), n_wanted: 65 }],
                     inputs: vec![
                         SlottedInput::new(Filter::Name("kubejs:substrate_gem"), 1, vec![0]),
                         SlottedInput::new(Filter::Name("kubejs:substrate_copper"), 2, vec![1]),
@@ -1739,7 +1920,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_per_slot: 16,
                 },
                 SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_blue"), n_wanted: 16 }],
+                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_blue"), n_wanted: 65 }],
                     inputs: vec![
                         SlottedInput::new(Filter::Name("kubejs:substrate_herbal"), 1, vec![0]),
                         SlottedInput::new(Filter::Name("kubejs:substrate_gabbro"), 2, vec![1]),
@@ -1784,7 +1965,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 },
                 SlottedRecipe {
                     outputs: vec![Output { item: Filter::Label("Niter"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Red Sandstone"), 1, vec![0])],
+                    inputs: vec![SlottedInput::new(Filter::Label("Sandstone"), 1, vec![0])],
                     max_per_slot: 16,
                 },
                 SlottedRecipe {
@@ -1798,7 +1979,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             name: "unbottler",
             accesses: vec![BusAccess {
                 client: "1a",
-                inv_addr: "thermal:machine_sawmill_0",
+                inv_addr: "thermal:machine_sawmill_2",
                 bus_addr: "minecraft:barrel_38",
             }],
             input_slots: vec![0],
@@ -1812,6 +1993,26 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 SlottedRecipe {
                     outputs: vec![Output { item: Filter::Label("Emerald Dust"), n_wanted: 16 }],
                     inputs: vec![SlottedInput::new(Filter::Name("kubejs:substrate_emerald"), 1, vec![0])],
+                    max_per_slot: 16,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Diamond Dust"), n_wanted: 16 }],
+                    inputs: vec![SlottedInput::new(Filter::Name("kubejs:substrate_diamond"), 1, vec![0])],
+                    max_per_slot: 16,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Silicon"), n_wanted: 16 }],
+                    inputs: vec![SlottedInput::new(Filter::Name("kubejs:substrate_silicon"), 1, vec![0])],
+                    max_per_slot: 16,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Slimeball"), n_wanted: 16 }],
+                    inputs: vec![SlottedInput::new(Filter::Name("kubejs:substrate_slime"), 1, vec![0])],
+                    max_per_slot: 16,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Gold Dust"), n_wanted: 16 }],
+                    inputs: vec![SlottedInput::new(Filter::Name("kubejs:substrate_gold"), 1, vec![0])],
                     max_per_slot: 16,
                 },
             ],
@@ -1836,6 +2037,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Block of Quartz"), n_wanted: 16 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Pure Nether Quartz Crystal"), 8)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Fluix Block"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Pure Fluix Crystal"), 8)],
                     max_inputs: i32::MAX,
                 },
             ],
@@ -1880,35 +2086,103 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 max_inputs: i32::MAX,
             }],
         });
-        factory.add_process(SlottedConfig {
+        factory.add_process(MultiInvSlottedConfig {
             name: "laser",
-            accesses: vec![BusAccess {
+            accesses: vec![MultiInvAccess {
                 client: "1a",
-                inv_addr: "moreminecarts:minecart_loader_te_3",
+                inv_addrs: vec!["moreminecarts:minecart_loader_te_3", "moreminecarts:minecart_loader_te_4"],
                 bus_addr: "minecraft:barrel_38",
             }],
-            input_slots: vec![0, 1, 2, 3],
+            input_slots: vec![vec![0, 1, 2, 3], vec![0, 1]],
             to_extract: None,
             recipes: vec![
-                SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_igneous"), n_wanted: 16 }],
+                MultiInvSlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Glowstone Dust"), n_wanted: 16 }],
                     inputs: vec![
-                        SlottedInput::new(Filter::Name("kubejs:substrate_basalt"), 1, vec![0]),
-                        SlottedInput::new(Filter::Name("kubejs:substrate_diorite"), 1, vec![1]),
-                        SlottedInput::new(Filter::Name("kubejs:substrate_gabbro"), 1, vec![2]),
-                        SlottedInput::new(Filter::Name("kubejs:substrate_andesite"), 1, vec![3]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_cobblestone"), 1, vec![(0, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_diorite"), 1, vec![(0, 1)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_gabbro"), 1, vec![(0, 2)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_andesite"), 1, vec![(0, 3)]),
                     ],
                     max_per_slot: 1,
                 },
-                SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Glowstone Dust"), n_wanted: 16 }],
+                MultiInvSlottedRecipe {
+                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_silicon"), n_wanted: 16 }],
                     inputs: vec![
-                        SlottedInput::new(Filter::Name("kubejs:substrate_cobblestone"), 1, vec![0]),
-                        SlottedInput::new(Filter::Name("kubejs:substrate_diorite"), 1, vec![1]),
-                        SlottedInput::new(Filter::Name("kubejs:substrate_gabbro"), 1, vec![2]),
-                        SlottedInput::new(Filter::Name("kubejs:substrate_andesite"), 1, vec![3]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_chaos"), 1, vec![(0, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_magenta"), 1, vec![(0, 1)]),
                     ],
                     max_per_slot: 1,
+                },
+                MultiInvSlottedRecipe {
+                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_chaos"), n_wanted: 16 }],
+                    inputs: vec![
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_metal"), 1, vec![(0, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_crystal"), 1, vec![(0, 1)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_herbal"), 64, vec![(0, 2)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_herbal"), 1, vec![(0, 3)]),
+                    ],
+                    max_per_slot: 64,
+                },
+                MultiInvSlottedRecipe {
+                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_igneous"), n_wanted: 16 }],
+                    inputs: vec![
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_basalt"), 1, vec![(0, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_diorite"), 1, vec![(0, 1)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_gabbro"), 1, vec![(0, 2)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_andesite"), 1, vec![(0, 3)]),
+                    ],
+                    max_per_slot: 1,
+                },
+                MultiInvSlottedRecipe {
+                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_herbal"), n_wanted: 65 }],
+                    inputs: vec![
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_blue"), 64, vec![(0, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_yellow"), 1, vec![(0, 1)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_blue"), 1, vec![(1, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_green"), 1, vec![(1, 1)]),
+                    ],
+                    max_per_slot: 64,
+                },
+                MultiInvSlottedRecipe {
+                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_volatile"), n_wanted: 16 }],
+                    inputs: vec![
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_blaze"), 1, vec![(0, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_obsidian"), 64, vec![(0, 1)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_obsidian"), 64, vec![(0, 2)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_obsidian"), 1, vec![(0, 3)]),
+                    ],
+                    max_per_slot: 64,
+                },
+                MultiInvSlottedRecipe {
+                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_crystal"), n_wanted: 16 }],
+                    inputs: vec![
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_niter"), 64, vec![(0, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_quartz"), 1, vec![(0, 1)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_apatite"), 1, vec![(0, 2)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_niter"), 1, vec![(1, 0)]),
+                    ],
+                    max_per_slot: 64,
+                },
+                MultiInvSlottedRecipe {
+                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_metal"), n_wanted: 16 }],
+                    inputs: vec![
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_iron"), 64, vec![(0, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_iron"), 64, vec![(0, 1)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_iron"), 1, vec![(0, 2)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_nickel"), 1, vec![(1, 0)]),
+                    ],
+                    max_per_slot: 64,
+                },
+                MultiInvSlottedRecipe {
+                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_gem"), n_wanted: 16 }],
+                    inputs: vec![
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_ruby"), 1, vec![(0, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_emerald"), 1, vec![(0, 1)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_sapphire"), 64, vec![(0, 2)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:substrate_sapphire"), 1, vec![(0, 3)]),
+                    ],
+                    max_per_slot: 64,
                 },
             ],
         });
@@ -1925,6 +2199,233 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 outputs: vec![],
                 inputs: vec![SlottedInput::new(Filter::Name("kubejs:failed_alchemy_7"), 1, vec![0])],
                 max_per_slot: 64,
+            }],
+        });
+        factory.add_process(BufferedConfig {
+            name: "printedSilicon",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "minecraft:barrel_65",
+                bus_addr: "minecraft:barrel_38",
+            }],
+            slot_filter: None,
+            to_extract: None,
+            stocks: vec![],
+            max_recipe_inputs: 16,
+            recipes: vec![BufferedRecipe {
+                outputs: vec![Output { item: Filter::Label("Printed Silicon"), n_wanted: 16 }],
+                inputs: vec![BufferedInput::new(Filter::Label("Silicon"), 1)],
+                max_inputs: i32::MAX,
+            }],
+        });
+        factory.add_process(SlottedConfig {
+            name: "calculationA",
+            accesses: vec![BusAccess { client: "1a", inv_addr: "create:deployer_12", bus_addr: "minecraft:barrel_38" }],
+            input_slots: vec![0],
+            to_extract: None,
+            recipes: vec![SlottedRecipe {
+                outputs: vec![],
+                inputs: vec![SlottedInput::new(Filter::Label("Printed Silicon"), 1, vec![0])],
+                max_per_slot: 64,
+            }],
+        });
+        factory.add_process(SlottedConfig {
+            name: "calculationB",
+            accesses: vec![BusAccess { client: "1a", inv_addr: "create:deployer_13", bus_addr: "minecraft:barrel_38" }],
+            input_slots: vec![0],
+            to_extract: None,
+            recipes: vec![SlottedRecipe {
+                outputs: vec![],
+                inputs: vec![SlottedInput::new(Filter::Label("Printed Silicon"), 1, vec![0])],
+                max_per_slot: 64,
+            }],
+        });
+        factory.add_process(BufferedConfig {
+            name: "calculation",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "minecraft:barrel_67",
+                bus_addr: "minecraft:barrel_38",
+            }],
+            slot_filter: None,
+            to_extract: None,
+            stocks: vec![],
+            max_recipe_inputs: 16,
+            recipes: vec![BufferedRecipe {
+                outputs: vec![Output { item: Filter::Name("kubejs:calculation_mechanism"), n_wanted: 16 }],
+                inputs: vec![BufferedInput::new(Filter::Name("kubejs:inductive_mechanism"), 1)],
+                max_inputs: i32::MAX,
+            }],
+        });
+        factory.add_process(BufferedConfig {
+            name: "processorSilicon",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "minecraft:barrel_68",
+                bus_addr: "minecraft:barrel_38",
+            }],
+            slot_filter: None,
+            to_extract: None,
+            stocks: vec![BufferedInput::new(Filter::Label("Printed Silicon"), 64)],
+            max_recipe_inputs: 0,
+            recipes: vec![],
+        });
+        factory.add_process(SlottedConfig {
+            name: "processor",
+            accesses: vec![BusAccess { client: "1a", inv_addr: "create:deployer_14", bus_addr: "minecraft:barrel_38" }],
+            input_slots: vec![0],
+            to_extract: None,
+            recipes: vec![
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Engineering Processor"), n_wanted: 16 }],
+                    inputs: vec![SlottedInput::new(Filter::Label("Printed Engineering Circuit"), 1, vec![0])],
+                    max_per_slot: 16,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Calculation Processor"), n_wanted: 16 }],
+                    inputs: vec![SlottedInput::new(Filter::Label("Printed Calculation Circuit"), 1, vec![0])],
+                    max_per_slot: 16,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Logic Processor"), n_wanted: 16 }],
+                    inputs: vec![SlottedInput::new(Filter::Label("Printed Logic Circuit"), 1, vec![0])],
+                    max_per_slot: 16,
+                },
+            ],
+        });
+        factory.add_process(BufferedConfig {
+            name: "operator",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "minecraft:barrel_70",
+                bus_addr: "minecraft:barrel_38",
+            }],
+            slot_filter: None,
+            to_extract: None,
+            stocks: vec![
+                BufferedInput::new(Filter::Label("Charcoal"), 64),
+                BufferedInput::new(Filter::Name("kubejs:calculation_mechanism"), 64),
+            ],
+            max_recipe_inputs: 0,
+            recipes: vec![],
+        });
+        factory.add_process(MultiInvSlottedConfig {
+            name: "number",
+            accesses: vec![MultiInvAccess {
+                client: "1a",
+                inv_addrs: vec!["create:depot_1", "create:depot_2", "create:depot_3"],
+                bus_addr: "minecraft:barrel_38",
+            }],
+            input_slots: vec![vec![0], vec![0], vec![0]],
+            to_extract: None,
+            recipes: vec![
+                MultiInvSlottedRecipe {
+                    outputs: vec![Output { item: Filter::Name("kubejs:zero"), n_wanted: 16 }],
+                    inputs: vec![
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:eight"), 1, vec![(0, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:minus"), 1, vec![(1, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:eight"), 1, vec![(2, 0)]),
+                    ],
+                    max_per_slot: 4,
+                },
+                MultiInvSlottedRecipe {
+                    outputs: vec![Output { item: Filter::Name("kubejs:one"), n_wanted: 16 }],
+                    inputs: vec![
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:eight"), 1, vec![(0, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:divide"), 1, vec![(1, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:eight"), 1, vec![(2, 0)]),
+                    ],
+                    max_per_slot: 4,
+                },
+                MultiInvSlottedRecipe {
+                    outputs: vec![Output { item: Filter::Name("kubejs:five"), n_wanted: 16 }],
+                    inputs: vec![
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:eight"), 1, vec![(0, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:minus"), 1, vec![(1, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:three"), 1, vec![(2, 0)]),
+                    ],
+                    max_per_slot: 4,
+                },
+                MultiInvSlottedRecipe {
+                    outputs: vec![Output { item: Filter::Name("kubejs:nine"), n_wanted: 16 }],
+                    inputs: vec![
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:three"), 1, vec![(0, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:multiply"), 1, vec![(1, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:three"), 1, vec![(2, 0)]),
+                    ],
+                    max_per_slot: 4,
+                },
+                MultiInvSlottedRecipe {
+                    outputs: vec![Output { item: Filter::Name("kubejs:six"), n_wanted: 16 }],
+                    inputs: vec![
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:three"), 1, vec![(0, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:plus"), 1, vec![(1, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:three"), 1, vec![(2, 0)]),
+                    ],
+                    max_per_slot: 4,
+                },
+                MultiInvSlottedRecipe {
+                    outputs: vec![Output { item: Filter::Name("kubejs:two"), n_wanted: 16 }],
+                    inputs: vec![
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:five"), 1, vec![(0, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:minus"), 1, vec![(1, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:three"), 1, vec![(2, 0)]),
+                    ],
+                    max_per_slot: 4,
+                },
+                MultiInvSlottedRecipe {
+                    outputs: vec![Output { item: Filter::Name("kubejs:four"), n_wanted: 16 }],
+                    inputs: vec![
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:three"), 1, vec![(0, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:plus"), 1, vec![(1, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:one"), 1, vec![(2, 0)]),
+                    ],
+                    max_per_slot: 4,
+                },
+                MultiInvSlottedRecipe {
+                    outputs: vec![Output { item: Filter::Name("kubejs:seven"), n_wanted: 16 }],
+                    inputs: vec![
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:eight"), 1, vec![(0, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:minus"), 1, vec![(1, 0)]),
+                        MultiInvSlottedInput::new(Filter::Name("kubejs:one"), 1, vec![(2, 0)]),
+                    ],
+                    max_per_slot: 4,
+                },
+                MultiInvSlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Grout"), n_wanted: 16 }],
+                    inputs: vec![
+                        MultiInvSlottedInput::new(Filter::Label("Clay Ball"), 1, vec![(0, 0)]),
+                        MultiInvSlottedInput::new(Filter::Label("Gravel"), 1, vec![(1, 0)]),
+                        MultiInvSlottedInput::new(Filter::Label("Sand"), 1, vec![(2, 0)]),
+                    ],
+                    max_per_slot: 4,
+                },
+            ],
+        });
+        factory.add_process(SlottedConfig {
+            name: "smeltery",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "minecraft:barrel_71",
+                bus_addr: "minecraft:barrel_38",
+            }],
+            input_slots: vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+            to_extract: None,
+            recipes: vec![SlottedRecipe {
+                outputs: vec![Output { item: Filter::Name("kubejs:computation_matrix"), n_wanted: 8 }],
+                inputs: vec![
+                    SlottedInput::new(Filter::Name("kubejs:zero"), 10, vec![0]),
+                    SlottedInput::new(Filter::Name("kubejs:one"), 10, vec![1]),
+                    SlottedInput::new(Filter::Name("kubejs:two"), 10, vec![2]),
+                    SlottedInput::new(Filter::Name("kubejs:three"), 10, vec![3]),
+                    SlottedInput::new(Filter::Name("kubejs:four"), 10, vec![4]),
+                    SlottedInput::new(Filter::Name("kubejs:five"), 10, vec![5]),
+                    SlottedInput::new(Filter::Name("kubejs:six"), 10, vec![6]),
+                    SlottedInput::new(Filter::Name("kubejs:seven"), 10, vec![7]),
+                    SlottedInput::new(Filter::Name("kubejs:eight"), 10, vec![8]),
+                    SlottedInput::new(Filter::Name("kubejs:nine"), 10, vec![9]),
+                ],
+                max_per_slot: 10,
             }],
         });
         /*
