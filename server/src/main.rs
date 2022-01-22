@@ -16,6 +16,7 @@ pub mod lua_value;
 pub mod process;
 pub mod server;
 pub mod storage;
+pub mod turtle_rc;
 
 use config::build_factory;
 use tokio::{signal::ctrl_c, task::LocalSet};
@@ -26,6 +27,8 @@ async fn main() {
     tasks.spawn_local(async {
         let _factory = build_factory();
         ctrl_c().await.unwrap()
+        // To run turtle_rc, replace above with:
+        // turtle_rc::run(server::Server::new(1848)).await
     });
     tasks.await
 }
