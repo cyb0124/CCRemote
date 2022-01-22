@@ -9,29 +9,48 @@ use std::rc::Rc;
 use tokio::io::{stdin, AsyncBufReadExt, BufReader};
 
 fn run_command(funcs: &mut FnvHashSet<&'static str>, client: &str, args: &[&str], server: &Server) {
-    let func = funcs.get(args[0]).map(|x| *x);
-    let func = func.unwrap_or_else(|| {
-        let leaked = Box::leak(args[0].to_owned().into_boxed_str());
-        funcs.insert(leaked);
-        leaked
-    });
-    let action = ActionFuture::from(TurtleCall {
-        func,
-        args: args
-            .iter()
-            .skip(1)
-            .map(|arg| if let Ok(arg) = arg.parse::<NotNan<f64>>() { Value::F(arg) } else { arg.to_owned().into() })
-            .collect(),
-    });
-    server.enqueue_request_group(client, vec![action.clone().into()]);
-    tokio::task::spawn_local(async move { println!("{:?}", action.await) });
+    if let Ok(n) = args[0].parse::<usize>() {
+        if args.len() < 2 {
+            println!("expect delimiter");
+            return;
+        }
+        let commands: Vec<_> = args[2..].split(|arg| *arg == args[1]).collect();
+        for args in &commands {
+            if args.is_empty() {
+                println!("expect args");
+                return;
+            }
+        }
+        for _ in 0..n {
+            for args in &commands {
+                run_command(funcs, client, args, server)
+            }
+        }
+    } else {
+        let func = funcs.get(args[0]).map(|x| *x);
+        let func = func.unwrap_or_else(|| {
+            let leaked = Box::leak(args[0].to_owned().into_boxed_str());
+            funcs.insert(leaked);
+            leaked
+        });
+        let action = ActionFuture::from(TurtleCall {
+            func,
+            args: args
+                .iter()
+                .skip(1)
+                .map(|arg| if let Ok(arg) = arg.parse::<NotNan<f64>>() { Value::F(arg) } else { arg.to_owned().into() })
+                .collect(),
+        });
+        server.enqueue_request_group(client, vec![action.clone().into()]);
+        tokio::task::spawn_local(async move { println!("{:?}", action.await) });
+    }
 }
 
 pub async fn run(server: Rc<RefCell<Server>>) {
     let mut funcs = FnvHashSet::<&'static str>::default();
     let mut stdin = BufReader::new(stdin());
     let mut client = None;
-    'command: loop {
+    loop {
         let mut line = String::new();
         if stdin.read_line(&mut line).await.unwrap() == 0 {
             break;
@@ -50,22 +69,7 @@ pub async fn run(server: Rc<RefCell<Server>>) {
                 println!("client set")
             }
         } else if let Some(client) = client.as_ref() {
-            if let Ok(n) = args[0].parse::<usize>() {
-                let commands: Vec<_> = args[1..].split(|arg| *arg == ";").collect();
-                for args in &commands {
-                    if args.is_empty() {
-                        println!("expect args");
-                        continue 'command;
-                    }
-                }
-                for _ in 0..n {
-                    for args in &commands {
-                        run_command(&mut funcs, client, args, &*server.borrow())
-                    }
-                }
-            } else {
-                run_command(&mut funcs, client, &args, &*server.borrow())
-            }
+            run_command(&mut funcs, client, &args, &*server.borrow())
         } else {
             println!("set client first")
         }
