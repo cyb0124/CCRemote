@@ -53,7 +53,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         server: Server::new(1849),
         min_cycle_time: Duration::from_secs(1),
         log_clients: vec!["1a"],
-        bus_accesses: vec![BasicAccess { client: "1a", addr: "minecraft:barrel_38" }],
+        bus_accesses: vec![BasicAccess { client: "1a", addr: "enderstorage:ender_chest_0" }],
         backups: vec![
             (Filter::Label("Pure Certus Quartz Crystal"), 16),
             (Filter::Label("Pure Nether Quartz Crystal"), 16),
@@ -61,11 +61,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             (Filter::Name("kubejs:ender_slimy_fern_leaf"), 16),
             (Filter::Name("kubejs:earth_slimy_fern_leaf"), 16),
             (Filter::Name("kubejs:sky_slimy_fern_leaf"), 16),
-            (Filter::Name("kubejs:substrate_basalt"), 16),
-            (Filter::Name("kubejs:substrate_sulfur"), 16),
-            (Filter::Name("kubejs:substrate_slime"), 16),
-            (Filter::Name("kubejs:substrate_olive"), 16),
-            (Filter::Name("kubejs:substrate_ruby"), 16),
+            (Filter::Label("Tall Poise Bush"), 16),
         ],
     }
     .build(|factory| {
@@ -73,7 +69,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "storagedrawers:controller_0",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             filters: vec![
                 Filter::Label("Spruce Log"),
@@ -101,6 +97,8 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 Filter::Label("Buddybeans"),
                 Filter::Label("Ash"),
                 Filter::Label("Clay Ball"),
+                Filter::Label("Basalt"),
+                Filter::Label("Dead Bush"),
             ],
         });
         for inv_addr in [
@@ -118,19 +116,23 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             "minecraft:chest_11",
         ] {
             factory.add_storage(ChestConfig {
-                accesses: vec![BusAccess { client: "1a", inv_addr, bus_addr: "minecraft:barrel_38" }],
+                accesses: vec![BusAccess { client: "1a", inv_addr, bus_addr: "enderstorage:ender_chest_0" }],
             })
         }
         factory.add_process(SyncAndRestockConfig {
             name: "treeFarm",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "minecraft:barrel_3", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "minecraft:barrel_3",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             accesses_in: vec![RedstoneAccess { client: "1a", addr: None, side: TOP, bit: Some(0) }],
             accesses_out: vec![RedstoneAccess { client: "1a", addr: None, side: TOP, bit: Some(11) }],
             hold_if_unfilled: false,
             stocks: Box::new(|factory| {
                 let mut result = vec![BufferedInput::new(Filter::Label("Spruce Sapling"), 64)];
                 if factory.search_n_stored(&Filter::Label("Spruce Log")) < 16 {
-                    result.push(BufferedInput::new(Filter::Label("Phyto-Gro"), 8))
+                    result.push(BufferedInput::new(Filter::Label("Phyto-Gro"), 4))
                 }
                 result
             }),
@@ -140,7 +142,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_39",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: extract_all(),
@@ -150,7 +152,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: "packer",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "create:basin_0", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "create:basin_0",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             input_slots: vec![0, 1, 2],
             to_extract: None,
             recipes: vec![
@@ -210,7 +216,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: "mixer",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "create:basin_1", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "create:basin_1",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             input_slots: vec![0, 1, 2],
             to_extract: None,
             recipes: vec![
@@ -255,7 +265,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:dropper_0",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -319,7 +329,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_19",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -348,7 +358,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_25",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -441,11 +451,6 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Copper Dust"), n_wanted: 16 }],
-                    inputs: vec![BufferedInput::new(Filter::Label("Copper Ingot"), 1)],
-                    max_inputs: i32::MAX,
-                },
-                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Nickel Dust"), n_wanted: 16 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Nickel Ingot"), 1)],
                     max_inputs: i32::MAX,
@@ -479,7 +484,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(BufferedConfig {
             name: "saw",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "minecraft:barrel_6", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "minecraft:barrel_6",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             slot_filter: None,
             to_extract: None,
             stocks: vec![],
@@ -499,7 +508,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(BufferedConfig {
             name: "slabSaw",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "minecraft:barrel_7", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "minecraft:barrel_7",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             slot_filter: None,
             to_extract: None,
             stocks: vec![],
@@ -512,7 +525,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: "kineticA",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "create:deployer_1", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "create:deployer_1",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             input_slots: vec![0],
             to_extract: None,
             recipes: vec![SlottedRecipe {
@@ -523,7 +540,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: "kineticB",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "create:deployer_0", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "create:deployer_0",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             input_slots: vec![0],
             to_extract: None,
             recipes: vec![SlottedRecipe {
@@ -537,7 +558,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_17",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -551,7 +572,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: "liquidSkyStone",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "create:basin_2", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "create:basin_2",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             input_slots: vec![0],
             to_extract: None,
             recipes: vec![SlottedRecipe {
@@ -562,7 +587,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: "liquidRedstone",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "create:basin_4", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "create:basin_4",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             input_slots: vec![0],
             to_extract: None,
             recipes: vec![SlottedRecipe {
@@ -573,7 +602,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(BufferedConfig {
             name: "charger",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "minecraft:barrel_9", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "minecraft:barrel_9",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             slot_filter: None,
             to_extract: None,
             stocks: vec![],
@@ -589,7 +622,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_13",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -645,7 +678,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: "electronTube",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "create:basin_7", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "create:basin_7",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             input_slots: vec![0],
             to_extract: None,
             recipes: vec![SlottedRecipe {
@@ -659,7 +696,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "tconstruct:heater_0",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -674,7 +711,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_15",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -682,21 +719,19 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             max_recipe_inputs: 0,
             recipes: vec![],
         });
-        factory.add_process(BufferedConfig {
+        factory.add_process(SlottedConfig {
             name: "exchangeCoin",
             accesses: vec![BusAccess {
                 client: "1a",
-                inv_addr: "minecraft:barrel_16",
-                bus_addr: "minecraft:barrel_38",
+                inv_addr: "thermal:machine_press_16",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
-            slot_filter: None,
+            input_slots: vec![0],
             to_extract: None,
-            stocks: vec![],
-            max_recipe_inputs: 256,
-            recipes: vec![BufferedRecipe {
+            recipes: vec![SlottedRecipe {
                 outputs: vec![Output { item: Filter::Label("Gold Coin"), n_wanted: 16 }],
-                inputs: vec![BufferedInput::new(Filter::Label("Silver Coin"), 64)],
-                max_inputs: i32::MAX,
+                inputs: vec![SlottedInput::new(Filter::Label("Silver Coin"), 64, vec![0])],
+                max_per_slot: 64,
             }],
         });
         factory.add_process(SlottedConfig {
@@ -704,7 +739,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_press_14",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -715,17 +750,47 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             }],
         });
         factory.add_process(SlottedConfig {
-            name: "buyCopper",
+            name: "sellDiamond",
             accesses: vec![BusAccess {
                 client: "1a",
-                inv_addr: "thermal:machine_press_12",
-                bus_addr: "minecraft:barrel_38",
+                inv_addr: "thermal:machine_press_17",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
             recipes: vec![SlottedRecipe {
-                outputs: vec![Output { item: Filter::Label("Copper Ingot"), n_wanted: 16 }],
-                inputs: vec![SlottedInput::new(Filter::Label("Silver Coin"), 16, vec![0])],
+                outputs: vec![Output { item: Filter::Label("Silver Coin"), n_wanted: 64 }],
+                inputs: vec![SlottedInput::new(Filter::Label("Diamond"), 1, vec![0])],
+                max_per_slot: 16,
+            }],
+        });
+        factory.add_process(SlottedConfig {
+            name: "buyEnderPearl",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "thermal:machine_press_12",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
+            input_slots: vec![0],
+            to_extract: None,
+            recipes: vec![SlottedRecipe {
+                outputs: vec![Output { item: Filter::Label("Ender Pearl"), n_wanted: 16 }],
+                inputs: vec![SlottedInput::new(Filter::Label("Silver Coin"), 48, vec![0])],
+                max_per_slot: 48,
+            }],
+        });
+        factory.add_process(SlottedConfig {
+            name: "buyXp",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "thermal:machine_press_18",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
+            input_slots: vec![0],
+            to_extract: None,
+            recipes: vec![SlottedRecipe {
+                outputs: vec![Output { item: Filter::Label("Bottle o' Enchanting"), n_wanted: 16 }],
+                inputs: vec![SlottedInput::new(Filter::Label("Silver Coin"), 8, vec![0])],
                 max_per_slot: 64,
             }],
         });
@@ -734,7 +799,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_press_9",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -749,7 +814,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_press_8",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -764,7 +829,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_press_15",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -776,7 +841,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: "precisionA",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "create:deployer_2", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "create:deployer_2",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             input_slots: vec![0],
             to_extract: None,
             recipes: vec![SlottedRecipe {
@@ -787,7 +856,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: "precisionB",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "create:deployer_3", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "create:deployer_3",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             input_slots: vec![0],
             to_extract: None,
             recipes: vec![SlottedRecipe {
@@ -801,7 +874,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_18",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -815,7 +888,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: "redAlloy",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "create:basin_8", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "create:basin_8",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             input_slots: vec![0],
             to_extract: None,
             recipes: vec![SlottedRecipe {
@@ -829,7 +906,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "tconstruct:heater_1",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -844,7 +921,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "tconstruct:heater_2",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -859,11 +936,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_21",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
-            stocks: vec![BufferedInput::new(Filter::Label("Copper Ingot"), 64)],
+            stocks: vec![BufferedInput::new(Filter::Label("Copper Dust"), 64)],
             max_recipe_inputs: 0,
             recipes: vec![],
         });
@@ -872,7 +949,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_22",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -885,7 +962,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_66",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -897,7 +974,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "storagedrawers:standard_drawers_1_4",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             outputs: vec![Output { item: Filter::Label("Brass Ingot"), n_wanted: 16 }],
@@ -906,7 +983,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "storagedrawers:standard_drawers_1_5",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             outputs: vec![Output { item: Filter::Label("Silver Ingot"), n_wanted: 16 }],
@@ -915,7 +992,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_chiller_4",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             outputs: vec![Output { item: Filter::Label("Block of Redstone"), n_wanted: 16 }],
@@ -923,8 +1000,8 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         factory.add_process(InputlessConfig {
             accesses: vec![BusAccess {
                 client: "1a",
-                inv_addr: "thermal:machine_chiller_3",
-                bus_addr: "minecraft:barrel_38",
+                inv_addr: "thermal:machine_chiller_6",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             outputs: vec![Output { item: Filter::Label("Obsidian"), n_wanted: 16 }],
@@ -933,7 +1010,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_refinery_0",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             outputs: vec![Output { item: Filter::Label("Signalum Ingot"), n_wanted: 16 }],
@@ -942,7 +1019,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_refinery_4",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             outputs: vec![Output { item: Filter::Label("Lumium Ingot"), n_wanted: 16 }],
@@ -950,17 +1027,20 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         factory.add_process(InputlessConfig {
             accesses: vec![BusAccess {
                 client: "1a",
-                inv_addr: "storagedrawers:standard_drawers_1_7",
-                bus_addr: "minecraft:barrel_38",
+                inv_addr: "storagedrawers:controller_1",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
-            outputs: vec![Output { item: Filter::Label("Printed Calculation Circuit"), n_wanted: 16 }],
+            outputs: vec![
+                Output { item: Filter::Label("Printed Calculation Circuit"), n_wanted: 16 },
+                Output { item: Filter::Label("Copper Ingot"), n_wanted: 16 },
+            ],
         });
         factory.add_process(InputlessConfig {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "storagedrawers:standard_drawers_1_11",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             outputs: vec![Output { item: Filter::Label("Printed Logic Circuit"), n_wanted: 16 }],
@@ -969,7 +1049,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "storagedrawers:standard_drawers_1_9",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             outputs: vec![Output { item: Filter::Label("Printed Engineering Circuit"), n_wanted: 16 }],
@@ -978,7 +1058,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "storagedrawers:standard_drawers_1_10",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             outputs: vec![Output { item: Filter::Label("Gold Nugget"), n_wanted: 16 }],
@@ -987,7 +1067,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "storagedrawers:controller_2",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             outputs: vec![
@@ -1004,7 +1084,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_23",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1053,7 +1133,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_24",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1080,7 +1160,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_31",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: Some(Box::new(|slot| slot >= 25)),
             to_extract: Some(Box::new(|_, stack| {
@@ -1098,7 +1178,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_32",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1150,6 +1230,16 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     inputs: vec![BufferedInput::new(Filter::Label("Lead Ingot"), 1)],
                     max_inputs: i32::MAX,
                 },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Signalum Plate"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Signalum Ingot"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Paper"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Sugar Cane"), 1)],
+                    max_inputs: i32::MAX,
+                },
             ],
         });
         factory.add_process(BufferedConfig {
@@ -1157,7 +1247,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_33",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1174,7 +1264,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_36",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1188,7 +1278,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: "lavaGenBasin",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "create:basin_9", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "create:basin_9",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             input_slots: vec![0],
             to_extract: None,
             recipes: vec![SlottedRecipe {
@@ -1199,7 +1293,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: "lavaGenHeater",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "create:deployer_5", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "create:deployer_5",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             input_slots: vec![0],
             to_extract: None,
             recipes: vec![SlottedRecipe {
@@ -1210,7 +1308,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: "liquidSoulBasin",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "create:basin_10", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "create:basin_10",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             input_slots: vec![0, 1],
             to_extract: None,
             recipes: vec![SlottedRecipe {
@@ -1224,7 +1326,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: "liquidSoulHeater",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "create:deployer_6", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "create:deployer_6",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             input_slots: vec![0],
             to_extract: None,
             recipes: vec![SlottedRecipe {
@@ -1238,7 +1344,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_48",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1255,7 +1361,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_43",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1284,7 +1390,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_45",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1310,7 +1416,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: "stove",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "create:deployer_7", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "create:deployer_7",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             input_slots: vec![0],
             to_extract: None,
             recipes: vec![
@@ -1336,7 +1446,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_47",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1353,7 +1463,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: "explosionTNT",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "create:deployer_8", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "create:deployer_8",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             input_slots: vec![0],
             to_extract: None,
             recipes: vec![SlottedRecipe {
@@ -1367,7 +1481,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_49",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1387,7 +1501,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_50",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1405,7 +1519,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_52",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1427,7 +1541,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_53",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0, 1],
             to_extract: None,
@@ -1445,7 +1559,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:dropper_1",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1462,7 +1576,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_54",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0, 1],
             to_extract: None,
@@ -1480,7 +1594,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_55",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1497,7 +1611,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: "inductiveA",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "create:deployer_9", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "create:deployer_9",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             input_slots: vec![0],
             to_extract: None,
             recipes: vec![SlottedRecipe {
@@ -1508,7 +1626,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: "inductiveB",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "create:deployer_10", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "create:deployer_10",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             input_slots: vec![0],
             to_extract: None,
             recipes: vec![SlottedRecipe {
@@ -1522,7 +1644,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_56",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1539,7 +1661,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_57",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1569,7 +1691,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_crucible_0",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -1584,7 +1706,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_crucible_1",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -1599,7 +1721,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_crucible_3",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -1614,7 +1736,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_bottler_2",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -1622,6 +1744,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 SlottedRecipe {
                     outputs: vec![Output { item: Filter::Name("kubejs:substrate_obsidian"), n_wanted: 129 }],
                     inputs: vec![SlottedInput::new(Filter::Label("Powdered Obsidian"), 1, vec![0])],
+                    max_per_slot: 16,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_basalt"), n_wanted: 16 }],
+                    inputs: vec![SlottedInput::new(Filter::Label("Basalt"), 1, vec![0])],
                     max_per_slot: 16,
                 },
                 SlottedRecipe {
@@ -1680,11 +1807,6 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_per_slot: 16,
                 },
                 SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_copper"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Copper Dust"), 1, vec![0])],
-                    max_per_slot: 16,
-                },
-                SlottedRecipe {
                     outputs: vec![Output { item: Filter::Name("kubejs:substrate_nickel"), n_wanted: 16 }],
                     inputs: vec![SlottedInput::new(Filter::Label("Nickel Dust"), 1, vec![0])],
                     max_per_slot: 16,
@@ -1706,7 +1828,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_61",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1722,7 +1844,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_smelter_0",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0, 1, 2],
             to_extract: None,
@@ -1768,20 +1890,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_per_slot: 16,
                 },
                 SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_slime"), n_wanted: 32 }],
+                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_slime"), n_wanted: 16 }],
                     inputs: vec![
                         SlottedInput::new(Filter::Name("kubejs:substrate_volatile"), 1, vec![0]),
-                        SlottedInput::new(Filter::Name("kubejs:substrate_green"), 2, vec![1]).allow_backup(),
+                        SlottedInput::new(Filter::Name("kubejs:substrate_green"), 2, vec![1]),
                         SlottedInput::new(Filter::Name("kubejs:substrate_granite"), 1, vec![2]),
-                    ],
-                    max_per_slot: 16,
-                },
-                SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_basalt"), n_wanted: 32 }],
-                    inputs: vec![
-                        SlottedInput::new(Filter::Name("kubejs:substrate_igneous"), 1, vec![0]),
-                        SlottedInput::new(Filter::Name("kubejs:substrate_ruby"), 2, vec![1]).allow_backup(),
-                        SlottedInput::new(Filter::Name("kubejs:substrate_nickel"), 1, vec![2]),
                     ],
                     max_per_slot: 16,
                 },
@@ -1803,11 +1916,41 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     ],
                     max_per_slot: 16,
                 },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_copper"), n_wanted: 16 }],
+                    inputs: vec![
+                        SlottedInput::new(Filter::Name("kubejs:substrate_metal"), 1, vec![0]),
+                        SlottedInput::new(Filter::Name("kubejs:substrate_niter"), 2, vec![1]),
+                        SlottedInput::new(Filter::Name("kubejs:substrate_nether"), 1, vec![2]),
+                    ],
+                    max_per_slot: 16,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Enderium Ingot"), n_wanted: 16 }],
+                    inputs: vec![
+                        SlottedInput::new(Filter::Label("Tall Poise Bush"), 1, vec![0]),
+                        SlottedInput::new(Filter::Label("Silver Ingot"), 1, vec![1]),
+                        SlottedInput::new(Filter::Label("Ender Dust"), 4, vec![2]),
+                    ],
+                    max_per_slot: 16,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Name("kubejs:abstruse_mechanism"), n_wanted: 16 }],
+                    inputs: vec![
+                        SlottedInput::new(Filter::Label("Enderium Ingot"), 1, vec![0]),
+                        SlottedInput::new(Filter::Name("kubejs:inductive_mechanism"), 1, vec![1]),
+                    ],
+                    max_per_slot: 16,
+                },
             ],
         });
         factory.add_process(SlottedConfig {
             name: "heatedMixer",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "create:basin_11", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "create:basin_11",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             input_slots: vec![0, 1, 2],
             to_extract: None,
             recipes: vec![
@@ -1884,29 +2027,29 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_per_slot: 16,
                 },
                 SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_green"), n_wanted: 32 }],
+                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_green"), n_wanted: 16 }],
                     inputs: vec![
                         SlottedInput::new(Filter::Name("kubejs:substrate_herbal"), 1, vec![0]),
-                        SlottedInput::new(Filter::Name("kubejs:substrate_basalt"), 2, vec![1]).allow_backup(),
+                        SlottedInput::new(Filter::Name("kubejs:substrate_basalt"), 2, vec![1]),
                         SlottedInput::new(Filter::Name("kubejs:substrate_cobblestone"), 1, vec![2]),
                     ],
                     max_per_slot: 16,
                 },
                 SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_sulfur"), n_wanted: 32 }],
+                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_sulfur"), n_wanted: 16 }],
                     inputs: vec![
                         SlottedInput::new(Filter::Name("kubejs:substrate_crystal"), 1, vec![0]),
-                        SlottedInput::new(Filter::Name("kubejs:substrate_slime"), 2, vec![1]).allow_backup(),
+                        SlottedInput::new(Filter::Name("kubejs:substrate_slime"), 2, vec![1]),
                         SlottedInput::new(Filter::Name("kubejs:substrate_yellow"), 1, vec![2]),
                     ],
                     max_per_slot: 16,
                 },
                 SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_ruby"), n_wanted: 32 }],
+                    outputs: vec![Output { item: Filter::Name("kubejs:substrate_ruby"), n_wanted: 16 }],
                     inputs: vec![
                         SlottedInput::new(Filter::Name("kubejs:substrate_gem"), 1, vec![0]),
                         SlottedInput::new(Filter::Name("kubejs:substrate_zinc"), 2, vec![1]),
-                        SlottedInput::new(Filter::Name("kubejs:substrate_sulfur"), 1, vec![2]).allow_backup(),
+                        SlottedInput::new(Filter::Name("kubejs:substrate_sulfur"), 1, vec![2]),
                     ],
                     max_per_slot: 16,
                 },
@@ -1953,7 +2096,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_pulverizer_0",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -1980,7 +2123,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_sawmill_2",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -2015,6 +2158,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     inputs: vec![SlottedInput::new(Filter::Name("kubejs:substrate_gold"), 1, vec![0])],
                     max_per_slot: 16,
                 },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Copper Dust"), n_wanted: 16 }],
+                    inputs: vec![SlottedInput::new(Filter::Name("kubejs:substrate_copper"), 1, vec![0])],
+                    max_per_slot: 16,
+                },
             ],
         });
         factory.add_process(BufferedConfig {
@@ -2022,7 +2170,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_62",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -2051,7 +2199,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_63",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -2071,7 +2219,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_64",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -2091,7 +2239,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![MultiInvAccess {
                 client: "1a",
                 inv_addrs: vec!["moreminecarts:minecart_loader_te_3", "moreminecarts:minecart_loader_te_4"],
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![vec![0, 1, 2, 3], vec![0, 1]],
             to_extract: None,
@@ -2191,7 +2339,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_centrifuge_0",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -2206,7 +2354,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_65",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -2220,7 +2368,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: "calculationA",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "create:deployer_12", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "create:deployer_12",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             input_slots: vec![0],
             to_extract: None,
             recipes: vec![SlottedRecipe {
@@ -2231,7 +2383,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: "calculationB",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "create:deployer_13", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "create:deployer_13",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             input_slots: vec![0],
             to_extract: None,
             recipes: vec![SlottedRecipe {
@@ -2245,7 +2401,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_67",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -2261,8 +2417,8 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             name: "processorSilicon",
             accesses: vec![BusAccess {
                 client: "1a",
-                inv_addr: "minecraft:barrel_68",
-                bus_addr: "minecraft:barrel_38",
+                inv_addr: "minecraft:barrel_74",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -2272,7 +2428,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: "processor",
-            accesses: vec![BusAccess { client: "1a", inv_addr: "create:deployer_14", bus_addr: "minecraft:barrel_38" }],
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "create:deployer_14",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
             input_slots: vec![0],
             to_extract: None,
             recipes: vec![
@@ -2298,7 +2458,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_70",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -2314,7 +2474,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![MultiInvAccess {
                 client: "1a",
                 inv_addrs: vec!["create:depot_1", "create:depot_2", "create:depot_3"],
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![vec![0], vec![0], vec![0]],
             to_extract: None,
@@ -2407,7 +2567,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_71",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
             to_extract: None,
@@ -2428,13 +2588,55 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 max_per_slot: 10,
             }],
         });
+        factory.add_process(SlottedConfig {
+            name: "phytoFertilizer",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "thermal:machine_insolator_1",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
+            input_slots: vec![1],
+            to_extract: Some(Box::new(|slot, _| slot >= 2)),
+            recipes: vec![SlottedRecipe {
+                outputs: vec![],
+                inputs: vec![SlottedInput::new(Filter::Label("Phyto-Gro"), 1, vec![1])],
+                max_per_slot: 64,
+            }],
+        });
+        factory.add_process(SlottedConfig {
+            name: "phyto",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "thermal:machine_insolator_1",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
+            input_slots: vec![0],
+            to_extract: None,
+            recipes: vec![
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Poise Cluster"), n_wanted: 16 }],
+                    inputs: vec![SlottedInput::new(Filter::Label("Tall Poise Bush"), 1, vec![0]).allow_backup()],
+                    max_per_slot: 16,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Tall Poise Bush"), n_wanted: 32 }],
+                    inputs: vec![SlottedInput::new(Filter::Label("Poise Bush"), 1, vec![0])],
+                    max_per_slot: 16,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Poise Bush"), n_wanted: 16 }],
+                    inputs: vec![SlottedInput::new(Filter::Label("Poise Cluster"), 1, vec![0])],
+                    max_per_slot: 16,
+                },
+            ],
+        });
         /*
         factory.add_process(SyncAndRestockConfig {
             name: "bore",
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_58",
-                bus_addr: "minecraft:barrel_38",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             accesses_in: vec![RedstoneAccess { client: "1a", addr: None, side: LEFT, bit: None }],
             accesses_out: vec![RedstoneAccess { client: "1a", addr: None, side: FRONT, bit: None }],
