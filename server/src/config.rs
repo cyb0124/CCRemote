@@ -141,7 +141,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             name: "output",
             accesses: vec![BusAccess {
                 client: "1a",
-                inv_addr: "minecraft:barrel_39",
+                inv_addr: "enderstorage:ender_chest_1",
                 bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
@@ -2128,6 +2128,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             input_slots: vec![0],
             to_extract: None,
             recipes: vec![
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Blaze Powder"), n_wanted: 16 }],
+                    inputs: vec![SlottedInput::new(Filter::Name("kubejs:substrate_blaze"), 1, vec![0])],
+                    max_per_slot: 16,
+                },
                 SlottedRecipe {
                     outputs: vec![Output { item: Filter::Label("Apatite Dust"), n_wanted: 16 }],
                     inputs: vec![SlottedInput::new(Filter::Name("kubejs:substrate_apatite"), 1, vec![0])],
