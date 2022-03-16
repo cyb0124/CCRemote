@@ -15,6 +15,11 @@ pub trait IntoProcess {
     fn into_process(self, factory: &Factory) -> Rc<RefCell<Self::Output>>;
 }
 
+impl<T: Process> IntoProcess for T {
+    type Output = T;
+    fn into_process(self, _: &Factory) -> Rc<RefCell<Self::Output>> { Rc::new(RefCell::new(self)) }
+}
+
 macro_rules! impl_into_process {
     ($c:ident, $p:ident) => {
         impl IntoProcess for $c {
