@@ -3,7 +3,7 @@ use super::super::action::{ActionFuture, Log, RedstoneInput, RedstoneOutput};
 use super::super::detail_cache::DetailCache;
 use super::super::factory::Factory;
 use super::super::inventory::{list_inventory, Inventory};
-use super::super::item::{insert_into_inventory, jammer, InsertPlan};
+use super::super::item::{insert_into_inventory, jammer, Filter, InsertPlan};
 use super::super::recipe::Input;
 use super::super::server::Server;
 use super::super::util::{alive, join_tasks, spawn, AbortOnDrop};
@@ -215,5 +215,33 @@ impl Process for SyncAndRestockProcess {
         } else {
             spawn(self.output(&*server, false))
         }
+    }
+}
+
+pub struct LowAlert {
+    item: Filter,
+    n_wanted: i32,
+    log: String,
+}
+
+impl LowAlert {
+    pub fn new(item: Filter, n_wanted: i32, log: Option<String>) -> Self {
+        let log = log.unwrap_or_else(|| match &item {
+            Filter::Label(x) => (*x).to_owned(),
+            Filter::Name(x) => format!("<{}>", x),
+            Filter::Both { label, name } => format!("{} <{}>", label, name),
+            Filter::Fn(_) => "<fn>".to_owned(),
+        });
+        Self { item, n_wanted, log }
+    }
+}
+
+impl Process for LowAlert {
+    fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>> {
+        let n_stored = factory.search_n_stored(&self.item);
+        if n_stored < self.n_wanted {
+            factory.log(Log { text: format!("need {}*{}", self.log, self.n_wanted - n_stored), color: 6 })
+        }
+        spawn(async { Ok(()) })
     }
 }
