@@ -5,17 +5,6 @@ use super::{access::*, item::*, process::*, recipe::*, storage::*};
 use std::{cell::RefCell, rc::Rc, time::Duration};
 
 pub fn build_factory() -> Rc<RefCell<Factory>> {
-    /*
-        Coal Chunk
-        Lead Chunk
-        Copper Chunk
-        Silver Chunk
-        Aluminum Chunk
-        Uranium Chunk
-        Nickel Chunk
-        Zinc Chunk
-        Tin Chunk
-    */
     FactoryConfig {
         detail_cache: DetailCache::new(),
         server: Server::new(1847),
@@ -35,6 +24,15 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 accesses: vec![BusAccess { client: "1a", inv_addr, bus_addr: "ironchest:diamond_chest_8" }],
             })
         }
+        factory.add_process(LowAlert::new(Filter::Label("Coal Chunk"), 16, None));
+        factory.add_process(LowAlert::new(Filter::Label("Lead Chunk"), 16, None));
+        factory.add_process(LowAlert::new(Filter::Label("Copper Chunk"), 16, None));
+        factory.add_process(LowAlert::new(Filter::Label("Silver Chunk"), 16, None));
+        factory.add_process(LowAlert::new(Filter::Label("Aluminum Chunk"), 16, None));
+        factory.add_process(LowAlert::new(Filter::Label("Uranium Chunk"), 16, None));
+        factory.add_process(LowAlert::new(Filter::Label("Nickel Chunk"), 16, None));
+        factory.add_process(LowAlert::new(Filter::Label("Zinc Chunk"), 16, None));
+        factory.add_process(LowAlert::new(Filter::Label("Tin Chunk"), 16, None));
         factory.add_process(SyncAndRestockConfig {
             name: "farm",
             accesses: vec![BusAccess {
@@ -171,6 +169,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Coal Coke Dust"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Coal Coke"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("String"), n_wanted: 16 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Flax"), 1)],
                     max_inputs: i32::MAX,
@@ -225,7 +228,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             stocks: vec![],
         });
         factory.add_process(SlottedConfig {
-            name: "mixer",
+            name: "creosoteMixer",
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "create:basin_1",
@@ -451,6 +454,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             to_extract: None,
             recipes: vec![
                 BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Tin Plate"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Tin Ingot"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Iron Plate"), n_wanted: 16 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Iron Ingot"), 1)],
                     max_inputs: i32::MAX,
@@ -547,5 +555,45 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 max_per_slot: 8,
             }],
         });
+        factory.add_process(SlottedConfig {
+            name: "pulverizer",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "thermal:machine_pulverizer_0",
+                bus_addr: "ironchest:diamond_chest_8",
+            }],
+            input_slots: vec![0],
+            to_extract: None,
+            recipes: vec![SlottedRecipe {
+                outputs: vec![Output { item: Filter::Label("Silicon"), n_wanted: 16 }],
+                inputs: vec![SlottedInput::new(Filter::Label("Limesand"), 1, vec![0])],
+                max_per_slot: 8,
+            }],
+        });
+        factory.add_process(SlottedConfig {
+            name: "pyrolyzer",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "thermal:machine_pyrolyzer_1",
+                bus_addr: "ironchest:diamond_chest_8",
+            }],
+            input_slots: vec![0],
+            to_extract: extract_all(),
+            recipes: vec![SlottedRecipe {
+                outputs: vec![],
+                inputs: vec![SlottedInput::new(Filter::Label("Coal"), 1, vec![0])],
+                max_per_slot: 64,
+            }],
+        });
+        factory.add_process(RedstoneEmitterConfig {
+            accesses: vec![RedstoneAccess { client: "1a", addr: None, side: BOTTOM, bit: None }],
+            output: emit_when_want_item(
+                "pyrolyzer",
+                vec![
+                    Output { item: Filter::Label("Coal Coke"), n_wanted: 16 },
+                    Output { item: Filter::Label("Tar"), n_wanted: 16 },
+                ],
+            ),
+        })
     })
 }
