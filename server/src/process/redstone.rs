@@ -2,7 +2,7 @@ use super::super::access::RedstoneAccess;
 use super::super::action::{ActionFuture, Log, RedstoneInput, RedstoneOutput};
 use super::super::factory::Factory;
 use super::super::inventory::Inventory;
-use super::super::item::Filter;
+use super::super::recipe::Output;
 use super::super::util::{alive, spawn, AbortOnDrop};
 use super::{IntoProcess, Process};
 use std::{
@@ -11,14 +11,15 @@ use std::{
 };
 
 pub type RedstoneFn = Box<dyn Fn(&Factory) -> u8>;
-pub fn emit_when_want_item(name: &'static str, item: Filter, n_wanted: i32) -> RedstoneFn {
+pub fn emit_when_want_item(name: &'static str, outputs: Vec<Output>) -> RedstoneFn {
     Box::new(move |factory| {
-        if factory.search_n_stored(&item) < n_wanted {
-            factory.log(Log { text: format!("{}: on", name), color: 10 });
-            15
-        } else {
-            0
+        for output in &outputs {
+            if factory.search_n_stored(&output.item) < output.n_wanted {
+                factory.log(Log { text: format!("{}: on", name), color: 10 });
+                return 15;
+            }
         }
+        0
     })
 }
 
