@@ -57,7 +57,6 @@ pub struct SyncAndRestockProcess {
     factory: Weak<RefCell<Factory>>,
     server: Rc<RefCell<Server>>,
     size: Option<usize>,
-    initialized: bool,
     waiting_for_low: bool,
 }
 
@@ -74,7 +73,6 @@ impl IntoProcess for SyncAndRestockConfig {
                 factory: factory.get_weak().clone(),
                 server: factory.get_server().clone(),
                 size: None,
-                initialized: false,
                 waiting_for_low: false,
             })
         })
@@ -92,7 +90,6 @@ impl SyncAndRestockProcess {
         async move {
             action.await?;
             alive_mut!(weak, this);
-            this.initialized = true;
             this.waiting_for_low = is_high;
             Ok(())
         }
@@ -158,8 +155,11 @@ impl SyncAndRestockProcess {
             Ok(unfilled)
         }
     }
+}
 
-    fn run_initialized(&self, server: &Server) -> AbortOnDrop<Result<(), String>> {
+impl Process for SyncAndRestockProcess {
+    fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>> {
+        let server = factory.get_server().borrow();
         let access = server.load_balance(&self.config.accesses_in);
         let action = ActionFuture::from(RedstoneInput { side: access.side, addr: access.addr, bit: access.bit });
         server.enqueue_request_group(access.client, vec![action.clone().into()]);
@@ -169,52 +169,36 @@ impl SyncAndRestockProcess {
             let task = {
                 alive!(weak, this);
                 if this.waiting_for_low {
-                    if is_high {
-                        return Ok(());
-                    } else {
+                    if !is_high {
                         upgrade!(this.factory, factory);
                         factory.log(Log { text: format!("{}: leave", this.config.name), color: 10 });
-                        spawn(this.output(&*this.server.borrow(), false))
                     }
+                    spawn(this.output(&*this.server.borrow(), is_high))
                 } else {
                     if is_high {
                         let task = this.restock(weak.clone());
                         spawn(async move {
                             let skip = task.await?;
-                            if skip {
+                            let task = {
                                 alive!(weak, this);
                                 upgrade!(this.factory, factory);
-                                factory.log(Log { text: format!("{}: unfilled", this.config.name), color: 10 });
-                                Ok(())
-                            } else {
-                                let task = {
-                                    alive!(weak, this);
-                                    upgrade!(this.factory, factory);
+                                if skip {
+                                    factory.log(Log { text: format!("{}: unfilled", this.config.name), color: 10 });
+                                } else {
                                     factory.log(Log { text: format!("{}: enter", this.config.name), color: 10 });
-                                    let server = this.server.borrow();
-                                    this.output(&*server, true)
-                                };
-                                task.await
-                            }
+                                }
+                                let server = this.server.borrow();
+                                this.output(&*server, !skip)
+                            };
+                            task.await
                         })
                     } else {
-                        return Ok(());
+                        spawn(this.output(&*this.server.borrow(), false))
                     }
                 }
             };
             task.into_future().await
         })
-    }
-}
-
-impl Process for SyncAndRestockProcess {
-    fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>> {
-        let server = factory.get_server().borrow();
-        if self.initialized {
-            self.run_initialized(&*server)
-        } else {
-            spawn(self.output(&*server, false))
-        }
     }
 }
 
