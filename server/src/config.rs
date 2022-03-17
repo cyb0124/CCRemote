@@ -33,6 +33,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         factory.add_process(LowAlert::new(Filter::Label("Nickel Chunk"), 16, None));
         factory.add_process(LowAlert::new(Filter::Label("Zinc Chunk"), 16, None));
         factory.add_process(LowAlert::new(Filter::Label("Tin Chunk"), 16, None));
+        factory.add_process(LowAlert::new(Filter::Label("Netherrack"), 16, None));
         factory.add_process(SyncAndRestockConfig {
             name: "farm",
             accesses: vec![BusAccess {
@@ -76,6 +77,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 BufferedInput::new(Filter::Label("Acacia Blossom"), i32::MAX).extra_backup(512),
                 BufferedInput::new(Filter::Label("Acacia Sapling"), i32::MAX).extra_backup(512),
                 BufferedInput::new(Filter::Label("Cobblestone"), i32::MAX).extra_backup(512),
+                BufferedInput::new(Filter::Label("Chicken Egg"), i32::MAX).extra_backup(512),
                 BufferedInput::new(Filter::Label("Acacia Log"), i32::MAX).extra_backup(512),
                 BufferedInput::new(Filter::Label("Sugar Cane"), i32::MAX).extra_backup(512),
                 BufferedInput::new(Filter::Label("Flax Seeds"), i32::MAX).extra_backup(512),
@@ -174,6 +176,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Cinder Flour"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Netherrack"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("String"), n_wanted: 16 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Flax"), 1)],
                     max_inputs: i32::MAX,
@@ -224,7 +231,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_inputs: i32::MAX,
                 },
             ],
-            max_recipe_inputs: 128,
+            max_recipe_inputs: 16,
             stocks: vec![],
         });
         factory.add_process(SlottedConfig {
@@ -253,6 +260,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                         SlottedInput::new(Filter::Label("Sand"), 4, vec![1]),
                         SlottedInput::new(Filter::Label("Gravel"), 4, vec![2]),
                     ],
+                    max_per_slot: 16,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Treated Wood Planks"), n_wanted: 16 }],
+                    inputs: vec![SlottedInput::new(Filter::Label("Acacia Planks"), 1, vec![0])],
                     max_per_slot: 16,
                 },
             ],
@@ -380,7 +392,6 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             max_recipe_inputs: 64,
             stocks: vec![],
         });
-        // TODO: buffer this
         factory.add_process(SlottedConfig {
             name: "packer",
             accesses: vec![BusAccess {
@@ -390,58 +401,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             }],
             input_slots: vec![0],
             to_extract: None,
-            recipes: vec![
-                SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Iron Ingot"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Iron Nugget"), 9, vec![0])],
-                    max_per_slot: 9,
-                },
-                SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Gold Ingot"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Gold Nugget"), 9, vec![0])],
-                    max_per_slot: 9,
-                },
-                SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Lead Ingot"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Lead Nugget"), 9, vec![0])],
-                    max_per_slot: 9,
-                },
-                SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Copper Ingot"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Copper Nugget"), 9, vec![0])],
-                    max_per_slot: 9,
-                },
-                SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Silver Ingot"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Silver Nugget"), 9, vec![0])],
-                    max_per_slot: 9,
-                },
-                SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Aluminum Ingot"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Aluminum Nugget"), 9, vec![0])],
-                    max_per_slot: 9,
-                },
-                SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Uranium Ingot"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Uranium Nugget"), 9, vec![0])],
-                    max_per_slot: 9,
-                },
-                SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Nickel Ingot"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Nickel Nugget"), 9, vec![0])],
-                    max_per_slot: 9,
-                },
-                SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Zinc Ingot"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Zinc Nugget"), 9, vec![0])],
-                    max_per_slot: 9,
-                },
-                SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Tin Ingot"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Tin Nugget"), 9, vec![0])],
-                    max_per_slot: 9,
-                },
-            ],
+            recipes: vec![],
         });
         factory.add_process(BufferedConfig {
             name: "press",
@@ -594,6 +554,94 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     Output { item: Filter::Label("Tar"), n_wanted: 16 },
                 ],
             ),
+        });
+        factory.add_process(BufferedConfig {
+            name: "saw",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "minecraft:barrel_34",
+                bus_addr: "ironchest:diamond_chest_8",
+            }],
+            slot_filter: None,
+            to_extract: None,
+            recipes: vec![
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Stripped Acacia Log"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Acacia Log"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Acacia Planks"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Stripped Acacia Log"), 1)],
+                    max_inputs: i32::MAX,
+                },
+            ],
+            max_recipe_inputs: 16,
+            stocks: vec![],
+        });
+        factory.add_process(BufferedConfig {
+            name: "bufferedPacker",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "minecraft:barrel_35",
+                bus_addr: "ironchest:diamond_chest_8",
+            }],
+            slot_filter: None,
+            to_extract: None,
+            recipes: vec![
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Iron Ingot"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Iron Nugget"), 9)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Gold Ingot"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Gold Nugget"), 9)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Lead Ingot"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Lead Nugget"), 9)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Copper Ingot"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Copper Nugget"), 9)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Silver Ingot"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Silver Nugget"), 9)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Aluminum Ingot"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Aluminum Nugget"), 9)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Uranium Ingot"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Uranium Nugget"), 9)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Nickel Ingot"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Nickel Nugget"), 9)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Zinc Ingot"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Zinc Nugget"), 9)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Tin Ingot"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Tin Nugget"), 9)],
+                    max_inputs: i32::MAX,
+                },
+            ],
+            max_recipe_inputs: 64,
+            stocks: vec![],
         })
     })
 }
