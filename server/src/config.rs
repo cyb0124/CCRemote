@@ -265,7 +265,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 SlottedRecipe {
                     outputs: vec![Output { item: Filter::Label("Treated Wood Planks"), n_wanted: 16 }],
                     inputs: vec![SlottedInput::new(Filter::Label("Acacia Planks"), 1, vec![0])],
-                    max_per_slot: 16,
+                    max_per_slot: 8,
                 },
             ],
         });
@@ -287,6 +287,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 BufferedRecipe {
                     outputs: vec![],
                     inputs: vec![BufferedInput::new(Filter::Label("Crushed Gold Ore"), 16)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Clay Ball"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Sand"), 16)],
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
@@ -393,15 +398,23 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             stocks: vec![],
         });
         factory.add_process(SlottedConfig {
-            name: "packer",
+            name: "slottedPacker",
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "create:basin_3",
                 bus_addr: "ironchest:diamond_chest_8",
             }],
-            input_slots: vec![0],
+            input_slots: vec![0, 1, 2],
             to_extract: None,
-            recipes: vec![],
+            recipes: vec![SlottedRecipe {
+                outputs: vec![Output { item: Filter::Label("Blaze Cake Base"), n_wanted: 16 }],
+                inputs: vec![
+                    SlottedInput::new(Filter::Label("Chicken Egg"), 1, vec![0]),
+                    SlottedInput::new(Filter::Label("Sugar"), 1, vec![1]),
+                    SlottedInput::new(Filter::Label("Cinder Flour"), 1, vec![2]),
+                ],
+                max_per_slot: 8,
+            }],
         });
         factory.add_process(BufferedConfig {
             name: "press",
@@ -506,14 +519,41 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             }],
             input_slots: vec![0, 1, 2],
             to_extract: None,
-            recipes: vec![SlottedRecipe {
-                outputs: vec![Output { item: Filter::Label("Andesite Alloy"), n_wanted: 16 }],
-                inputs: vec![
-                    SlottedInput::new(Filter::Label("Iron Nugget"), 1, vec![0]),
-                    SlottedInput::new(Filter::Label("Andesite"), 1, vec![1]),
-                ],
-                max_per_slot: 8,
-            }],
+            recipes: vec![
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Andesite Alloy"), n_wanted: 16 }],
+                    inputs: vec![
+                        SlottedInput::new(Filter::Label("Iron Nugget"), 1, vec![0]),
+                        SlottedInput::new(Filter::Label("Andesite"), 1, vec![1]),
+                    ],
+                    max_per_slot: 8,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Steel Ingot"), n_wanted: 16 }],
+                    inputs: vec![
+                        SlottedInput::new(Filter::Label("Coal Coke Dust"), 1, vec![0]),
+                        SlottedInput::new(Filter::Label("Iron Ingot"), 1, vec![1]),
+                    ],
+                    max_per_slot: 8,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Bronze Ingot"), n_wanted: 16 }],
+                    inputs: vec![
+                        SlottedInput::new(Filter::Label("Copper Ingot"), 3, vec![0]),
+                        SlottedInput::new(Filter::Label("Tin Ingot"), 1, vec![1]),
+                    ],
+                    max_per_slot: 24,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Seared Brick"), n_wanted: 16 }],
+                    inputs: vec![
+                        SlottedInput::new(Filter::Label("Clay Ball"), 1, vec![0]),
+                        SlottedInput::new(Filter::Label("Gravel"), 1, vec![1]),
+                        SlottedInput::new(Filter::Label("Sand"), 1, vec![2]),
+                    ],
+                    max_per_slot: 8,
+                },
+            ],
         });
         factory.add_process(SlottedConfig {
             name: "pulverizer",
@@ -642,6 +682,42 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             ],
             max_recipe_inputs: 64,
             stocks: vec![],
-        })
+        });
+        factory.add_process(BufferedConfig {
+            name: "lavaSpout",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "minecraft:barrel_36",
+                bus_addr: "ironchest:diamond_chest_8",
+            }],
+            slot_filter: None,
+            to_extract: None,
+            recipes: vec![BufferedRecipe {
+                outputs: vec![Output { item: Filter::Label("Blaze Cake"), n_wanted: 16 }],
+                inputs: vec![BufferedInput::new(Filter::Label("Blaze Cake Base"), 1)],
+                max_inputs: i32::MAX,
+            }],
+            max_recipe_inputs: 16,
+            stocks: vec![],
+        });
+        factory.add_process(SlottedConfig {
+            name: "pressureChamber",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "minecraft:barrel_37",
+                bus_addr: "ironchest:diamond_chest_8",
+            }],
+            input_slots: vec![0, 1, 2],
+            to_extract: None,
+            recipes: vec![SlottedRecipe {
+                outputs: vec![Output { item: Filter::Label("Compressed Iron Ingot"), n_wanted: 16 }],
+                inputs: vec![
+                    SlottedInput::new(Filter::Label("Obsidian"), 1, vec![0]),
+                    SlottedInput::new(Filter::Label("Steel Ingot"), 2, vec![1]),
+                    SlottedInput::new(Filter::Label("Tar"), 2, vec![2]),
+                ],
+                max_per_slot: 16,
+            }],
+        });
     })
 }
