@@ -28,38 +28,15 @@ pub struct RedstoneEmitterConfig {
     pub output: RedstoneFn,
 }
 
-pub struct RedstoneEmitterProcess {
-    weak: Weak<RefCell<RedstoneEmitterProcess>>,
-    config: RedstoneEmitterConfig,
-    prev_value: Option<u8>,
-}
-
-impl IntoProcess for RedstoneEmitterConfig {
-    type Output = RedstoneEmitterProcess;
-    fn into_process(self, _factory: &Factory) -> Rc<RefCell<Self::Output>> {
-        Rc::new_cyclic(|weak| RefCell::new(Self::Output { weak: weak.clone(), config: self, prev_value: None }))
-    }
-}
-
-impl Process for RedstoneEmitterProcess {
+impl Process for RedstoneEmitterConfig {
     fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>> {
-        let value = (self.config.output)(factory);
-        if Some(value) == self.prev_value {
-            spawn(async { Ok(()) })
-        } else {
-            let server = factory.get_server().borrow();
-            let access = server.load_balance(&self.config.accesses);
-            let action =
-                ActionFuture::from(RedstoneOutput { side: access.side, addr: access.addr, bit: access.bit, value });
-            server.enqueue_request_group(access.client, vec![action.clone().into()]);
-            let weak = self.weak.clone();
-            spawn(async move {
-                action.await?;
-                alive_mut!(weak, this);
-                this.prev_value = Some(value);
-                Ok(())
-            })
-        }
+        let value = (self.output)(factory);
+        let server = factory.get_server().borrow();
+        let access = server.load_balance(&self.accesses);
+        let action =
+            ActionFuture::from(RedstoneOutput { side: access.side, addr: access.addr, bit: access.bit, value });
+        server.enqueue_request_group(access.client, vec![action.clone().into()]);
+        spawn(async move { action.await.map(|_| ()) })
     }
 }
 
