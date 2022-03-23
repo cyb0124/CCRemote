@@ -83,8 +83,7 @@ impl SyncAndRestockProcess {
     fn output(&self, server: &Server, is_high: bool) -> impl Future<Output = Result<(), String>> {
         let access = server.load_balance(&self.config.accesses_out);
         let value = if is_high { 15 } else { 0 };
-        let action =
-            ActionFuture::from(RedstoneOutput { side: access.side, addr: access.addr, bit: access.bit, value });
+        let action = ActionFuture::from(RedstoneOutput { side: access.side, addr: access.addr, bit: access.bit, value });
         server.enqueue_request_group(access.client, vec![action.clone().into()]);
         let weak = self.weak.clone();
         async move {
@@ -130,8 +129,7 @@ impl SyncAndRestockProcess {
                 for (stock, remaining) in stocks.iter().zip(&mut remaining_stocks) {
                     if let Some((item, info)) = factory.search_item(&stock.get_item()) {
                         let info = info.borrow();
-                        let to_insert =
-                            info.get_availability(stock.get_allow_backup(), stock.get_extra_backup()).min(*remaining);
+                        let to_insert = info.get_availability(stock.get_allow_backup(), stock.get_extra_backup()).min(*remaining);
                         if to_insert <= 0 {
                             continue;
                         }

@@ -22,9 +22,7 @@ impl<T> AbortOnDrop<T> {
     pub async fn into_future(mut self) -> T { self.0.take().unwrap().await.unwrap() }
 }
 
-pub fn spawn<T: 'static>(future: impl Future<Output = T> + 'static) -> AbortOnDrop<T> {
-    AbortOnDrop(Some(spawn_local(future)))
-}
+pub fn spawn<T: 'static>(future: impl Future<Output = T> + 'static) -> AbortOnDrop<T> { AbortOnDrop(Some(spawn_local(future))) }
 
 pub async fn join_tasks(tasks: Vec<AbortOnDrop<Result<(), String>>>) -> Result<(), String> {
     let mut result: Result<(), String> = Ok(());

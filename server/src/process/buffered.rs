@@ -131,11 +131,8 @@ impl Process for BufferedProcess {
                             if inputs.n_sets <= 0 {
                                 continue 'recipe;
                             }
-                            let existing_total: i32 = inputs
-                                .items
-                                .iter()
-                                .map(|(item, _)| *existing_size.entry(item.clone()).or_default())
-                                .sum();
+                            let existing_total: i32 =
+                                inputs.items.iter().map(|(item, _)| *existing_size.entry(item.clone()).or_default()).sum();
                             inputs.n_sets = min(inputs.n_sets, (recipe.max_inputs - existing_total) / size_per_set);
                             if inputs.n_sets <= 0 {
                                 continue 'recipe;
@@ -202,10 +199,8 @@ impl BufferedProcess {
         let factory = factory.get_weak().clone();
         spawn(async move {
             let bus_slots = join_outputs(bus_slots).await;
-            let slots_to_free = Rc::try_unwrap(slots_to_free)
-                .map_err(|_| "slots_to_free should be exclusively owned here")
-                .unwrap()
-                .into_inner();
+            let slots_to_free =
+                Rc::try_unwrap(slots_to_free).map_err(|_| "slots_to_free should be exclusively owned here").unwrap().into_inner();
             let task = async {
                 let bus_slots = bus_slots?;
                 let mut tasks = Vec::new();

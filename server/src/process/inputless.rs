@@ -69,8 +69,7 @@ impl Process for InputlessProcess {
                         let info = match infos.entry(&stack.item) {
                             Entry::Occupied(entry) => entry.into_mut(),
                             Entry::Vacant(entry) => {
-                                let mut info =
-                                    InputlessInfo { n_wanted: 0, n_stored: factory.get_n_stored(&stack.item) };
+                                let mut info = InputlessInfo { n_wanted: 0, n_stored: factory.get_n_stored(&stack.item) };
                                 for output in &this.config.outputs {
                                     if output.item.apply(&stack.item, &stack.detail) {
                                         info.n_wanted = max(info.n_wanted, output.n_wanted)

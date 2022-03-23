@@ -67,8 +67,7 @@ impl CraftyProcess {
                 let mut bus_slots = Vec::new();
                 let slots_to_free = Rc::new(RefCell::new(Vec::new()));
                 for (i_input, (item, _)) in items.into_iter().enumerate() {
-                    let reservation =
-                        factory.reserve_item(self.config.name, &item, n_sets * recipe.inputs[i_input].size);
+                    let reservation = factory.reserve_item(self.config.name, &item, n_sets * recipe.inputs[i_input].size);
                     let slots_to_free = slots_to_free.clone();
                     let bus_slot = factory.bus_allocate();
                     bus_slots.push(spawn(async move {
@@ -146,13 +145,7 @@ impl CraftyProcess {
         let mut group = Vec::new();
         group.push(Call {
             addr: access.bus_addr,
-            args: vec![
-                "pullItems".into(),
-                access.turtle_addr.into(),
-                1.into(),
-                64.into(),
-                (output_bus_slot + 1).into(),
-            ],
+            args: vec!["pullItems".into(), access.turtle_addr.into(), 1.into(), 64.into(), (output_bus_slot + 1).into()],
         });
         for non_consumable in &self.config.recipes[job.i_recipe].non_consumables {
             group.push(Call {
@@ -177,10 +170,8 @@ async fn worker_main(weak: Weak<RefCell<CraftyProcess>>, i_turtle: usize) -> Res
         let Job { i_recipe, n_sets, slots_to_free, bus_slots } =
             if let Some(job) = alive(&weak)?.borrow_mut().next_job() { job } else { break Ok(()) };
         let bus_slots = join_outputs(bus_slots).await;
-        let mut slots_to_free = Rc::try_unwrap(slots_to_free)
-            .map_err(|_| "slots_to_free should be exclusively owned here")
-            .unwrap()
-            .into_inner();
+        let mut slots_to_free =
+            Rc::try_unwrap(slots_to_free).map_err(|_| "slots_to_free should be exclusively owned here").unwrap().into_inner();
         let task = async {
             let bus_slots = bus_slots?;
             let job = JobRef { i_recipe, i_turtle, n_sets, bus_slots: &bus_slots };

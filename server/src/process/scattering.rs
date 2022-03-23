@@ -33,9 +33,7 @@ pub struct ScatteringRecipe {
 }
 
 impl ScatteringRecipe {
-    pub fn new(outputs: Vec<Output>, input: ScatteringInput) -> Self {
-        ScatteringRecipe { outputs, inputs: vec![input] }
-    }
+    pub fn new(outputs: Vec<Output>, input: ScatteringInput) -> Self { ScatteringRecipe { outputs, inputs: vec![input] } }
 }
 
 impl_recipe!(ScatteringRecipe, ScatteringInput);
