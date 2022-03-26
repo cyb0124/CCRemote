@@ -146,7 +146,12 @@ impl Process for MultiInvSlottedProcess {
                                 *existing_input = Some(stack)
                             } else if let Some(ref to_extract) = this.to_extract {
                                 if to_extract(i, slot, &stack) {
-                                    tasks.push(extract_output(&*this.invs[i].borrow(), factory, slot, stack.detail.max_size))
+                                    tasks.push(extract_output(
+                                        &*this.invs[i].borrow(),
+                                        factory,
+                                        slot,
+                                        stack.detail.max_size,
+                                    ))
                                 }
                             }
                         }
@@ -199,7 +204,8 @@ impl MultiInvSlottedProcess {
         let slots_to_free = Rc::new(RefCell::new(Vec::new()));
         let recipe = &self.recipes[demand.i_recipe];
         for (i_input, input) in recipe.inputs.iter().enumerate() {
-            let reservation = factory.reserve_item(self.name, &demand.inputs.items[i_input].0, demand.inputs.n_sets * input.size);
+            let reservation =
+                factory.reserve_item(self.name, &demand.inputs.items[i_input].0, demand.inputs.n_sets * input.size);
             let bus_slot = factory.bus_allocate();
             let slots_to_free = slots_to_free.clone();
             bus_slots.push(spawn(async move {
@@ -213,8 +219,10 @@ impl MultiInvSlottedProcess {
         let factory = factory.get_weak().clone();
         spawn(async move {
             let bus_slots = join_outputs(bus_slots).await;
-            let slots_to_free =
-                Rc::try_unwrap(slots_to_free).map_err(|_| "slots_to_free should be exclusively owned here").unwrap().into_inner();
+            let slots_to_free = Rc::try_unwrap(slots_to_free)
+                .map_err(|_| "slots_to_free should be exclusively owned here")
+                .unwrap()
+                .into_inner();
             let task = async {
                 let bus_slots = bus_slots?;
                 let mut tasks = Vec::new();

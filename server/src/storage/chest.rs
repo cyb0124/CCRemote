@@ -140,7 +140,13 @@ impl Extractor for ChestExtractor {
         let access = server.load_balance(&this.config.accesses);
         let action = ActionFuture::from(Call {
             addr: access.inv_addr,
-            args: vec!["pushItems".into(), access.bus_addr.into(), (inv_slot + 1).into(), size.into(), (bus_slot + 1).into()],
+            args: vec![
+                "pushItems".into(),
+                access.bus_addr.into(),
+                (inv_slot + 1).into(),
+                size.into(),
+                (bus_slot + 1).into(),
+            ],
         });
         server.enqueue_request_group(access.client, vec![action.clone().into()]);
         let weak = self.weak.clone();

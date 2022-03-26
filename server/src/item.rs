@@ -49,7 +49,9 @@ impl ItemStack {
         }
     }
 
-    pub fn with_detail(self, detail: Rc<Detail>) -> DetailStack { DetailStack { item: self.item, size: self.size, detail } }
+    pub fn with_detail(self, detail: Rc<Detail>) -> DetailStack {
+        DetailStack { item: self.item, size: self.size, detail }
+    }
 }
 
 pub struct Detail {

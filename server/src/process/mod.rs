@@ -60,7 +60,13 @@ where
             let access = server.load_balance(this.get_accesses());
             action = ActionFuture::from(Call {
                 addr: access.inv_addr,
-                args: vec!["pushItems".into(), access.bus_addr.into(), (slot + 1).into(), size.into(), (bus_slot + 1).into()],
+                args: vec![
+                    "pushItems".into(),
+                    access.bus_addr.into(),
+                    (slot + 1).into(),
+                    size.into(),
+                    (bus_slot + 1).into(),
+                ],
             });
             server.enqueue_request_group(access.client, vec![action.clone().into()])
         }

@@ -23,7 +23,11 @@ pub struct DetailCache {
     weak: Weak<RefCell<DetailCache>>,
 }
 
-async fn resolver_main(weak: Weak<RefCell<DetailCache>>, expected: Rc<Item>, receiver: LocalReceiver<(Rc<Item>, Rc<Detail>)>) {
+async fn resolver_main(
+    weak: Weak<RefCell<DetailCache>>,
+    expected: Rc<Item>,
+    receiver: LocalReceiver<(Rc<Item>, Rc<Detail>)>,
+) {
     let result = receiver.await;
     if let Some(this) = weak.upgrade() {
         let mut this = this.borrow_mut();

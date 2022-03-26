@@ -44,14 +44,21 @@ fn run_command(ctx: Rc<RefCell<Context>>, client: String, args: Vec<String>) -> 
                 ctx.funcs.insert(leaked);
                 leaked
             });
-            let action = ActionFuture::from(TurtleCall {
-                func,
-                args: args
-                    .iter()
-                    .skip(1)
-                    .map(|arg| if let Ok(arg) = arg.parse::<NotNan<f64>>() { Value::F(arg) } else { arg.to_owned().into() })
-                    .collect(),
-            });
+            let action =
+                ActionFuture::from(TurtleCall {
+                    func,
+                    args: args
+                        .iter()
+                        .skip(1)
+                        .map(|arg| {
+                            if let Ok(arg) = arg.parse::<NotNan<f64>>() {
+                                Value::F(arg)
+                            } else {
+                                arg.to_owned().into()
+                            }
+                        })
+                        .collect(),
+                });
             ctx.server.borrow().enqueue_request_group(&client, vec![action.clone().into()]);
             if ctx.queue.len() == QUEUE_SIZE {
                 ctx.queue.pop_front().unwrap().into_future().await
