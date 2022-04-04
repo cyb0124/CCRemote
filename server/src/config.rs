@@ -32,6 +32,12 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         ],
     }
     .build(|factory| {
+        let air_canister = |full| {
+            Filter::Fn(Box::new(move |_, detail| {
+                detail.label == "Air Canister"
+                    && detail.others.get(&super::lua_value::Key::from("durability")).is_none() == full
+            }))
+        };
         for inv_addr in [
             "ironchest:diamond_chest_27",
             "ironchest:diamond_chest_28",
@@ -111,7 +117,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             name: "gridCraftingOutput",
             accesses: vec![BusAccess {
                 client: "1a",
-                inv_addr: "minecraft:barrel_69",
+                inv_addr: "minecraft:barrel_95",
                 bus_addr: "ironchest:diamond_chest_31",
             }],
             slot_filter: None,
@@ -950,7 +956,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_per_slot: 32,
                 },
                 SlottedRecipe {
-                    outputs: vec![Output { item: Filter::Label("Cardboard Box"), n_wanted: 16 }],
+                    outputs: vec![Output { item: Filter::Label("Cardboard Box"), n_wanted: 4 }],
                     inputs: vec![SlottedInput::new(Filter::Label("Sawdust"), 4, vec![0])],
                     max_per_slot: 8,
                 },
@@ -1024,6 +1030,16 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Aluminum Plate"), n_wanted: 16 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Aluminum Ingot"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Constantan Plate"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Constantan Ingot"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Thermo Plate"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Thermoelectric Generator"), 1)],
                     max_inputs: i32::MAX,
                 },
             ],
@@ -2538,6 +2554,15 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_per_slot: 64,
                 },
                 MultiInvSlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Pressure Tube"), n_wanted: 16 }],
+                    inputs: vec![
+                        MultiInvSlottedInput::new(Filter::Label("Andesite Cobblestone"), 64, vec![(9, 0)]),
+                        MultiInvSlottedInput::new(Filter::Label("Hardened Glass"), 1, vec![(1, 0)]),
+                        MultiInvSlottedInput::new(Filter::Label("Compressed Iron Ingot"), 2, vec![(0, 0), (2, 0)]),
+                    ],
+                    max_per_slot: 64,
+                },
+                MultiInvSlottedRecipe {
                     outputs: vec![Output { item: Filter::Label("LV Wire Coil"), n_wanted: 16 }],
                     inputs: vec![
                         MultiInvSlottedInput::new(Filter::Label("Andesite Cobblestone"), 64, vec![(9, 0)]),
@@ -2880,6 +2905,34 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                             Filter::Label("Black Stained Glass Pane"),
                             6,
                             vec![(0, 0), (1, 0), (2, 0), (6, 0), (7, 0), (8, 0)],
+                        ),
+                    ],
+                    max_per_slot: 64,
+                },
+                MultiInvSlottedRecipe {
+                    outputs: vec![Output { item: air_canister(false), n_wanted: 4 }],
+                    inputs: vec![
+                        MultiInvSlottedInput::new(Filter::Label("Andesite Cobblestone"), 64, vec![(9, 0)]),
+                        MultiInvSlottedInput::new(Filter::Label("Pressure Tube"), 1, vec![(1, 0)]),
+                        MultiInvSlottedInput::new(
+                            Filter::Label("Compressed Iron Ingot"),
+                            4,
+                            vec![(3, 0), (5, 0), (6, 0), (8, 0)],
+                        ),
+                        MultiInvSlottedInput::new(Filter::Label("Redstone Dust"), 2, vec![(4, 0), (7, 0)]),
+                    ],
+                    max_per_slot: 64,
+                },
+                MultiInvSlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Thermoelectric Generator"), n_wanted: 16 }],
+                    inputs: vec![
+                        MultiInvSlottedInput::new(Filter::Label("Andesite Cobblestone"), 64, vec![(9, 0)]),
+                        MultiInvSlottedInput::new(Filter::Label("Copper Coil Block"), 1, vec![(4, 0)]),
+                        MultiInvSlottedInput::new(Filter::Label("Steel Ingot"), 3, vec![(0, 0), (1, 0), (2, 0)]),
+                        MultiInvSlottedInput::new(
+                            Filter::Label("Constantan Plate"),
+                            5,
+                            vec![(3, 0), (5, 0), (6, 0), (7, 0), (8, 0)],
                         ),
                     ],
                     max_per_slot: 64,
@@ -3459,6 +3512,23 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     max_per_slot: 8,
                 },
             ],
+        });
+        factory.add_process(BufferedConfig {
+            name: "airCharger",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "minecraft:hopper_15",
+                bus_addr: "ironchest:diamond_chest_31",
+            }],
+            slot_filter: None,
+            to_extract: None,
+            recipes: vec![BufferedRecipe {
+                outputs: vec![Output { item: air_canister(true), n_wanted: 4 }],
+                inputs: vec![BufferedInput::new(air_canister(false), 1)],
+                max_inputs: i32::MAX,
+            }],
+            max_recipe_inputs: 1,
+            stocks: vec![],
         });
     })
 }
