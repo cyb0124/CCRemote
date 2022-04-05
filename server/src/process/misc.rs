@@ -1,5 +1,5 @@
 use super::super::access::{BusAccess, RedstoneAccess};
-use super::super::action::{ActionFuture, Log, RedstoneInput, RedstoneOutput};
+use super::super::action::{ActionFuture, Call, Log, RedstoneInput, RedstoneOutput};
 use super::super::detail_cache::DetailCache;
 use super::super::factory::Factory;
 use super::super::inventory::{list_inventory, Inventory};
@@ -7,11 +7,14 @@ use super::super::item::{insert_into_inventory, jammer, Filter, InsertPlan};
 use super::super::recipe::Input;
 use super::super::server::Server;
 use super::super::util::{alive, join_tasks, spawn, AbortOnDrop};
-use super::{extract_output, scattering_insert, BufferedInput, IntoProcess, Process};
+use super::{extract_output, scattering_insert, BufferedInput, IntoProcess, Process, ScatteringInput};
 use std::{
     cell::RefCell,
+    fs::read_to_string,
     future::Future,
+    iter::once,
     rc::{Rc, Weak},
+    str::FromStr,
 };
 
 pub struct ConditionalConfig<T: IntoProcess> {
@@ -227,5 +230,107 @@ impl Process for LowAlert {
             factory.log(Log { text: format!("need {}*{}", self.log, self.n_wanted - n_stored), color: 6 })
         }
         spawn(async { Ok(()) })
+    }
+}
+
+pub struct ItemCycleConfig {
+    pub name: &'static str,
+    pub file_name: &'static str,
+    pub accesses: Vec<BusAccess>,
+    pub slot: usize,
+    pub items: Vec<ScatteringInput>,
+}
+
+pub struct ItemCycleProcess {
+    weak: Weak<RefCell<ItemCycleProcess>>,
+    config: ItemCycleConfig,
+    detail_cache: Rc<RefCell<DetailCache>>,
+    factory: Weak<RefCell<Factory>>,
+    server: Rc<RefCell<Server>>,
+    size: Option<usize>,
+    next_item: usize,
+}
+
+impl IntoProcess for ItemCycleConfig {
+    type Output = ItemCycleProcess;
+    fn into_process(self, factory: &Factory) -> Rc<RefCell<Self::Output>> {
+        let next_item = read_to_string(self.file_name).ok().and_then(|x| usize::from_str(&x).ok()).unwrap_or_default();
+        Rc::new_cyclic(|weak| {
+            RefCell::new(Self::Output {
+                weak: weak.clone(),
+                config: self,
+                detail_cache: factory.get_detail_cache().clone(),
+                factory: factory.get_weak().clone(),
+                server: factory.get_server().clone(),
+                size: None,
+                next_item,
+            })
+        })
+    }
+}
+
+impl_inventory!(ItemCycleProcess, BusAccess);
+
+impl Process for ItemCycleProcess {
+    fn run(&self, _: &Factory) -> AbortOnDrop<Result<(), String>> {
+        let stacks = list_inventory(self);
+        let weak = self.weak.clone();
+        spawn(async move {
+            let stacks = stacks.await?;
+            let mut slot_to_free = None;
+            let task = {
+                alive!(weak, this);
+                if this.config.slot >= stacks.len() || stacks[this.config.slot].is_some() {
+                    return Ok(());
+                }
+                upgrade_mut!(this.factory, factory);
+                if let Some((item, _)) = factory.search_item(this.config.items[this.next_item].get_item()) {
+                    let reservation = factory.reserve_item(this.config.name, item, 1);
+                    let bus_slot = factory.bus_allocate();
+                    let weak = weak.clone();
+                    let slot_to_free = &mut slot_to_free;
+                    async move {
+                        let bus_slot = bus_slot.await?;
+                        *slot_to_free = Some(bus_slot);
+                        reservation.extract(bus_slot).await?;
+                        let task = {
+                            alive_mut!(weak, this);
+                            let server = this.server.borrow();
+                            let access = server.load_balance(&this.config.accesses);
+                            let action = ActionFuture::from(Call {
+                                addr: access.inv_addr,
+                                args: vec![
+                                    "pullItems".into(),
+                                    access.bus_addr.into(),
+                                    (bus_slot + 1).into(),
+                                    1.into(),
+                                    (this.config.slot + 1).into(),
+                                ],
+                            });
+                            server.enqueue_request_group(access.client, vec![action.clone().into()]);
+                            action
+                        };
+                        task.await?;
+                        alive_mut!(weak, this);
+                        upgrade_mut!(this.factory, factory);
+                        factory.bus_free(bus_slot);
+                        *slot_to_free = None;
+                        this.next_item += 1;
+                        if this.next_item == this.config.items.len() {
+                            this.next_item = 0
+                        }
+                        std::fs::write(this.config.file_name, this.next_item.to_string())
+                            .map_err(|e| format!("{}: {}", this.config.name, e))
+                    }
+                } else {
+                    return Ok(());
+                }
+            };
+            let result = task.await;
+            if let Some(slot) = slot_to_free {
+                alive(&weak)?.borrow().factory.upgrade().unwrap().borrow_mut().bus_deposit(once(slot))
+            }
+            result
+        })
     }
 }
