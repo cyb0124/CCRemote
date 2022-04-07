@@ -53,6 +53,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         ] {
             factory.add_storage(ChestConfig {
                 accesses: vec![BusAccess { client: "1a", inv_addr, bus_addr: "ironchest:diamond_chest_31" }],
+                override_max_stack_size: None,
             })
         }
         factory.add_storage(DrawerConfig {
