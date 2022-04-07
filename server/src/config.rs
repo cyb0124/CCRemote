@@ -20,6 +20,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 inv_addr: "ironchest:obsidian_chest_1",
                 bus_addr: "enderstorage:ender_chest_1",
             }],
+            override_max_stack_size: None,
         })
     })
 }
