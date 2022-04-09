@@ -17,13 +17,14 @@ use std::rc::{Rc, Weak};
 pub struct MultiInvSlottedInput {
     item: Filter,
     size: i32,
-    slots: Vec<(usize, usize)>,
+    slots: Vec<(usize, usize, i32)>,
     allow_backup: bool,
     extra_backup: i32,
 }
 
 impl MultiInvSlottedInput {
-    pub fn new(item: Filter, size: i32, slots: Vec<(usize, usize)>) -> Self {
+    pub fn new(item: Filter, slots: Vec<(usize, usize, i32)>) -> Self {
+        let size = slots.iter().map(|(_, _, size)| size).sum();
         MultiInvSlottedInput { item, size, slots, allow_backup: false, extra_backup: 0 }
     }
 }
@@ -33,7 +34,7 @@ impl_input!(MultiInvSlottedInput);
 pub struct MultiInvSlottedRecipe {
     pub outputs: Vec<Output>,
     pub inputs: Vec<MultiInvSlottedInput>,
-    pub max_per_slot: i32,
+    pub max_sets: i32,
 }
 
 impl_recipe!(MultiInvSlottedRecipe, MultiInvSlottedInput);
@@ -162,8 +163,8 @@ impl Process for MultiInvSlottedProcess {
                     let recipe = &this.recipes[demand.i_recipe];
                     let mut used_slots = FnvHashSet::<(usize, usize)>::default();
                     for (i_input, input) in recipe.inputs.iter().enumerate() {
-                        let size_per_slot = input.size / input.slots.len() as i32;
-                        for slot in &input.slots {
+                        for (inv, inv_slot, mult) in &input.slots {
+                            let slot = (*inv, *inv_slot);
                             let existing_input = existing_inputs.get(&slot).unwrap();
                             let existing_size = if let Some(existing_input) = existing_input {
                                 if existing_input.item != demand.inputs.items[i_input].0 {
@@ -175,13 +176,13 @@ impl Process for MultiInvSlottedProcess {
                             };
                             demand.inputs.n_sets = min(
                                 demand.inputs.n_sets,
-                                (min(recipe.max_per_slot, demand.inputs.items[i_input].1.max_size) - existing_size)
-                                    / size_per_slot,
+                                (min(recipe.max_sets * mult, demand.inputs.items[i_input].1.max_size) - existing_size)
+                                    / mult,
                             );
                             if demand.inputs.n_sets <= 0 {
                                 continue 'recipe;
                             }
-                            used_slots.insert(*slot);
+                            used_slots.insert(slot);
                         }
                     }
                     for (slot, existing_input) in &existing_inputs {
@@ -234,9 +235,9 @@ impl MultiInvSlottedProcess {
                     let recipe = &this.recipes[demand.i_recipe];
                     for (i_input, input) in recipe.inputs.iter().enumerate() {
                         let size_per_slot = input.size / input.slots.len() as i32;
-                        for (inv_i, inv_slot) in &input.slots {
+                        for (inv, inv_slot, _) in &input.slots {
                             let action = ActionFuture::from(Call {
-                                addr: access.inv_addrs[*inv_i],
+                                addr: access.inv_addrs[*inv],
                                 args: vec![
                                     "pullItems".into(),
                                     access.bus_addr.into(),
