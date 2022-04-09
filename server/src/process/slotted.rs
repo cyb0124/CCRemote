@@ -3,8 +3,8 @@ use super::super::action::{ActionFuture, Call};
 use super::super::detail_cache::DetailCache;
 use super::super::factory::Factory;
 use super::super::inventory::{list_inventory, Inventory};
-use super::super::item::DetailStack;
-use super::super::recipe::{compute_demands, Demand, Output, Recipe, SlottedInput};
+use super::super::item::{DetailStack, Filter};
+use super::super::recipe::{compute_demands, Demand, Input, Output, Recipe};
 use super::super::server::Server;
 use super::super::util::{alive, join_outputs, join_tasks, spawn, AbortOnDrop};
 use super::{extract_output, ExtractFilter, IntoProcess, Process};
@@ -15,10 +15,27 @@ use std::{
     rc::{Rc, Weak},
 };
 
+pub struct SlottedInput {
+    item: Filter,
+    pub size: i32,
+    pub slots: Vec<(usize, i32)>,
+    allow_backup: bool,
+    extra_backup: i32,
+}
+
+impl SlottedInput {
+    pub fn new(item: Filter, slots: Vec<(usize, i32)>) -> Self {
+        let size = slots.iter().map(|(_, size)| size).sum();
+        SlottedInput { item, size, slots, allow_backup: false, extra_backup: 0 }
+    }
+}
+
+impl_input!(SlottedInput);
+
 pub struct SlottedRecipe {
     pub outputs: Vec<Output>,
     pub inputs: Vec<SlottedInput>,
-    pub max_per_slot: i32,
+    pub max_sets: i32,
 }
 
 impl_recipe!(SlottedRecipe, SlottedInput);
@@ -76,9 +93,8 @@ impl Process for SlottedProcess {
                     let recipe = &this.config.recipes[demand.i_recipe];
                     let mut used_slots = FnvHashSet::<usize>::default();
                     for (i_input, input) in recipe.inputs.iter().enumerate() {
-                        let size_per_slot = input.size / input.slots.len() as i32;
-                        for slot in &input.slots {
-                            let existing_input = existing_inputs.get(&slot).unwrap();
+                        for (slot, mult) in &input.slots {
+                            let existing_input = existing_inputs.get(slot).unwrap();
                             let existing_size = if let Some(existing_input) = existing_input {
                                 if existing_input.item != demand.inputs.items[i_input].0 {
                                     continue 'recipe;
@@ -89,8 +105,8 @@ impl Process for SlottedProcess {
                             };
                             demand.inputs.n_sets = min(
                                 demand.inputs.n_sets,
-                                (min(recipe.max_per_slot, demand.inputs.items[i_input].1.max_size) - existing_size)
-                                    / size_per_slot,
+                                (min(recipe.max_sets * mult, demand.inputs.items[i_input].1.max_size) - existing_size)
+                                    / mult,
                             );
                             if demand.inputs.n_sets <= 0 {
                                 continue 'recipe;
@@ -151,7 +167,7 @@ impl SlottedProcess {
                     let recipe = &this.config.recipes[demand.i_recipe];
                     for (i_input, input) in recipe.inputs.iter().enumerate() {
                         let size_per_slot = input.size / input.slots.len() as i32;
-                        for inv_slot in &input.slots {
+                        for (inv_slot, _) in &input.slots {
                             let action = ActionFuture::from(Call {
                                 addr: access.inv_addr,
                                 args: vec![

@@ -140,7 +140,7 @@ pub fn compute_demands(factory: &Factory, recipes: &Vec<impl Recipe>) -> Vec<Dem
     result
 }
 
-pub struct SlottedInput {
+pub struct CraftingGridInput {
     item: Filter,
     pub size: i32,
     pub slots: Vec<usize>,
@@ -148,13 +148,13 @@ pub struct SlottedInput {
     extra_backup: i32,
 }
 
-impl SlottedInput {
-    pub fn new(item: Filter, size: i32, slots: Vec<usize>) -> Self {
-        SlottedInput { item, size, slots, allow_backup: false, extra_backup: 0 }
+impl CraftingGridInput {
+    pub fn new(item: Filter, slots: Vec<usize>) -> Self {
+        CraftingGridInput { item, size: slots.len() as i32, slots, allow_backup: false, extra_backup: 0 }
     }
 }
 
-impl_input!(SlottedInput);
+impl_input!(CraftingGridInput);
 
 pub struct NonConsumable {
     pub storage_slot: usize,
@@ -167,10 +167,10 @@ pub struct CraftingGridRecipe {
     //   0, 1, 2
     //   3, 4, 5
     //   6, 7, 8
-    pub inputs: Vec<SlottedInput>,
+    pub inputs: Vec<CraftingGridInput>,
     // can't craft more than one stack at a time.
     pub max_sets: i32,
     pub non_consumables: Vec<NonConsumable>,
 }
 
-impl_recipe!(CraftingGridRecipe, SlottedInput);
+impl_recipe!(CraftingGridRecipe, CraftingGridInput);
