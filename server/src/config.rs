@@ -1,8 +1,8 @@
 use super::detail_cache::DetailCache;
 use super::factory::{Factory, FactoryConfig};
 use super::server::Server;
-use super::{access::*, item::*, process::*, recipe::*, storage::*};
-use std::{cell::RefCell, rc::Rc, time::Duration};
+use super::{access::*, item::*, lua_value::*, process::*, recipe::*, storage::*};
+use std::{cell::RefCell, convert::TryFrom, rc::Rc, time::Duration};
 
 pub fn build_factory() -> Rc<RefCell<Factory>> {
     /*
@@ -18,7 +18,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
     FactoryConfig {
         detail_cache: DetailCache::new(),
         server: Server::new(1847),
-        min_cycle_time: Duration::from_secs(1),
+        min_cycle_time: Duration::from_secs(3),
         log_clients: vec!["1a"],
         bus_accesses: vec![BasicAccess { client: "1a", addr: "ironchest:diamond_chest_31" }],
         backups: vec![
@@ -39,8 +39,17 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
     .build(|factory| {
         let air_canister = |full| {
             Filter::Fn(Box::new(move |_, detail| {
-                detail.label == "Air Canister"
-                    && detail.others.get(&super::lua_value::Key::from("durability")).is_none() == full
+                detail.label == "Air Canister" && detail.others.get(&Key::from("durability")).is_none() == full
+            }))
+        };
+        let cleaver = |repaired| {
+            Filter::Fn(Box::new(move |_, detail| {
+                detail.label == "Rose Gold Cleaver"
+                    && detail
+                        .others
+                        .get(&Key::from("damage"))
+                        .and_then(|x| i32::try_from(x.clone()).ok())
+                        .map_or(false, |x| (x < 200) == repaired)
             }))
         };
         factory.add_storage(ChestConfig {
@@ -208,6 +217,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 BufferedInput::new(Filter::Label("Source Berry"), i32::MAX).extra_backup(1024),
                 BufferedInput::new(Filter::Label("Cobblestone"), i32::MAX).extra_backup(16384),
                 BufferedInput::new(Filter::Label("Shiverstone"), i32::MAX).extra_backup(16384),
+                BufferedInput::new(Filter::Label("Silk Fiber"), i32::MAX).extra_backup(1024),
                 BufferedInput::new(Filter::Label("Magebloom"), i32::MAX).extra_backup(1024),
                 BufferedInput::new(Filter::Label("Habanero"), i32::MAX).extra_backup(1024),
                 BufferedInput::new(Filter::Label("Pepper"), i32::MAX).extra_backup(1024),
@@ -2175,11 +2185,26 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             to_extract: None,
             recipes: vec![
                 MultiInvSlottedRecipe {
+                    outputs: vec![],
+                    inputs: vec![
+                        MultiInvSlottedInput::new(Filter::Label("Andesite Cobblestone"), vec![(9, 0, 1)]),
+                        MultiInvSlottedInput::new(cleaver(false), vec![(0, 0, 1)]),
+                        MultiInvSlottedInput::new(Filter::Label("Rose Gold Repair Kit"), vec![(1, 0, 1)]),
+                    ],
+                    max_sets: 1,
+                },
+                MultiInvSlottedRecipe {
                     outputs: vec![Output { item: Filter::Name("thermal:machine_frame"), n_wanted: 4 }],
                     inputs: vec![
                         MultiInvSlottedInput::new(Filter::Label("Andesite Cobblestone"), vec![(9, 0, 1)]),
-                        MultiInvSlottedInput::new(Filter::Label("Iron Plate"), vec![(0, 0, 1), (2, 0, 1), (6, 0, 1), (8, 0, 1)]),
-                        MultiInvSlottedInput::new(Filter::Label("Glass Pane"), vec![(1, 0, 1), (3, 0, 1), (5, 0, 1), (7, 0, 1)]),
+                        MultiInvSlottedInput::new(
+                            Filter::Label("Iron Plate"),
+                            vec![(0, 0, 1), (2, 0, 1), (6, 0, 1), (8, 0, 1)],
+                        ),
+                        MultiInvSlottedInput::new(
+                            Filter::Label("Glass Pane"),
+                            vec![(1, 0, 1), (3, 0, 1), (5, 0, 1), (7, 0, 1)],
+                        ),
                         MultiInvSlottedInput::new(Filter::Label("Iron Gear"), vec![(4, 0, 1)]),
                     ],
                     max_sets: 1,
@@ -2192,7 +2217,10 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                             Filter::Label("Copper Plate"),
                             vec![(0, 0, 1), (2, 0, 1), (6, 0, 1), (8, 0, 1)],
                         ),
-                        MultiInvSlottedInput::new(Filter::Label("Glass Pane"), vec![(1, 0, 1), (3, 0, 1), (5, 0, 1), (7, 0, 1)]),
+                        MultiInvSlottedInput::new(
+                            Filter::Label("Glass Pane"),
+                            vec![(1, 0, 1), (3, 0, 1), (5, 0, 1), (7, 0, 1)],
+                        ),
                         MultiInvSlottedInput::new(Filter::Label("Bronze Gear"), vec![(4, 0, 1)]),
                     ],
                     max_sets: 1,
@@ -2216,8 +2244,14 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     outputs: vec![Output { item: Filter::Label("Redstone Flux Cell Frame"), n_wanted: 4 }],
                     inputs: vec![
                         MultiInvSlottedInput::new(Filter::Label("Andesite Cobblestone"), vec![(9, 0, 1)]),
-                        MultiInvSlottedInput::new(Filter::Label("Lead Plate"), vec![(0, 0, 1), (2, 0, 1), (6, 0, 1), (8, 0, 1)]),
-                        MultiInvSlottedInput::new(Filter::Label("Glass Pane"), vec![(1, 0, 1), (3, 0, 1), (5, 0, 1), (7, 0, 1)]),
+                        MultiInvSlottedInput::new(
+                            Filter::Label("Lead Plate"),
+                            vec![(0, 0, 1), (2, 0, 1), (6, 0, 1), (8, 0, 1)],
+                        ),
+                        MultiInvSlottedInput::new(
+                            Filter::Label("Glass Pane"),
+                            vec![(1, 0, 1), (3, 0, 1), (5, 0, 1), (7, 0, 1)],
+                        ),
                         MultiInvSlottedInput::new(Filter::Label("Electrum Gear"), vec![(4, 0, 1)]),
                     ],
                     max_sets: 1,
@@ -2288,7 +2322,16 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                         MultiInvSlottedInput::new(Filter::Label("Andesite Alloy"), vec![(4, 0, 1)]),
                         MultiInvSlottedInput::new(
                             Filter::Label("Oak Button"),
-                            vec![(0, 0, 1), (1, 0, 1), (2, 0, 1), (3, 0, 1), (5, 0, 1), (6, 0, 1), (7, 0, 1), (8, 0, 1)],
+                            vec![
+                                (0, 0, 1),
+                                (1, 0, 1),
+                                (2, 0, 1),
+                                (3, 0, 1),
+                                (5, 0, 1),
+                                (6, 0, 1),
+                                (7, 0, 1),
+                                (8, 0, 1),
+                            ],
                         ),
                     ],
                     max_sets: 1,
@@ -2298,8 +2341,14 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     inputs: vec![
                         MultiInvSlottedInput::new(Filter::Label("Andesite Cobblestone"), vec![(9, 0, 1)]),
                         MultiInvSlottedInput::new(Filter::Label("Andesite Alloy"), vec![(4, 0, 1)]),
-                        MultiInvSlottedInput::new(Filter::Label("Oak Button"), vec![(0, 0, 1), (2, 0, 1), (6, 0, 1), (8, 0, 1)]),
-                        MultiInvSlottedInput::new(Filter::Label("Oak Planks"), vec![(1, 0, 1), (3, 0, 1), (5, 0, 1), (7, 0, 1)]),
+                        MultiInvSlottedInput::new(
+                            Filter::Label("Oak Button"),
+                            vec![(0, 0, 1), (2, 0, 1), (6, 0, 1), (8, 0, 1)],
+                        ),
+                        MultiInvSlottedInput::new(
+                            Filter::Label("Oak Planks"),
+                            vec![(1, 0, 1), (3, 0, 1), (5, 0, 1), (7, 0, 1)],
+                        ),
                     ],
                     max_sets: 1,
                 },
@@ -2309,7 +2358,16 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                         MultiInvSlottedInput::new(Filter::Label("Andesite Cobblestone"), vec![(9, 0, 1)]),
                         MultiInvSlottedInput::new(
                             Filter::Label("Oak Planks"),
-                            vec![(0, 0, 1), (1, 0, 1), (2, 0, 1), (3, 0, 1), (5, 0, 1), (6, 0, 1), (7, 0, 1), (8, 0, 1)],
+                            vec![
+                                (0, 0, 1),
+                                (1, 0, 1),
+                                (2, 0, 1),
+                                (3, 0, 1),
+                                (5, 0, 1),
+                                (6, 0, 1),
+                                (7, 0, 1),
+                                (8, 0, 1),
+                            ],
                         ),
                     ],
                     max_sets: 1,
@@ -2448,7 +2506,10 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     outputs: vec![Output { item: Filter::Label("Reinforced Stone Slab"), n_wanted: 16 }],
                     inputs: vec![
                         MultiInvSlottedInput::new(Filter::Label("Andesite Cobblestone"), vec![(9, 0, 1)]),
-                        MultiInvSlottedInput::new(Filter::Label("Reinforced Stone"), vec![(0, 0, 1), (1, 0, 1), (2, 0, 1)]),
+                        MultiInvSlottedInput::new(
+                            Filter::Label("Reinforced Stone"),
+                            vec![(0, 0, 1), (1, 0, 1), (2, 0, 1)],
+                        ),
                     ],
                     max_sets: 1,
                 },
@@ -2540,7 +2601,10 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     inputs: vec![
                         MultiInvSlottedInput::new(Filter::Label("Andesite Cobblestone"), vec![(9, 0, 1)]),
                         MultiInvSlottedInput::new(Filter::Label("Lightning Charge"), vec![(4, 0, 1)]),
-                        MultiInvSlottedInput::new(Filter::Label("Arrow"), vec![(1, 0, 1), (3, 0, 1), (5, 0, 1), (7, 0, 1)]),
+                        MultiInvSlottedInput::new(
+                            Filter::Label("Arrow"),
+                            vec![(1, 0, 1), (3, 0, 1), (5, 0, 1), (7, 0, 1)],
+                        ),
                     ],
                     max_sets: 1,
                 },
@@ -2581,7 +2645,16 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                         MultiInvSlottedInput::new(Filter::Label("Iron Ingot"), vec![(4, 0, 1)]),
                         MultiInvSlottedInput::new(
                             Filter::Label("LV Wire Coil"),
-                            vec![(0, 0, 1), (1, 0, 1), (2, 0, 1), (3, 0, 1), (5, 0, 1), (6, 0, 1), (7, 0, 1), (8, 0, 1)],
+                            vec![
+                                (0, 0, 1),
+                                (1, 0, 1),
+                                (2, 0, 1),
+                                (3, 0, 1),
+                                (5, 0, 1),
+                                (6, 0, 1),
+                                (7, 0, 1),
+                                (8, 0, 1),
+                            ],
                         ),
                     ],
                     max_sets: 1,
@@ -2591,7 +2664,10 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     inputs: vec![
                         MultiInvSlottedInput::new(Filter::Label("Andesite Cobblestone"), vec![(9, 0, 1)]),
                         MultiInvSlottedInput::new(Filter::Label("Copper Ingot"), vec![(1, 0, 1), (4, 0, 1), (7, 0, 1)]),
-                        MultiInvSlottedInput::new(Filter::Label("Terracotta"), vec![(3, 0, 1), (5, 0, 1), (6, 0, 1), (8, 0, 1)]),
+                        MultiInvSlottedInput::new(
+                            Filter::Label("Terracotta"),
+                            vec![(3, 0, 1), (5, 0, 1), (6, 0, 1), (8, 0, 1)],
+                        ),
                     ],
                     max_sets: 1,
                 },
@@ -2599,8 +2675,14 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     outputs: vec![Output { item: Filter::Label("MV Wire Connector"), n_wanted: 16 }],
                     inputs: vec![
                         MultiInvSlottedInput::new(Filter::Label("Andesite Cobblestone"), vec![(9, 0, 1)]),
-                        MultiInvSlottedInput::new(Filter::Label("Electrum Ingot"), vec![(1, 0, 1), (4, 0, 1), (7, 0, 1)]),
-                        MultiInvSlottedInput::new(Filter::Label("Terracotta"), vec![(3, 0, 1), (5, 0, 1), (6, 0, 1), (8, 0, 1)]),
+                        MultiInvSlottedInput::new(
+                            Filter::Label("Electrum Ingot"),
+                            vec![(1, 0, 1), (4, 0, 1), (7, 0, 1)],
+                        ),
+                        MultiInvSlottedInput::new(
+                            Filter::Label("Terracotta"),
+                            vec![(3, 0, 1), (5, 0, 1), (6, 0, 1), (8, 0, 1)],
+                        ),
                     ],
                     max_sets: 1,
                 },
@@ -2608,8 +2690,14 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     outputs: vec![Output { item: Filter::Label("HV Wire Connector"), n_wanted: 16 }],
                     inputs: vec![
                         MultiInvSlottedInput::new(Filter::Label("Andesite Cobblestone"), vec![(9, 0, 1)]),
-                        MultiInvSlottedInput::new(Filter::Label("Aluminum Ingot"), vec![(1, 0, 1), (4, 0, 1), (7, 0, 1)]),
-                        MultiInvSlottedInput::new(Filter::Label("Terracotta"), vec![(3, 0, 1), (5, 0, 1), (6, 0, 1), (8, 0, 1)]),
+                        MultiInvSlottedInput::new(
+                            Filter::Label("Aluminum Ingot"),
+                            vec![(1, 0, 1), (4, 0, 1), (7, 0, 1)],
+                        ),
+                        MultiInvSlottedInput::new(
+                            Filter::Label("Terracotta"),
+                            vec![(3, 0, 1), (5, 0, 1), (6, 0, 1), (8, 0, 1)],
+                        ),
                     ],
                     max_sets: 1,
                 },
@@ -2662,7 +2750,10 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     outputs: vec![Output { item: Filter::Label("Tesla Coil"), n_wanted: 4 }],
                     inputs: vec![
                         MultiInvSlottedInput::new(Filter::Label("Andesite Cobblestone"), vec![(9, 0, 1)]),
-                        MultiInvSlottedInput::new(Filter::Label("Aluminum Ingot"), vec![(0, 0, 1), (1, 0, 1), (2, 0, 1)]),
+                        MultiInvSlottedInput::new(
+                            Filter::Label("Aluminum Ingot"),
+                            vec![(0, 0, 1), (1, 0, 1), (2, 0, 1)],
+                        ),
                         MultiInvSlottedInput::new(Filter::Label("Copper Coil Block"), vec![(4, 0, 1), (7, 0, 1)]),
                         MultiInvSlottedInput::new(Filter::Label("HV Capacitor"), vec![(6, 0, 1), (8, 0, 1)]),
                     ],
@@ -2672,7 +2763,10 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     outputs: vec![Output { item: Filter::Label("Hardened Integral Components"), n_wanted: 4 }],
                     inputs: vec![
                         MultiInvSlottedInput::new(Filter::Label("Andesite Cobblestone"), vec![(9, 0, 1)]),
-                        MultiInvSlottedInput::new(Filter::Label("Invar Gear"), vec![(0, 0, 1), (2, 0, 1), (6, 0, 1), (8, 0, 1)]),
+                        MultiInvSlottedInput::new(
+                            Filter::Label("Invar Gear"),
+                            vec![(0, 0, 1), (2, 0, 1), (6, 0, 1), (8, 0, 1)],
+                        ),
                         MultiInvSlottedInput::new(Filter::Label("Blue Connector"), vec![(3, 0, 1), (5, 0, 1)]),
                         MultiInvSlottedInput::new(Filter::Label("Redstone Flux Cell"), vec![(1, 0, 1)]),
                         MultiInvSlottedInput::new(Filter::Label("Fluid Cell"), vec![(7, 0, 1)]),
@@ -2841,7 +2935,10 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     inputs: vec![
                         MultiInvSlottedInput::new(Filter::Label("Andesite Cobblestone"), vec![(9, 0, 1)]),
                         MultiInvSlottedInput::new(Filter::Label("Flourishing Archwood Sapling"), vec![(4, 0, 1)]),
-                        MultiInvSlottedInput::new(Filter::Label("Beeswax"), vec![(0, 0, 1), (2, 0, 1), (6, 0, 1), (8, 0, 1)]),
+                        MultiInvSlottedInput::new(
+                            Filter::Label("Beeswax"),
+                            vec![(0, 0, 1), (2, 0, 1), (6, 0, 1), (8, 0, 1)],
+                        ),
                         MultiInvSlottedInput::new(
                             Filter::Label("item.resourcefulbees.forest_honeycomb"),
                             vec![(1, 0, 1), (3, 0, 1), (5, 0, 1), (7, 0, 1)],
@@ -2875,7 +2972,16 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                         MultiInvSlottedInput::new(Filter::Label("Black Dye"), vec![(4, 0, 1)]),
                         MultiInvSlottedInput::new(
                             Filter::Label("Glass"),
-                            vec![(0, 0, 1), (1, 0, 1), (2, 0, 1), (3, 0, 1), (5, 0, 1), (6, 0, 1), (7, 0, 1), (8, 0, 1)],
+                            vec![
+                                (0, 0, 1),
+                                (1, 0, 1),
+                                (2, 0, 1),
+                                (3, 0, 1),
+                                (5, 0, 1),
+                                (6, 0, 1),
+                                (7, 0, 1),
+                                (8, 0, 1),
+                            ],
                         ),
                     ],
                     max_sets: 1,
@@ -2884,7 +2990,10 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     outputs: vec![Output { item: Filter::Label("Thermal Lagging"), n_wanted: 16 }],
                     inputs: vec![
                         MultiInvSlottedInput::new(Filter::Label("Andesite Cobblestone"), vec![(9, 0, 1)]),
-                        MultiInvSlottedInput::new(Filter::Label("Gray Rockwool"), vec![(3, 0, 1), (4, 0, 1), (5, 0, 1)]),
+                        MultiInvSlottedInput::new(
+                            Filter::Label("Gray Rockwool"),
+                            vec![(3, 0, 1), (4, 0, 1), (5, 0, 1)],
+                        ),
                         MultiInvSlottedInput::new(
                             Filter::Label("Black Stained Glass Pane"),
                             vec![(0, 0, 1), (1, 0, 1), (2, 0, 1), (6, 0, 1), (7, 0, 1), (8, 0, 1)],
@@ -2922,7 +3031,10 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     outputs: vec![Output { item: Filter::Label("Pie Crust"), n_wanted: 16 }],
                     inputs: vec![
                         MultiInvSlottedInput::new(Filter::Label("Andesite Cobblestone"), vec![(9, 0, 1)]),
-                        MultiInvSlottedInput::new(Filter::Label("Wheat Dough"), vec![(3, 0, 1), (5, 0, 1) ,(6, 0, 1), (7, 0, 1) ,(8, 0, 1)]),
+                        MultiInvSlottedInput::new(
+                            Filter::Label("Wheat Dough"),
+                            vec![(3, 0, 1), (5, 0, 1), (6, 0, 1), (7, 0, 1), (8, 0, 1)],
+                        ),
                     ],
                     max_sets: 1,
                 },
@@ -2935,6 +3047,27 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                         MultiInvSlottedInput::new(Filter::Label("Pie Crust"), vec![(7, 0, 1)]),
                         MultiInvSlottedInput::new(Filter::Label("Wheat Dough"), vec![(1, 0, 1)]),
                         MultiInvSlottedInput::new(Filter::Label("Source Berry"), vec![(3, 0, 1), (5, 0, 1)]),
+                    ],
+                    max_sets: 1,
+                },
+                MultiInvSlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Magebloom Fiber"), n_wanted: 16 }],
+                    inputs: vec![
+                        MultiInvSlottedInput::new(Filter::Label("Andesite Cobblestone"), vec![(9, 0, 1)]),
+                        MultiInvSlottedInput::new(Filter::Label("Magebloom"), vec![(4, 0, 1)]),
+                        MultiInvSlottedInput::new(
+                            Filter::Label("Silk Fiber"),
+                            vec![
+                                (0, 0, 1),
+                                (1, 0, 1),
+                                (2, 0, 1),
+                                (3, 0, 1),
+                                (5, 0, 1),
+                                (6, 0, 1),
+                                (7, 0, 1),
+                                (8, 0, 1),
+                            ],
+                        ),
                     ],
                     max_sets: 1,
                 },
@@ -3157,7 +3290,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     MultiInvSlottedInput::new(Filter::Label("Redstone Dust"), vec![(1, 0, 16)]),
                     MultiInvSlottedInput::new(Filter::Label("Obsidian"), vec![(1, 1, 1)]),
                 ],
-                max_sets: 1
+                max_sets: 1,
             }],
         });
         factory.add_process(MultiInvSlottedConfig {
@@ -3178,7 +3311,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                         MultiInvSlottedInput::new(Filter::Label("Shiverstone"), vec![(1, 1, 6)]),
                         MultiInvSlottedInput::new(Filter::Label("Prismarine"), vec![(1, 2, 6)]),
                     ],
-                    max_sets: 1
+                    max_sets: 1,
                 },
                 MultiInvSlottedRecipe {
                     outputs: vec![Output { item: Filter::Label("Arcane Stone"), n_wanted: 16 }],
@@ -3188,7 +3321,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                         MultiInvSlottedInput::new(Filter::Label("Apatite"), vec![(1, 1, 1)]),
                         MultiInvSlottedInput::new(Filter::Label("Clay"), vec![(1, 2, 3)]),
                     ],
-                    max_sets: 1
+                    max_sets: 1,
                 },
                 MultiInvSlottedRecipe {
                     outputs: vec![Output { item: Filter::Label("Lodestone"), n_wanted: 16 }],
@@ -3199,7 +3332,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                         MultiInvSlottedInput::new(Filter::Label("Iron Dust"), vec![(1, 2, 1)]),
                         MultiInvSlottedInput::new(Filter::Label("Fluorite"), vec![(1, 3, 1)]),
                     ],
-                    max_sets: 1
+                    max_sets: 1,
                 },
             ],
         });
@@ -3299,7 +3432,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                         ),
                         MultiInvSlottedInput::new(Filter::Label("Sulfur Dust"), vec![(0, 0, 1)]),
                     ],
-                    max_sets: 1
+                    max_sets: 1,
                 },
                 MultiInvSlottedRecipe {
                     outputs: vec![Output { item: Filter::Label("Otherstone Tablet"), n_wanted: 16 }],
@@ -3308,10 +3441,13 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                             Filter::Label("Otherstone Slab"),
                             vec![(1, 0, 1), (2, 0, 1), (3, 0, 1), (4, 0, 1)],
                         ),
-                        MultiInvSlottedInput::new(Filter::Label("Flux Dust"), vec![(5, 0, 1), (6, 0, 1), (7, 0, 1), (8, 0, 1)]),
+                        MultiInvSlottedInput::new(
+                            Filter::Label("Flux Dust"),
+                            vec![(5, 0, 1), (6, 0, 1), (7, 0, 1), (8, 0, 1)],
+                        ),
                         MultiInvSlottedInput::new(Filter::Name("emendatusenigmatica:arcane_gem"), vec![(0, 0, 1)]),
                     ],
-                    max_sets: 1
+                    max_sets: 1,
                 },
                 MultiInvSlottedRecipe {
                     outputs: vec![Output { item: Filter::Label("Arcane Gold Ingot"), n_wanted: 16 }],
@@ -3321,24 +3457,18 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                         MultiInvSlottedInput::new(Filter::Label("Enchanted Ash"), vec![(5, 0, 1)]),
                         MultiInvSlottedInput::new(Filter::Label("Soul Shard"), vec![(0, 0, 1)]),
                     ],
-                    max_sets: 1
+                    max_sets: 1,
                 },
                 MultiInvSlottedRecipe {
                     outputs: vec![Output { item: Filter::Label("Magebloom Seed"), n_wanted: 16 }],
                     inputs: vec![
-                        MultiInvSlottedInput::new(Filter::Name("emendatusenigmatica:arcane_gem"), vec![(1, 0, 1), (2, 0, 1), (3, 0, 1), (4, 0, 1)]),
+                        MultiInvSlottedInput::new(
+                            Filter::Name("emendatusenigmatica:arcane_gem"),
+                            vec![(1, 0, 1), (2, 0, 1), (3, 0, 1), (4, 0, 1)],
+                        ),
                         MultiInvSlottedInput::new(Filter::Label("Potato Seeds"), vec![(0, 0, 1)]),
                     ],
-                    max_sets: 1
-                },
-                MultiInvSlottedRecipe {
-                    outputs: vec![],
-                    inputs: vec![
-                        MultiInvSlottedInput::new(Filter::Label("Blank Slate"), vec![(1, 0, 1), (2, 0, 1), (3, 0, 1), (4, 0, 1), (5, 0, 1), (6, 0, 1)]),
-                        MultiInvSlottedInput::new(Filter::Label("Calx of End"), vec![(7, 0, 1), (8, 0, 1)]),
-                        MultiInvSlottedInput::new(Filter::Label("Livingwood"), vec![(0, 0, 1)]),
-                    ],
-                    max_sets: 1
+                    max_sets: 1,
                 },
             ],
         });
@@ -3505,120 +3635,107 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             max_recipe_inputs: 8,
             stocks: vec![],
         });
-        factory.add_process(SlottedConfig {
-            name: "phytoStock",
-            accesses: vec![BusAccess {
-                client: "1a",
-                inv_addr: "thermal:machine_insolator_0",
-                bus_addr: "ironchest:diamond_chest_31",
-            }],
-            input_slots: vec![1],
-            to_extract: Some(Box::new(|slot, _| slot > 1)),
-            recipes: vec![SlottedRecipe {
-                outputs: vec![],
-                inputs: vec![SlottedInput::new(Filter::Label("Phyto-Gro"), vec![(1, 1)])],
-                max_sets: 64,
-            }],
-        });
-        factory.add_process(SlottedConfig {
+        factory.add_process(BufferedConfig {
             name: "phyto",
             accesses: vec![BusAccess {
                 client: "1a",
-                inv_addr: "thermal:machine_insolator_0",
+                inv_addr: "minecraft:barrel_100",
                 bus_addr: "ironchest:diamond_chest_31",
             }],
-            input_slots: vec![0],
+            slot_filter: None,
             to_extract: None,
             recipes: vec![
-                SlottedRecipe {
+                BufferedRecipe {
                     outputs: vec![
                         Output { item: Filter::Label("Apple"), n_wanted: 16 },
                         Output { item: Filter::Label("Flourishing Archwood Leaves"), n_wanted: 16 },
                     ],
-                    inputs: vec![SlottedInput::new(Filter::Label("Flourishing Archwood Sapling"), vec![(0, 1)])],
-                    max_sets: 2,
+                    inputs: vec![BufferedInput::new(Filter::Label("Flourishing Archwood Sapling"), 1)],
+                    max_inputs: i32::MAX,
                 },
-                SlottedRecipe {
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Industrial Hemp Fiber"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Industrial Hemp Seeds"), vec![(0, 1)])],
-                    max_sets: 2,
+                    inputs: vec![BufferedInput::new(Filter::Label("Industrial Hemp Seeds"), 1)],
+                    max_inputs: i32::MAX,
                 },
-                SlottedRecipe {
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Plum"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Plum Sapling"), vec![(0, 1)])],
-                    max_sets: 2,
+                    inputs: vec![BufferedInput::new(Filter::Label("Plum Sapling"), 1)],
+                    max_inputs: i32::MAX,
                 },
-                SlottedRecipe {
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Mango"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Mango Sapling"), vec![(0, 1)])],
-                    max_sets: 2,
+                    inputs: vec![BufferedInput::new(Filter::Label("Mango Sapling"), 1)],
+                    max_inputs: i32::MAX,
                 },
-                SlottedRecipe {
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Wheat"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Wheat Seeds"), vec![(0, 1)])],
-                    max_sets: 8,
+                    inputs: vec![BufferedInput::new(Filter::Label("Wheat Seeds"), 1)],
+                    max_inputs: i32::MAX,
                 },
-                SlottedRecipe {
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Ginger"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Ginger Seeds"), vec![(0, 1)])],
-                    max_sets: 8,
+                    inputs: vec![BufferedInput::new(Filter::Label("Ginger Seeds"), 1)],
+                    max_inputs: i32::MAX,
                 },
-                SlottedRecipe {
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Grass"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Grass"), vec![(0, 1)]).allow_backup()],
-                    max_sets: 8,
+                    inputs: vec![BufferedInput::new(Filter::Label("Grass"), 1).allow_backup()],
+                    max_inputs: i32::MAX,
                 },
-                SlottedRecipe {
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Potato"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Potato"), vec![(0, 1)]).allow_backup()],
-                    max_sets: 8,
+                    inputs: vec![BufferedInput::new(Filter::Label("Potato"), 1).allow_backup()],
+                    max_inputs: i32::MAX,
                 },
-                SlottedRecipe {
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Dandelion"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Dandelion"), vec![(0, 1)]).allow_backup()],
-                    max_sets: 8,
+                    inputs: vec![BufferedInput::new(Filter::Label("Dandelion"), 1).allow_backup()],
+                    max_inputs: i32::MAX,
                 },
-                SlottedRecipe {
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Cumin Seeds"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Cumin Seeds"), vec![(0, 1)]).allow_backup()],
-                    max_sets: 8,
+                    inputs: vec![BufferedInput::new(Filter::Label("Cumin Seeds"), 1).allow_backup()],
+                    max_inputs: i32::MAX,
                 },
-                SlottedRecipe {
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Rice Panicle"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Rice"), vec![(0, 1)]).allow_backup()],
-                    max_sets: 8,
+                    inputs: vec![BufferedInput::new(Filter::Label("Rice"), 1).allow_backup()],
+                    max_inputs: i32::MAX,
                 },
-                SlottedRecipe {
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Mystical Black Flower"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Mystical Black Flower"), vec![(0, 1)]).allow_backup()],
-                    max_sets: 8,
+                    inputs: vec![BufferedInput::new(Filter::Label("Mystical Black Flower"), 1).allow_backup()],
+                    max_inputs: i32::MAX,
                 },
-                SlottedRecipe {
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Mystical Green Flower"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Mystical Green Flower"), vec![(0, 1)]).allow_backup()],
-                    max_sets: 8,
+                    inputs: vec![BufferedInput::new(Filter::Label("Mystical Green Flower"), 1).allow_backup()],
+                    max_inputs: i32::MAX,
                 },
-                SlottedRecipe {
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Ditchbulb"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Ditchbulb"), vec![(0, 1)]).allow_backup()],
-                    max_sets: 8,
+                    inputs: vec![BufferedInput::new(Filter::Label("Ditchbulb"), 1).allow_backup()],
+                    max_inputs: i32::MAX,
                 },
-                SlottedRecipe {
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Nether Wart"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Nether Wart"), vec![(0, 1)]).allow_backup()],
-                    max_sets: 8,
+                    inputs: vec![BufferedInput::new(Filter::Label("Nether Wart"), 1).allow_backup()],
+                    max_inputs: i32::MAX,
                 },
-                SlottedRecipe {
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Sugar Cane"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Sugar Cane"), vec![(0, 1)]).allow_backup()],
-                    max_sets: 8,
+                    inputs: vec![BufferedInput::new(Filter::Label("Sugar Cane"), 1).allow_backup()],
+                    max_inputs: i32::MAX,
                 },
-                SlottedRecipe {
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Kelp"), n_wanted: 16 }],
-                    inputs: vec![SlottedInput::new(Filter::Label("Kelp"), vec![(0, 1)]).allow_backup()],
-                    max_sets: 8,
+                    inputs: vec![BufferedInput::new(Filter::Label("Kelp"), 1).allow_backup()],
+                    max_inputs: i32::MAX,
                 },
             ],
+            max_recipe_inputs: 8,
+            stocks: vec![BufferedInput::new(Filter::Label("Phyto-Gro"), 64)],
         });
         factory.add_process(BufferedConfig {
             name: "airCharger",
@@ -3686,6 +3803,37 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 ],
                 max_sets: 8,
             }],
+        });
+        factory.add_process(SlottedConfig {
+            name: "repairKit",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "thermal:machine_crucible_0",
+                bus_addr: "ironchest:diamond_chest_31",
+            }],
+            input_slots: vec![0],
+            to_extract: None,
+            recipes: vec![SlottedRecipe {
+                outputs: vec![Output { item: Filter::Label("Rose Gold Repair Kit"), n_wanted: 16 }],
+                inputs: vec![SlottedInput::new(Filter::Label("Rose Gold Ingot"), vec![(0, 2)])],
+                max_sets: 8,
+            }],
+        });
+        factory.add_process(BufferedConfig {
+            name: "silkFiber",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "create:deployer_11",
+                bus_addr: "ironchest:diamond_chest_31",
+            }],
+            slot_filter: None,
+            to_extract: {
+                let filter = cleaver(true);
+                Some(Box::new(move |_, stack| !filter.apply(&stack.item, &stack.detail)))
+            },
+            recipes: vec![],
+            max_recipe_inputs: 0,
+            stocks: vec![BufferedInput::new(cleaver(true), 1)],
         });
     })
 }
