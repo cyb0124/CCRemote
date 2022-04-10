@@ -42,9 +42,9 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 detail.label == "Air Canister" && detail.others.get(&Key::from("durability")).is_none() == full
             }))
         };
-        let cleaver = |repaired| {
+        let luck_cleaver = |repaired| {
             Filter::Fn(Box::new(move |_, detail| {
-                detail.label == "Rose Gold Cleaver"
+                detail.label == "Luck Cleaver"
                     && detail
                         .others
                         .get(&Key::from("damage"))
@@ -127,10 +127,23 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             stocks: vec![],
         });
         factory.add_process(BufferedConfig {
-            name: "xpTransposerOutput",
+            name: "fluxDustOutput",
             accesses: vec![BusAccess {
                 client: "1a",
-                inv_addr: "minecraft:barrel_87",
+                inv_addr: "minecraft:barrel_58",
+                bus_addr: "ironchest:diamond_chest_31",
+            }],
+            slot_filter: None,
+            to_extract: extract_all(),
+            recipes: vec![],
+            max_recipe_inputs: 0,
+            stocks: vec![],
+        });
+        factory.add_process(BufferedConfig {
+            name: "lithiumDissolutionOutput",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "minecraft:barrel_109",
                 bus_addr: "ironchest:diamond_chest_31",
             }],
             slot_filter: None,
@@ -190,8 +203,6 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     .extra_backup(1024),
                 BufferedInput::new(Filter::Label("block.resourcefulbees.slimy_honeycomb_block"), i32::MAX)
                     .extra_backup(1024),
-                BufferedInput::new(Filter::Label("block.resourcefulbees.blaze_honeycomb_block"), i32::MAX)
-                    .extra_backup(1024),
                 BufferedInput::new(Filter::Label("block.resourcefulbees.blitz_honeycomb_block"), i32::MAX)
                     .extra_backup(1024),
                 BufferedInput::new(Filter::Label("block.resourcefulbees.blizz_honeycomb_block"), i32::MAX)
@@ -208,6 +219,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     .extra_backup(16384),
                 BufferedInput::new(Filter::Label("item.resourcefulbees.forest_honeycomb"), i32::MAX)
                     .extra_backup(16384),
+                BufferedInput::new(Filter::Label("item.resourcefulbees.blaze_honeycomb"), i32::MAX).extra_backup(16384),
                 BufferedInput::new(Filter::Label("White Corundum Cluster"), i32::MAX).extra_backup(1024),
                 BufferedInput::new(Filter::Label("Andesite Cobblestone"), i32::MAX).extra_backup(16384),
                 BufferedInput::new(Filter::Label("Komodo Dragon Spit"), i32::MAX).extra_backup(1024),
@@ -273,11 +285,6 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             recipes: vec![],
             max_recipe_inputs: 0,
             stocks: vec![
-                BufferedInput::new(Filter::Label("Flourishing Archwood Leaves"), 64),
-                BufferedInput::new(Filter::Label("Bottle o' Enchanting"), 64),
-                BufferedInput::new(Filter::Label("Redstone Dust"), 64),
-                BufferedInput::new(Filter::Label("Glass Bottle"), 64),
-                BufferedInput::new(Filter::Label("Milk Bottle"), 16),
                 BufferedInput::new(Filter::Label("Blaze Cake"), 64),
                 BufferedInput::new(Filter::Label("Charcoal"), 64),
             ],
@@ -307,6 +314,49 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             recipes: vec![],
             max_recipe_inputs: i32::MAX,
             stocks: vec![BufferedInput::new(Filter::Label("Baked Potato"), 64)],
+        });
+        factory.add_process(BufferedConfig {
+            name: "bufferF",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "minecraft:barrel_103",
+                bus_addr: "ironchest:diamond_chest_31",
+            }],
+            slot_filter: None,
+            to_extract: None,
+            recipes: vec![],
+            max_recipe_inputs: i32::MAX,
+            stocks: vec![BufferedInput::new(Filter::Label("Lava Bucket"), 1)],
+        });
+        factory.add_process(BufferedConfig {
+            name: "bufferG",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "minecraft:barrel_105",
+                bus_addr: "ironchest:diamond_chest_31",
+            }],
+            slot_filter: None,
+            to_extract: None,
+            recipes: vec![
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Builder's Tea"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Glass Bottle"), 1)],
+                    max_inputs: 8,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Power Core (Low)"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Machine Base"), 1)],
+                    max_inputs: 4,
+                },
+            ],
+            max_recipe_inputs: i32::MAX,
+            stocks: vec![
+                BufferedInput::new(Filter::Label("Flourishing Archwood Leaves"), 64),
+                BufferedInput::new(Filter::Label("Redstone Dust"), 64),
+                BufferedInput::new(Filter::Label("Milk Bottle"), 16),
+                BufferedInput::new(Filter::Label("Blaze Cake"), 64),
+                BufferedInput::new(Filter::Label("Charcoal"), 64),
+            ],
         });
         factory.add_process(ItemCycleConfig {
             name: "gourmaryllis",
@@ -892,6 +942,11 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             to_extract: None,
             recipes: vec![
                 BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Popped Chorus Fruit"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Chorus Fruit"), 16)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Nether Brick"), n_wanted: 16 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Netherrack"), 16)],
                     max_inputs: i32::MAX,
@@ -1156,23 +1211,6 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 max_inputs: i32::MAX,
             }],
             max_recipe_inputs: 1,
-            stocks: vec![],
-        });
-        factory.add_process(BufferedConfig {
-            name: "buildersTeaSpout",
-            accesses: vec![BusAccess {
-                client: "1a",
-                inv_addr: "minecraft:barrel_94",
-                bus_addr: "ironchest:diamond_chest_31",
-            }],
-            slot_filter: None,
-            to_extract: None,
-            recipes: vec![BufferedRecipe {
-                outputs: vec![Output { item: Filter::Label("Builder's Tea"), n_wanted: 16 }],
-                inputs: vec![BufferedInput::new(Filter::Label("Glass Bottle"), 1)],
-                max_inputs: i32::MAX,
-            }],
-            max_recipe_inputs: 8,
             stocks: vec![],
         });
         factory.add_process(InputlessConfig {
@@ -1731,11 +1769,6 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 },
                 BufferedRecipe {
                     outputs: vec![],
-                    inputs: vec![BufferedInput::new(Filter::Label("item.resourcefulbees.blaze_honeycomb"), 9)],
-                    max_inputs: i32::MAX,
-                },
-                BufferedRecipe {
-                    outputs: vec![],
                     inputs: vec![BufferedInput::new(Filter::Label("item.resourcefulbees.blitz_honeycomb"), 9)],
                     max_inputs: i32::MAX,
                 },
@@ -1825,6 +1858,14 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                         n_wanted: 16,
                     }],
                     inputs: vec![BufferedInput::new(Filter::Label("item.resourcefulbees.forest_honeycomb"), 9)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output {
+                        item: Filter::Label("block.resourcefulbees.blaze_honeycomb_block"),
+                        n_wanted: 16,
+                    }],
+                    inputs: vec![BufferedInput::new(Filter::Label("item.resourcefulbees.blaze_honeycomb"), 9)],
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
@@ -1960,12 +2001,19 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             }],
             slot_filter: None,
             to_extract: None,
-            recipes: vec![BufferedRecipe {
-                outputs: vec![Output { item: Filter::Label("Blaze Cake"), n_wanted: 16 }],
-                inputs: vec![BufferedInput::new(Filter::Label("Blaze Cake Base"), 1)],
-                max_inputs: i32::MAX,
-            }],
-            max_recipe_inputs: 16,
+            recipes: vec![
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Blaze Cake"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Blaze Cake Base"), 1)],
+                    max_inputs: 8,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Lava Bucket"), n_wanted: 1 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Bucket"), 1)],
+                    max_inputs: 1,
+                },
+            ],
+            max_recipe_inputs: i32::MAX,
             stocks: vec![],
         });
         factory.add_process(SlottedConfig {
@@ -2206,7 +2254,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     outputs: vec![],
                     inputs: vec![
                         MultiInvSlottedInput::new(Filter::Label("Andesite Cobblestone"), vec![(9, 0, 1)]),
-                        MultiInvSlottedInput::new(cleaver(false), vec![(0, 0, 1)]),
+                        MultiInvSlottedInput::new(luck_cleaver(false), vec![(0, 0, 1)]),
                         MultiInvSlottedInput::new(Filter::Label("Rose Gold Repair Kit"), vec![(1, 0, 1)]),
                     ],
                     max_sets: 1,
@@ -3279,19 +3327,6 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             ],
             max_per_slot: 2,
         });
-        factory.add_process(BufferedConfig {
-            name: "fluxDustOutput",
-            accesses: vec![BusAccess {
-                client: "1a",
-                inv_addr: "minecraft:barrel_58",
-                bus_addr: "ironchest:diamond_chest_31",
-            }],
-            slot_filter: None,
-            to_extract: extract_all(),
-            recipes: vec![],
-            max_recipe_inputs: 0,
-            stocks: vec![],
-        });
         factory.add_process(MultiInvSlottedConfig {
             name: "fluxDust",
             input_slots: vec![vec![0], vec![0, 1]],
@@ -3412,23 +3447,6 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             recipes: vec![BufferedRecipe {
                 outputs: vec![Output { item: Filter::Label("block.kubejs.coated_machine_frame_top"), n_wanted: 4 }],
                 inputs: vec![BufferedInput::new(Filter::Label("block.kubejs.rough_machine_frame_top"), 1)],
-                max_inputs: i32::MAX,
-            }],
-            max_recipe_inputs: 4,
-            stocks: vec![],
-        });
-        factory.add_process(BufferedConfig {
-            name: "redstoneTPP",
-            accesses: vec![BusAccess {
-                client: "1a",
-                inv_addr: "minecraft:barrel_88",
-                bus_addr: "ironchest:diamond_chest_31",
-            }],
-            slot_filter: None,
-            to_extract: None,
-            recipes: vec![BufferedRecipe {
-                outputs: vec![Output { item: Filter::Label("Power Core (Low)"), n_wanted: 16 }],
-                inputs: vec![BufferedInput::new(Filter::Label("Machine Base"), 1)],
                 max_inputs: i32::MAX,
             }],
             max_recipe_inputs: 4,
@@ -3609,6 +3627,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             max_recipe_inputs: 8,
             stocks: vec![],
         });
+        /* TODO:
         factory.add_process(SlottedConfig {
             name: "xpTransposer",
             accesses: vec![BusAccess {
@@ -3631,6 +3650,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 },
             ],
         });
+        */
         factory.add_process(SlottedConfig {
             name: "energizingOrb",
             accesses: vec![BusAccess {
@@ -3640,14 +3660,24 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             }],
             input_slots: vec![1, 2],
             to_extract: None,
-            recipes: vec![SlottedRecipe {
-                outputs: vec![Output { item: Filter::Label("Energized Steel"), n_wanted: 16 }],
-                inputs: vec![
-                    SlottedInput::new(Filter::Label("Froststeel Ingot"), vec![(1, 1)]),
-                    SlottedInput::new(Filter::Label("Electrum Ingot"), vec![(2, 1)]),
-                ],
-                max_sets: 1,
-            }],
+            recipes: vec![
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Energized Steel"), n_wanted: 16 }],
+                    inputs: vec![
+                        SlottedInput::new(Filter::Label("Froststeel Ingot"), vec![(1, 1)]),
+                        SlottedInput::new(Filter::Label("Electrum Ingot"), vec![(2, 1)]),
+                    ],
+                    max_sets: 1,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Blazing Crystal"), n_wanted: 16 }],
+                    inputs: vec![
+                        SlottedInput::new(Filter::Label("Blaze Fiber"), vec![(1, 1)]),
+                        SlottedInput::new(Filter::Label("item.resourcefulbees.blaze_honeycomb"), vec![(2, 1)]),
+                    ],
+                    max_sets: 1,
+                },
+            ],
         });
         factory.add_process(BufferedConfig {
             name: "spiritFire",
@@ -3687,6 +3717,16 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 BufferedRecipe {
                     outputs: vec![Output { item: Filter::Label("Industrial Hemp Fiber"), n_wanted: 16 }],
                     inputs: vec![BufferedInput::new(Filter::Label("Industrial Hemp Seeds"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Chorus Fruit"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Chorus Flower"), 1)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Enderslime Ball"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Enderslime Sapling"), 1)],
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
@@ -3870,12 +3910,30 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             }],
             slot_filter: None,
             to_extract: {
-                let filter = cleaver(true);
+                let filter = luck_cleaver(true);
                 Some(Box::new(move |_, stack| !filter.apply(&stack.item, &stack.detail)))
             },
             recipes: vec![],
             max_recipe_inputs: 0,
-            stocks: vec![BufferedInput::new(cleaver(true), 1)],
+            stocks: vec![BufferedInput::new(luck_cleaver(true), 1)],
+        });
+        factory.add_process(SlottedConfig {
+            name: "blazingBloodMixer",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "create:basin_8",
+                bus_addr: "ironchest:diamond_chest_31",
+            }],
+            input_slots: vec![0, 1],
+            to_extract: None,
+            recipes: vec![SlottedRecipe {
+                outputs: vec![Output { item: Filter::Label("Blaze Fiber"), n_wanted: 16 }],
+                inputs: vec![
+                    SlottedInput::new(Filter::Label("Magebloom Fiber"), vec![(0, 2)]),
+                    SlottedInput::new(Filter::Label("Ditchbulb"), vec![(1, 1)]),
+                ],
+                max_sets: 8,
+            }],
         });
     })
 }
