@@ -284,7 +284,11 @@ impl Process for ItemCycleProcess {
                     return Ok(());
                 }
                 upgrade_mut!(this.factory, factory);
-                if let Some((item, _)) = factory.search_item(this.config.items[this.next_item].get_item()) {
+                let input = &this.config.items[this.next_item];
+                if let Some((item, info)) = factory.search_item(input.get_item()) {
+                    if info.borrow().get_availability(input.get_allow_backup(), input.get_extra_backup()) < 1 {
+                        return Ok(());
+                    }
                     let reservation = factory.reserve_item(this.config.name, item, 1);
                     let bus_slot = factory.bus_allocate();
                     let weak = weak.clone();
