@@ -608,6 +608,14 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             to_extract: None,
             recipes: vec![
                 SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Magma Cream"), n_wanted: 16 }],
+                    inputs: vec![
+                        SlottedInput::new(Filter::Label("Blaze Powder"), vec![(0, 1)]),
+                        SlottedInput::new(Filter::Label("Slimeball"), vec![(1, 1)]),
+                    ],
+                    max_sets: 16,
+                },
+                SlottedRecipe {
                     outputs: vec![Output { item: Filter::Label("Mango Habanero Wings"), n_wanted: 16 }],
                     inputs: vec![
                         SlottedInput::new(Filter::Label("Cooked Chicken Wings"), vec![(0, 1)]),
@@ -1817,6 +1825,16 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                         n_wanted: 16,
                     }],
                     inputs: vec![BufferedInput::new(Filter::Label("item.resourcefulbees.forest_honeycomb"), 9)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Magma Bricks"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Magma Block"), 4)],
+                    max_inputs: i32::MAX,
+                },
+                BufferedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Magma Block"), n_wanted: 16 }],
+                    inputs: vec![BufferedInput::new(Filter::Label("Magma Cream"), 4)],
                     max_inputs: i32::MAX,
                 },
                 BufferedRecipe {
@@ -3367,6 +3385,19 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     ],
                     max_sets: 1,
                 },
+                MultiInvSlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Rune of Fire"), n_wanted: 16 }],
+                    inputs: vec![
+                        MultiInvSlottedInput::new(Filter::Label("Livingrock"), vec![(0, 0, 1)]),
+                        MultiInvSlottedInput::new(Filter::Label("Mana Powder"), vec![(1, 0, 1)]),
+                        MultiInvSlottedInput::new(Filter::Label("Manasteel Ingot"), vec![(1, 1, 1)]),
+                        MultiInvSlottedInput::new(Filter::Label("Blaze Powder"), vec![(1, 2, 1)]),
+                        MultiInvSlottedInput::new(Filter::Label("Magma Bricks"), vec![(1, 3, 1)]),
+                        MultiInvSlottedInput::new(Filter::Label("Ditchbulb"), vec![(1, 4, 1)]),
+                        MultiInvSlottedInput::new(Filter::Label("White Candle"), vec![(1, 5, 1)]),
+                    ],
+                    max_sets: 1,
+                },
             ],
         });
         factory.add_process(BufferedConfig {
@@ -3793,16 +3824,27 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 inv_addr: "farmersdelight:cooking_pot_0",
                 bus_addr: "ironchest:diamond_chest_31",
             }],
-            input_slots: vec![0, 1],
+            input_slots: vec![0, 1, 2],
             to_extract: None,
-            recipes: vec![SlottedRecipe {
-                outputs: vec![Output { item: Filter::Label("Calx of End"), n_wanted: 16 }],
-                inputs: vec![
-                    SlottedInput::new(Filter::Label("Enchanted Ash"), vec![(0, 1)]),
-                    SlottedInput::new(Filter::Label("Ender Dust"), vec![(1, 1)]),
-                ],
-                max_sets: 8,
-            }],
+            recipes: vec![
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("Calx of End"), n_wanted: 16 }],
+                    inputs: vec![
+                        SlottedInput::new(Filter::Label("Enchanted Ash"), vec![(0, 1)]),
+                        SlottedInput::new(Filter::Label("Ender Dust"), vec![(1, 1)]),
+                    ],
+                    max_sets: 8,
+                },
+                SlottedRecipe {
+                    outputs: vec![Output { item: Filter::Label("White Candle"), n_wanted: 16 }],
+                    inputs: vec![
+                        SlottedInput::new(Filter::Label("White Dye"), vec![(0, 1)]),
+                        SlottedInput::new(Filter::Label("Beeswax"), vec![(1, 1)]),
+                        SlottedInput::new(Filter::Label("String"), vec![(2, 1)]),
+                    ],
+                    max_sets: 8,
+                },
+            ],
         });
         factory.add_process(SlottedConfig {
             name: "repairKit",
