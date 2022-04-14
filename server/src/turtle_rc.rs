@@ -1,5 +1,5 @@
 use super::action::ActionFuture;
-use super::action::TurtleCall;
+use super::action::{Call, TurtleCall};
 use super::lua_value::Value;
 use super::server::Server;
 use super::util::{spawn, AbortOnDrop};
@@ -13,7 +13,7 @@ use tokio::io::{stdin, AsyncBufReadExt, BufReader};
 const QUEUE_SIZE: usize = 8;
 struct Context {
     server: Rc<RefCell<Server>>,
-    funcs: FnvHashSet<&'static str>,
+    leaks: FnvHashSet<&'static str>,
     queue: VecDeque<AbortOnDrop<()>>,
 }
 
@@ -38,38 +38,38 @@ fn run_command(ctx: Rc<RefCell<Context>>, client: String, args: Vec<String>) -> 
             }
         } else {
             let mut ctx = ctx.borrow_mut();
-            let func = ctx.funcs.get(&args[0][..]).map(|x| *x);
-            let func = func.unwrap_or_else(|| {
-                let leaked = Box::leak(args[0].to_owned().into_boxed_str());
-                ctx.funcs.insert(leaked);
+            let first = &args[0];
+            let is_call = first.starts_with('-');
+            let first = if is_call { &first[1..] } else { first as &str };
+            let first = ctx.leaks.get(first).map(|x| *x).unwrap_or_else(|| {
+                let leaked = Box::leak(first.to_owned().into_boxed_str());
+                ctx.leaks.insert(leaked);
                 leaked
             });
-            let action =
-                ActionFuture::from(TurtleCall {
-                    func,
-                    args: args
-                        .iter()
-                        .skip(1)
-                        .map(|arg| {
-                            if let Ok(arg) = arg.parse::<NotNan<f64>>() {
-                                Value::F(arg)
-                            } else {
-                                arg.to_owned().into()
-                            }
-                        })
-                        .collect(),
-                });
-            ctx.server.borrow().enqueue_request_group(&client, vec![action.clone().into()]);
+            let args = args
+                .iter()
+                .skip(1)
+                .map(|arg| if let Ok(arg) = arg.parse::<NotNan<f64>>() { Value::F(arg) } else { arg.to_owned().into() })
+                .collect();
+            let task = if is_call {
+                let action = ActionFuture::from(Call { addr: first, args });
+                ctx.server.borrow().enqueue_request_group(&client, vec![action.clone().into()]);
+                spawn(async move { println!("{:?}", action.await) })
+            } else {
+                let action = ActionFuture::from(TurtleCall { func: first, args });
+                ctx.server.borrow().enqueue_request_group(&client, vec![action.clone().into()]);
+                spawn(async move { println!("{:?}", action.await) })
+            };
             if ctx.queue.len() == QUEUE_SIZE {
                 ctx.queue.pop_front().unwrap().into_future().await
             }
-            ctx.queue.push_back(spawn(async move { println!("{:?}", action.await) }))
+            ctx.queue.push_back(task)
         }
     })
 }
 
 pub async fn run(server: Rc<RefCell<Server>>) {
-    let ctx = Rc::new(RefCell::new(Context { server, funcs: FnvHashSet::default(), queue: VecDeque::new() }));
+    let ctx = Rc::new(RefCell::new(Context { server, leaks: FnvHashSet::default(), queue: VecDeque::new() }));
     let mut stdin = BufReader::new(stdin());
     let mut client = None;
     loop {
