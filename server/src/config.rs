@@ -20,7 +20,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         server: Server::new(1847),
         min_cycle_time: Duration::from_secs(1),
         log_clients: vec!["1a"],
-        bus_accesses: vec![BasicAccess { client: "1a", addr: "ironchest:diamond_chest_31" }],
+        bus_accesses: vec![BasicAccess { client: "1a", addr: "enderstorage:ender_chest_0" }],
         backups: vec![
             (Filter::Label("Mystical Black Flower"), 8),
             (Filter::Label("Mystical Green Flower"), 8),
@@ -56,7 +56,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "occultism:storage_controller_1",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             override_max_stack_size: Some(1024),
         });
@@ -67,7 +67,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_18",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: extract_all(),
@@ -80,7 +80,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_95",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: extract_all(),
@@ -93,7 +93,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:device_collector_1",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: extract_all(),
@@ -106,7 +106,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_75",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: extract_all(),
@@ -119,7 +119,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_58",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: extract_all(),
@@ -132,7 +132,20 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_116",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
+            }],
+            slot_filter: None,
+            to_extract: extract_all(),
+            recipes: vec![],
+            max_recipe_inputs: 0,
+            stocks: vec![],
+        });
+        factory.add_process(BufferedConfig {
+            name: "ectoplasmOutput",
+            accesses: vec![BusAccess {
+                client: "1a",
+                inv_addr: "minecraft:barrel_121",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: extract_all(),
@@ -145,82 +158,83 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:dropper_3",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
             recipes: vec![],
             max_recipe_inputs: 0,
             stocks: vec![
-                BufferedInput::new(Filter::Label("Nether Quartz Honeycomb Block"), i32::MAX).extra_backup(1024),
-                BufferedInput::new(Filter::Label("Skeleton Honeycomb Block"), i32::MAX).extra_backup(1024),
-                BufferedInput::new(Filter::Label("Redstone Honeycomb Block"), i32::MAX).extra_backup(1024),
-                BufferedInput::new(Filter::Label("Diamond Honeycomb Block"), i32::MAX).extra_backup(1024),
-                BufferedInput::new(Filter::Label("Emerald Honeycomb Block"), i32::MAX).extra_backup(1024),
-                BufferedInput::new(Filter::Label("RGBee Honeycomb Block"), i32::MAX).extra_backup(1024),
-                BufferedInput::new(Filter::Label("Ender Honeycomb Block"), i32::MAX).extra_backup(1024),
-                BufferedInput::new(Filter::Label("Lapis Honeycomb Block"), i32::MAX).extra_backup(1024),
-                BufferedInput::new(Filter::Label("Coal Honeycomb Block"), i32::MAX).extra_backup(1024),
-                BufferedInput::new(Filter::Label("Iron Honeycomb Block"), i32::MAX).extra_backup(1024),
-                BufferedInput::new(Filter::Label("Gold Honeycomb Block"), i32::MAX).extra_backup(1024),
+                BufferedInput::new(Filter::Label("Nether Quartz Honeycomb Block"), i32::MAX).extra_backup(16384),
+                BufferedInput::new(Filter::Label("Skeleton Honeycomb Block"), i32::MAX).extra_backup(16384),
+                BufferedInput::new(Filter::Label("Redstone Honeycomb Block"), i32::MAX).extra_backup(16384),
+                BufferedInput::new(Filter::Label("Diamond Honeycomb Block"), i32::MAX).extra_backup(16384),
+                BufferedInput::new(Filter::Label("Emerald Honeycomb Block"), i32::MAX).extra_backup(16384),
+                BufferedInput::new(Filter::Label("RGBee Honeycomb Block"), i32::MAX).extra_backup(16384),
+                BufferedInput::new(Filter::Label("Ender Honeycomb Block"), i32::MAX).extra_backup(16384),
+                BufferedInput::new(Filter::Label("Lapis Honeycomb Block"), i32::MAX).extra_backup(16384),
+                BufferedInput::new(Filter::Label("Coal Honeycomb Block"), i32::MAX).extra_backup(16384),
+                BufferedInput::new(Filter::Label("Iron Honeycomb Block"), i32::MAX).extra_backup(16384),
+                BufferedInput::new(Filter::Label("Gold Honeycomb Block"), i32::MAX).extra_backup(16384),
                 BufferedInput::new(Filter::Label("block.resourcefulbees.dusty_mummbee_honeycomb_block"), i32::MAX)
-                    .extra_backup(1024),
+                    .extra_backup(16384),
                 BufferedInput::new(Filter::Label("block.resourcefulbees.glowstone_honeycomb_block"), i32::MAX)
-                    .extra_backup(1024),
+                    .extra_backup(16384),
                 BufferedInput::new(Filter::Label("block.resourcefulbees.spelling_honeycomb_block"), i32::MAX)
-                    .extra_backup(1024),
+                    .extra_backup(16384),
                 BufferedInput::new(Filter::Label("block.resourcefulbees.aluminum_honeycomb_block"), i32::MAX)
-                    .extra_backup(1024),
+                    .extra_backup(16384),
                 BufferedInput::new(Filter::Label("block.resourcefulbees.clogged_honeycomb_block"), i32::MAX)
-                    .extra_backup(1024),
+                    .extra_backup(16384),
                 BufferedInput::new(Filter::Label("block.resourcefulbees.uranium_honeycomb_block"), i32::MAX)
-                    .extra_backup(1024),
+                    .extra_backup(16384),
                 BufferedInput::new(Filter::Label("block.resourcefulbees.osmium_honeycomb_block"), i32::MAX)
-                    .extra_backup(1024),
+                    .extra_backup(16384),
                 BufferedInput::new(Filter::Label("block.resourcefulbees.cobalt_honeycomb_block"), i32::MAX)
-                    .extra_backup(1024),
+                    .extra_backup(16384),
                 BufferedInput::new(Filter::Label("block.resourcefulbees.copper_honeycomb_block"), i32::MAX)
-                    .extra_backup(1024),
+                    .extra_backup(16384),
                 BufferedInput::new(Filter::Label("block.resourcefulbees.silver_honeycomb_block"), i32::MAX)
-                    .extra_backup(1024),
+                    .extra_backup(16384),
                 BufferedInput::new(Filter::Label("block.resourcefulbees.nickel_honeycomb_block"), i32::MAX)
-                    .extra_backup(1024),
+                    .extra_backup(16384),
                 BufferedInput::new(Filter::Label("block.resourcefulbees.boobee_honeycomb_block"), i32::MAX)
-                    .extra_backup(1024),
+                    .extra_backup(16384),
                 BufferedInput::new(Filter::Label("block.resourcefulbees.basalz_honeycomb_block"), i32::MAX)
-                    .extra_backup(1024),
+                    .extra_backup(16384),
                 BufferedInput::new(Filter::Label("block.resourcefulbees.slimy_honeycomb_block"), i32::MAX)
-                    .extra_backup(1024),
+                    .extra_backup(16384),
                 BufferedInput::new(Filter::Label("block.resourcefulbees.blitz_honeycomb_block"), i32::MAX)
-                    .extra_backup(1024),
+                    .extra_backup(16384),
                 BufferedInput::new(Filter::Label("block.resourcefulbees.blizz_honeycomb_block"), i32::MAX)
-                    .extra_backup(1024),
+                    .extra_backup(16384),
                 BufferedInput::new(Filter::Label("block.resourcefulbees.pcbee_honeycomb_block"), i32::MAX)
-                    .extra_backup(1024),
+                    .extra_backup(16384),
                 BufferedInput::new(Filter::Label("block.resourcefulbees.zinc_honeycomb_block"), i32::MAX)
-                    .extra_backup(1024),
+                    .extra_backup(16384),
                 BufferedInput::new(Filter::Label("block.resourcefulbees.lead_honeycomb_block"), i32::MAX)
-                    .extra_backup(1024),
+                    .extra_backup(16384),
                 BufferedInput::new(Filter::Label("block.resourcefulbees.tin_honeycomb_block"), i32::MAX)
-                    .extra_backup(1024),
+                    .extra_backup(16384),
                 BufferedInput::new(Filter::Label("item.resourcefulbees.shepherd_honeycomb"), i32::MAX)
                     .extra_backup(16384),
                 BufferedInput::new(Filter::Label("item.resourcefulbees.forest_honeycomb"), i32::MAX)
                     .extra_backup(16384),
                 BufferedInput::new(Filter::Label("item.resourcefulbees.blaze_honeycomb"), i32::MAX).extra_backup(16384),
-                BufferedInput::new(Filter::Label("White Corundum Cluster"), i32::MAX).extra_backup(1024),
+                BufferedInput::new(Filter::Label("White Corundum Cluster"), i32::MAX).extra_backup(16384),
                 BufferedInput::new(Filter::Label("Andesite Cobblestone"), i32::MAX).extra_backup(16384),
-                BufferedInput::new(Filter::Label("Komodo Dragon Spit"), i32::MAX).extra_backup(1024),
+                BufferedInput::new(Filter::Label("Komodo Dragon Spit"), i32::MAX).extra_backup(16384),
                 BufferedInput::new(Filter::Label("Drop of Glycerol"), i32::MAX).extra_backup(16384),
-                BufferedInput::new(Filter::Label("White Corundum"), i32::MAX).extra_backup(1024),
-                BufferedInput::new(Filter::Label("Pepper Seeds"), i32::MAX).extra_backup(1024),
-                BufferedInput::new(Filter::Label("Source Berry"), i32::MAX).extra_backup(1024),
+                BufferedInput::new(Filter::Label("White Corundum"), i32::MAX).extra_backup(16384),
+                BufferedInput::new(Filter::Label("Pepper Seeds"), i32::MAX).extra_backup(16384),
+                BufferedInput::new(Filter::Label("Source Berry"), i32::MAX).extra_backup(16384),
                 BufferedInput::new(Filter::Label("Cobblestone"), i32::MAX).extra_backup(16384),
                 BufferedInput::new(Filter::Label("Shiverstone"), i32::MAX).extra_backup(16384),
                 BufferedInput::new(Filter::Label("Silk Fiber"), i32::MAX).extra_backup(16384),
-                BufferedInput::new(Filter::Label("Magebloom"), i32::MAX).extra_backup(1024),
-                BufferedInput::new(Filter::Label("Habanero"), i32::MAX).extra_backup(1024),
-                BufferedInput::new(Filter::Label("Pepper"), i32::MAX).extra_backup(1024),
+                BufferedInput::new(Filter::Label("Ectoplasm"), i32::MAX).extra_backup(16384),
+                BufferedInput::new(Filter::Label("Magebloom"), i32::MAX).extra_backup(16384),
+                BufferedInput::new(Filter::Label("Habanero"), i32::MAX).extra_backup(16384),
+                BufferedInput::new(Filter::Label("Pepper"), i32::MAX).extra_backup(16384),
                 BufferedInput::new(Filter::Label("Paper"), i32::MAX).extra_backup(16384),
                 BufferedInput::new(Filter::Label("Book"), i32::MAX).extra_backup(16384),
             ],
@@ -230,7 +244,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_19",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -247,7 +261,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_26",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -266,7 +280,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_60",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -282,7 +296,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_98",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -295,7 +309,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:hopper_17",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -308,7 +322,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_103",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -321,7 +335,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_105",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -356,7 +370,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_111",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: Some(Box::new(|slot| slot >= 18)),
             to_extract: None,
@@ -380,7 +394,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_111",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0, 1],
             to_extract: None,
@@ -416,7 +430,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_117",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -445,7 +459,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "immersiveengineering:autoworkbench_0",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -466,7 +480,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:dropper_7",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot: 0,
             items: vec![
@@ -479,7 +493,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_93",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -496,7 +510,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_38",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -774,7 +788,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "create:basin_1",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0, 1, 2, 3, 4],
             to_extract: None,
@@ -934,7 +948,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "create:basin_4",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0, 1, 2],
             to_extract: None,
@@ -953,7 +967,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "create:basin_5",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0, 1, 2],
             to_extract: None,
@@ -972,7 +986,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_10",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1071,7 +1085,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:dropper_2",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1160,7 +1174,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "create:basin_3",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0, 1, 2],
             to_extract: None,
@@ -1196,7 +1210,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_15",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1275,7 +1289,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_22",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1329,7 +1343,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_53",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1346,7 +1360,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_92",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1362,7 +1376,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_25",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             outputs: vec![Output { item: Filter::Label("Plastic Sheet"), n_wanted: 16 }],
@@ -1371,7 +1385,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_bottler_2",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             outputs: vec![Output { item: Filter::Label("Reinforced Stone"), n_wanted: 16 }],
@@ -1380,7 +1394,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:hopper_0",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             outputs: vec![Output { item: Filter::Label("Obsidian"), n_wanted: 16 }],
@@ -1389,7 +1403,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "ars_nouveau:crystallizer_1",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             outputs: vec![Output { item: Filter::Name("emendatusenigmatica:arcane_gem"), n_wanted: 64 }],
@@ -1398,7 +1412,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "create:depot_0",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             outputs: vec![Output { item: Filter::Label("Lithium Dust"), n_wanted: 16 }],
@@ -1407,7 +1421,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "create:depot_1",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             outputs: vec![Output { item: Filter::Label("Block of Crystalized Chorus"), n_wanted: 16 }],
@@ -1416,7 +1430,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "create:depot_3",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             outputs: vec![Output { item: Filter::Label("Block of Crystalized Menril"), n_wanted: 16 }],
@@ -1425,7 +1439,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_chiller_0",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             outputs: vec![Output { item: Filter::Label("Ice"), n_wanted: 16 }],
@@ -1435,7 +1449,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_press_2",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -1477,7 +1491,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_press_7",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -1519,7 +1533,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_press_6",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -1581,7 +1595,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_furnace_1",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -1613,7 +1627,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_smelter_0",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0, 1, 2],
             to_extract: None,
@@ -1783,7 +1797,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_pulverizer_0",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -1815,7 +1829,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_pyrolyzer_2",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: extract_all(),
@@ -1840,7 +1854,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_34",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1864,7 +1878,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_110",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -1881,7 +1895,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_35",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -2191,7 +2205,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_36",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -2215,7 +2229,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:hopper_2",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0, 1, 2, 3, 4],
             to_extract: None,
@@ -2324,7 +2338,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_59",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -2376,7 +2390,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_press_5",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -2413,7 +2427,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_bottler_3",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -2428,7 +2442,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_bottler_5",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -2455,7 +2469,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     "minecraft:hopper_8",
                     "minecraft:barrel_66",
                 ],
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             to_extract: None,
             recipes: vec![
@@ -3340,7 +3354,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "resourcefulbees:centrifuge_casing_0",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: Some(Box::new(|slot, _| slot > 3)),
@@ -3355,7 +3369,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "resourcefulbees:centrifuge_casing_0",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![1],
             to_extract: None,
@@ -3373,7 +3387,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "resourcefulbees:centrifuge_casing_0",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![2, 3],
             to_extract: None,
@@ -3532,7 +3546,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![MultiInvAccess {
                 client: "1a",
                 inv_addrs: vec!["minecraft:barrel_57", "minecraft:barrel_56"],
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             to_extract: None,
             recipes: vec![MultiInvSlottedRecipe {
@@ -3551,7 +3565,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![MultiInvAccess {
                 client: "1a",
                 inv_addrs: vec!["minecraft:dispenser_1", "minecraft:dropper_5"],
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             to_extract: None,
             recipes: vec![
@@ -3594,7 +3608,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![MultiInvAccess {
                 client: "1a",
                 inv_addrs: vec!["engineersdecor:te_factory_dropper_9", "engineersdecor:te_factory_dropper_6"],
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             to_extract: None,
             recipes: vec![
@@ -3639,7 +3653,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_61",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -3667,7 +3681,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                     "ars_nouveau:arcane_pedestal_8",
                     "ars_nouveau:arcane_pedestal_9",
                 ],
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             to_extract: None,
             recipes: vec![
@@ -3725,7 +3739,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_78",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -3749,7 +3763,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "create:basin_7",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0, 1, 2],
             to_extract: None,
@@ -3769,7 +3783,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![MultiInvAccess {
                 client: "1a",
                 inv_addrs: vec!["minecraft:barrel_85", "create:deployer_3", "create:deployer_4", "create:deployer_5"],
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             to_extract: None,
             recipes: vec![MultiInvSlottedRecipe {
@@ -3789,7 +3803,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![MultiInvAccess {
                 client: "1a",
                 inv_addrs: vec!["minecraft:barrel_86", "create:deployer_7", "create:deployer_8"],
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             to_extract: None,
             recipes: vec![MultiInvSlottedRecipe {
@@ -3807,7 +3821,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_83",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -3836,7 +3850,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_bottler_6",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -3858,7 +3872,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "powah:energizing_orb_0",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![1, 2, 3, 4],
             to_extract: None,
@@ -3918,7 +3932,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_90",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -3935,7 +3949,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:barrel_100",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -4063,7 +4077,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:hopper_15",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -4080,7 +4094,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "create:deployer_9",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -4095,7 +4109,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "engineersdecor:te_factory_dropper_7",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             slot_filter: None,
             to_extract: None,
@@ -4112,7 +4126,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "farmersdelight:cooking_pot_0",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0, 1, 2],
             to_extract: None,
@@ -4141,7 +4155,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "thermal:machine_crucible_1",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0],
             to_extract: None,
@@ -4151,28 +4165,26 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
                 max_sets: 8,
             }],
         });
-        factory.add_process(BufferedConfig {
-            name: "silkFiber",
-            accesses: vec![BusAccess {
-                client: "1a",
-                inv_addr: "create:deployer_11",
-                bus_addr: "ironchest:diamond_chest_31",
-            }],
-            slot_filter: None,
-            to_extract: {
-                let filter = luck_cleaver(true);
-                Some(Box::new(move |_, stack| !filter.apply(&stack.item, &stack.detail)))
-            },
-            recipes: vec![],
-            max_recipe_inputs: 0,
-            stocks: vec![BufferedInput::new(luck_cleaver(true), 1)],
-        });
+        for (name, inv_addr) in [("silkFiber", "create:deployer_11"), ("ectoplasm", "create:deployer_14")] {
+            factory.add_process(BufferedConfig {
+                name,
+                accesses: vec![BusAccess { client: "1a", inv_addr, bus_addr: "enderstorage:ender_chest_0" }],
+                slot_filter: None,
+                to_extract: {
+                    let filter = luck_cleaver(true);
+                    Some(Box::new(move |_, stack| !filter.apply(&stack.item, &stack.detail)))
+                },
+                recipes: vec![],
+                max_recipe_inputs: 0,
+                stocks: vec![BufferedInput::new(luck_cleaver(true), 1)],
+            })
+        }
         factory.add_process(SlottedConfig {
             name: "blazingBloodMixer",
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "create:basin_8",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0, 1],
             to_extract: None,
@@ -4190,7 +4202,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
             accesses: vec![BusAccess {
                 client: "1a",
                 inv_addr: "minecraft:hopper_22",
-                bus_addr: "ironchest:diamond_chest_31",
+                bus_addr: "enderstorage:ender_chest_0",
             }],
             input_slots: vec![0, 1, 2, 3],
             to_extract: None,
