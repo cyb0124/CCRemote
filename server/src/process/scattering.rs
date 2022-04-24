@@ -3,7 +3,7 @@ use super::super::detail_cache::DetailCache;
 use super::super::factory::Factory;
 use super::super::inventory::{list_inventory, Inventory};
 use super::super::item::{DetailStack, Filter};
-use super::super::recipe::{compute_demands, resolve_inputs, Demand, Input, Output, Recipe};
+use super::super::recipe::{compute_demands, resolve_inputs, Demand, Input, Outputs, Recipe};
 use super::super::server::Server;
 use super::super::util::{alive, join_tasks, spawn, AbortOnDrop};
 use super::{extract_output, scattering_insert, ExtractFilter, IntoProcess, Process};
@@ -28,12 +28,12 @@ impl ScatteringInput {
 impl_input!(ScatteringInput);
 
 pub struct ScatteringRecipe {
-    outputs: Vec<Output>,
+    outputs: Box<dyn Outputs>,
     inputs: Vec<ScatteringInput>,
 }
 
 impl ScatteringRecipe {
-    pub fn new(outputs: Vec<Output>, input: ScatteringInput) -> Self {
+    pub fn new(outputs: Box<dyn Outputs>, input: ScatteringInput) -> Self {
         ScatteringRecipe { outputs, inputs: vec![input] }
     }
 }

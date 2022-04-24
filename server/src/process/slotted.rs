@@ -4,7 +4,7 @@ use super::super::detail_cache::DetailCache;
 use super::super::factory::Factory;
 use super::super::inventory::{list_inventory, Inventory};
 use super::super::item::{DetailStack, Filter};
-use super::super::recipe::{compute_demands, Demand, Input, Output, Recipe};
+use super::super::recipe::{compute_demands, Demand, Input, Outputs, Recipe};
 use super::super::server::Server;
 use super::super::util::{alive, join_outputs, join_tasks, spawn, AbortOnDrop};
 use super::{extract_output, ExtractFilter, IntoProcess, Process};
@@ -33,7 +33,7 @@ impl SlottedInput {
 impl_input!(SlottedInput);
 
 pub struct SlottedRecipe {
-    pub outputs: Vec<Output>,
+    pub outputs: Box<dyn Outputs>,
     pub inputs: Vec<SlottedInput>,
     pub max_sets: i32,
 }

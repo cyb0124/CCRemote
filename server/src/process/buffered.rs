@@ -4,7 +4,7 @@ use super::super::detail_cache::DetailCache;
 use super::super::factory::Factory;
 use super::super::inventory::{list_inventory, Inventory};
 use super::super::item::{insert_into_inventory, jammer, Detail, Filter, InsertPlan, Item};
-use super::super::recipe::{compute_demands, resolve_inputs, Demand, Input, Output, Recipe};
+use super::super::recipe::{compute_demands, resolve_inputs, Demand, Input, Outputs, Recipe};
 use super::super::server::Server;
 use super::super::util::{alive, join_outputs, join_tasks, spawn, AbortOnDrop};
 use super::{extract_output, scattering_insert, ExtractFilter, IntoProcess, Process, SlotFilter};
@@ -30,7 +30,7 @@ impl BufferedInput {
 impl_input!(BufferedInput);
 
 pub struct BufferedRecipe {
-    pub outputs: Vec<Output>,
+    pub outputs: Box<dyn Outputs>,
     pub inputs: Vec<BufferedInput>,
     pub max_inputs: i32,
 }
