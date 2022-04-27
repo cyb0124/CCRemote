@@ -13,7 +13,7 @@ use std::{
 };
 
 pub type RedstoneFn = Box<dyn Fn(&Factory) -> u8>;
-pub fn emit_when_want_item(name: &'static str, off: u8, on: u8, outputs: Box<dyn Outputs>) -> RedstoneFn {
+pub fn emit_when_want_item(name: LocalStr, off: u8, on: u8, outputs: Box<dyn Outputs>) -> RedstoneFn {
     Box::new(move |factory| {
         if outputs.get_priority(&factory).is_some() {
             factory.log(Log { text: local_fmt!("{}: on", name), color: 10 });
