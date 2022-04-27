@@ -188,7 +188,7 @@ fn on_packet(client: &Rc<RefCell<Client>>, value: Value) -> Result<(), LocalStr>
         }
     } else if let Value::S(login) = value {
         upgrade_mut!(this.server, server);
-        write!(this.log_prefix, "[{}]", login);
+        write!(this.log_prefix, "[{}]", login).unwrap();
         this.log(format_args!("logged in"));
         this.login = Some(login.clone());
         drop(this);
