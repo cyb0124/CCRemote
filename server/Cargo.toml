@@ -11,6 +11,7 @@ dump_traffic = []
 [dependencies]
 tokio = { version = "1", features = ["rt", "net", "time", "signal", "macros", "io-util", "io-std"] }
 tokio-tungstenite = "0"
+abort-on-drop = "0"
 ordered-float = "2"
 futures-util = "0"
 num-traits = "0"

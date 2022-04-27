@@ -6,8 +6,9 @@ use super::super::inventory::{list_inventory, Inventory};
 use super::super::item::{insert_into_inventory, jammer, Filter, InsertPlan};
 use super::super::recipe::Input;
 use super::super::server::Server;
-use super::super::util::{alive, join_tasks, spawn, AbortOnDrop};
+use super::super::util::{alive, join_tasks, spawn};
 use super::{extract_output, scattering_insert, BufferedInput, IntoProcess, Process, ScatteringInput};
+use abort_on_drop::ChildTask;
 use std::{
     cell::RefCell,
     fs::read_to_string,
@@ -35,7 +36,7 @@ impl<T: IntoProcess> IntoProcess for ConditionalConfig<T> {
 }
 
 impl<T: Process> Process for ConditionalProcess<T> {
-    fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>> {
+    fn run(&self, factory: &Factory) -> ChildTask<Result<(), String>> {
         if (self.condition)(factory) {
             self.child.borrow().run(factory)
         } else {
@@ -161,7 +162,7 @@ impl SyncAndRestockProcess {
 }
 
 impl Process for SyncAndRestockProcess {
-    fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>> {
+    fn run(&self, factory: &Factory) -> ChildTask<Result<(), String>> {
         let server = factory.get_server().borrow();
         let access = server.load_balance(&self.config.accesses_in);
         let action = ActionFuture::from(RedstoneInput { side: access.side, addr: access.addr, bit: access.bit });
@@ -200,7 +201,7 @@ impl Process for SyncAndRestockProcess {
                     }
                 }
             };
-            task.into_future().await
+            task.await.unwrap()
         })
     }
 }
@@ -224,7 +225,7 @@ impl LowAlert {
 }
 
 impl Process for LowAlert {
-    fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>> {
+    fn run(&self, factory: &Factory) -> ChildTask<Result<(), String>> {
         let n_stored = factory.search_n_stored(&self.item);
         if n_stored < self.n_wanted {
             factory.log(Log { text: format!("need {}*{}", self.log, self.n_wanted - n_stored), color: 6 })
@@ -272,7 +273,7 @@ impl IntoProcess for ItemCycleConfig {
 impl_inventory!(ItemCycleProcess, BusAccess);
 
 impl Process for ItemCycleProcess {
-    fn run(&self, _: &Factory) -> AbortOnDrop<Result<(), String>> {
+    fn run(&self, _: &Factory) -> ChildTask<Result<(), String>> {
         let stacks = list_inventory(self);
         let weak = self.weak.clone();
         spawn(async move {

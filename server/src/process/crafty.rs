@@ -3,8 +3,9 @@ use super::super::action::{ActionFuture, Call, TurtleCall};
 use super::super::factory::Factory;
 use super::super::inventory::Inventory;
 use super::super::recipe::{compute_demands, resolve_inputs, CraftingGridRecipe, ResolvedInputs};
-use super::super::util::{alive, join_outputs, join_tasks, spawn, AbortOnDrop};
+use super::super::util::{alive, join_outputs, join_tasks, spawn};
 use super::{IntoProcess, Process};
+use abort_on_drop::ChildTask;
 use std::{
     cell::RefCell,
     cmp::min,
@@ -34,7 +35,7 @@ struct Job {
     i_recipe: usize,
     n_sets: i32,
     slots_to_free: Rc<RefCell<Vec<usize>>>,
-    bus_slots: Vec<AbortOnDrop<Result<usize, String>>>,
+    bus_slots: Vec<ChildTask<Result<usize, String>>>,
 }
 
 struct JobRef<'a> {
@@ -93,7 +94,7 @@ impl CraftyProcess {
         None
     }
 
-    fn load_inputs(&self, job: &JobRef) -> Vec<AbortOnDrop<Result<(), String>>> {
+    fn load_inputs(&self, job: &JobRef) -> Vec<ChildTask<Result<(), String>>> {
         upgrade!(self.factory, factory);
         let server = factory.get_server().borrow();
         let access = server.load_balance(&self.config.turtles[job.i_turtle].accesses);
@@ -139,7 +140,7 @@ impl CraftyProcess {
         action
     }
 
-    fn store_outputs(&self, job: &JobRef, output_bus_slot: usize) -> Vec<AbortOnDrop<Result<(), String>>> {
+    fn store_outputs(&self, job: &JobRef, output_bus_slot: usize) -> Vec<ChildTask<Result<(), String>>> {
         upgrade!(self.factory, factory);
         let server = factory.get_server().borrow();
         let access = server.load_balance(&self.config.turtles[job.i_turtle].accesses);
@@ -222,7 +223,7 @@ impl IntoProcess for CraftyConfig {
 }
 
 impl Process for CraftyProcess {
-    fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>> {
+    fn run(&self, factory: &Factory) -> ChildTask<Result<(), String>> {
         let jobs = compute_demands(factory, &self.config.recipes).into_iter().map(|x| x.i_recipe).collect();
         let weak = self.weak.clone();
         spawn(async move {

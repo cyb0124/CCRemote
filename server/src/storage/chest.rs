@@ -5,8 +5,9 @@ use super::super::factory::Factory;
 use super::super::inventory::{list_inventory, Inventory};
 use super::super::item::{Detail, DetailStack, Item};
 use super::super::server::Server;
-use super::super::util::{alive, spawn, AbortOnDrop};
+use super::super::util::{alive, spawn};
 use super::{DepositResult, Extractor, IntoStorage, Provider, Storage};
+use abort_on_drop::ChildTask;
 use std::{
     cell::RefCell,
     cmp::min,
@@ -55,7 +56,7 @@ impl IntoStorage for ChestConfig {
 }
 
 impl Storage for ChestStorage {
-    fn update(&self) -> AbortOnDrop<Result<(), String>> {
+    fn update(&self) -> ChildTask<Result<(), String>> {
         let stacks = list_inventory(self);
         let weak = self.weak.clone();
         spawn(async move {
@@ -137,7 +138,7 @@ impl Storage for ChestStorage {
 }
 
 impl Extractor for ChestExtractor {
-    fn extract(&self, size: i32, bus_slot: usize) -> AbortOnDrop<Result<(), String>> {
+    fn extract(&self, size: i32, bus_slot: usize) -> ChildTask<Result<(), String>> {
         let inv_slot = self.inv_slot;
         upgrade!(self.weak, this);
         let server = this.server.borrow();

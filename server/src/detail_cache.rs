@@ -1,5 +1,6 @@
 use super::item::{Detail, Item};
-use super::util::{make_local_one_shot, spawn, AbortOnDrop, LocalReceiver, LocalSender};
+use super::util::{make_local_one_shot, spawn, LocalReceiver, LocalSender};
+use abort_on_drop::ChildTask;
 use fnv::FnvHashMap;
 use std::{
     cell::RefCell,
@@ -10,7 +11,7 @@ use std::{
 
 enum DetailState {
     Resolved(Rc<Detail>),
-    Resolving { _resolver: AbortOnDrop<()>, wait_queue: Vec<LocalSender<Rc<Detail>>> },
+    Resolving { _resolver: ChildTask<()>, wait_queue: Vec<LocalSender<Rc<Detail>>> },
 }
 
 pub enum DetailResult<'a> {

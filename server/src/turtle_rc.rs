@@ -2,7 +2,8 @@ use super::action::ActionFuture;
 use super::action::{Call, TurtleCall};
 use super::lua_value::Value;
 use super::server::Server;
-use super::util::{spawn, AbortOnDrop};
+use super::util::spawn;
+use abort_on_drop::ChildTask;
 use fnv::FnvHashSet;
 use ordered_float::NotNan;
 use std::cell::RefCell;
@@ -14,10 +15,10 @@ const QUEUE_SIZE: usize = 8;
 struct Context {
     server: Rc<RefCell<Server>>,
     leaks: FnvHashSet<&'static str>,
-    queue: VecDeque<AbortOnDrop<()>>,
+    queue: VecDeque<ChildTask<()>>,
 }
 
-fn run_command(ctx: Rc<RefCell<Context>>, client: String, args: Vec<String>) -> AbortOnDrop<()> {
+fn run_command(ctx: Rc<RefCell<Context>>, client: String, args: Vec<String>) -> ChildTask<()> {
     spawn(async move {
         if let Ok(n) = args[0].parse::<usize>() {
             if args.len() < 2 {
@@ -33,7 +34,7 @@ fn run_command(ctx: Rc<RefCell<Context>>, client: String, args: Vec<String>) -> 
             }
             for _ in 0..n {
                 for args in &commands {
-                    run_command(ctx.clone(), client.clone(), args.to_vec()).into_future().await
+                    run_command(ctx.clone(), client.clone(), args.to_vec()).await.unwrap()
                 }
             }
         } else {
@@ -61,7 +62,7 @@ fn run_command(ctx: Rc<RefCell<Context>>, client: String, args: Vec<String>) -> 
                 spawn(async move { println!("{:?}", action.await) })
             };
             if ctx.queue.len() == QUEUE_SIZE {
-                ctx.queue.pop_front().unwrap().into_future().await
+                ctx.queue.pop_front().unwrap().await.unwrap()
             }
             ctx.queue.push_back(task)
         }
@@ -91,7 +92,7 @@ pub async fn run(server: Rc<RefCell<Server>>) {
                 println!("client set")
             }
         } else if let Some(client) = client.as_ref() {
-            run_command(ctx.clone(), client.clone(), args.iter().map(|x| (*x).to_owned()).collect()).into_future().await
+            run_command(ctx.clone(), client.clone(), args.iter().map(|x| (*x).to_owned()).collect()).await.unwrap()
         } else {
             println!("set client first")
         }

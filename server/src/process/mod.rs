@@ -3,11 +3,12 @@ use super::action::{ActionFuture, Call};
 use super::factory::{Factory, Reservation};
 use super::inventory::Inventory;
 use super::item::DetailStack;
-use super::util::{alive, join_tasks, spawn, AbortOnDrop};
+use super::util::{alive, join_tasks, spawn};
+use abort_on_drop::ChildTask;
 use std::{cell::RefCell, iter::once, rc::Rc};
 
 pub trait Process: 'static {
-    fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>>;
+    fn run(&self, factory: &Factory) -> ChildTask<Result<(), String>>;
 }
 
 pub trait IntoProcess {
@@ -44,7 +45,7 @@ pub type SlotFilter = Box<dyn Fn(usize) -> bool>;
 pub type ExtractFilter = Box<dyn Fn(usize, &DetailStack) -> bool>;
 pub fn extract_all() -> Option<ExtractFilter> { Some(Box::new(|_, _| true)) }
 
-fn extract_output<T>(this: &T, factory: &mut Factory, slot: usize, size: i32) -> AbortOnDrop<Result<(), String>>
+fn extract_output<T>(this: &T, factory: &mut Factory, slot: usize, size: i32) -> ChildTask<Result<(), String>>
 where
     T: Inventory<Access = BusAccess>,
 {
@@ -81,7 +82,7 @@ fn scattering_insert<T, U>(
     factory: &mut Factory,
     reservation: Reservation,
     insertions: U,
-) -> AbortOnDrop<Result<(), String>>
+) -> ChildTask<Result<(), String>>
 where
     T: Inventory<Access = BusAccess>,
     U: IntoIterator<Item = (usize, i32)> + 'static,

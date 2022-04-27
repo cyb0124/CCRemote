@@ -7,8 +7,9 @@ use super::super::item::{DetailStack, Filter};
 use super::super::process::{IntoProcess, Process};
 use super::super::recipe::{compute_demands, Demand, Input, Outputs, Recipe};
 use super::super::server::Server;
-use super::super::util::{alive, join_outputs, join_tasks, spawn, AbortOnDrop};
+use super::super::util::{alive, join_outputs, join_tasks, spawn};
 use super::extract_output;
+use abort_on_drop::ChildTask;
 use fnv::{FnvHashMap, FnvHashSet};
 use std::cell::RefCell;
 use std::cmp::min;
@@ -122,7 +123,7 @@ impl IntoProcess for MultiInvSlottedConfig {
 }
 
 impl Process for MultiInvSlottedProcess {
-    fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>> {
+    fn run(&self, factory: &Factory) -> ChildTask<Result<(), String>> {
         if self.to_extract.is_none() && compute_demands(factory, &self.recipes).is_empty() {
             return spawn(async { Ok(()) });
         }
@@ -200,7 +201,7 @@ impl Process for MultiInvSlottedProcess {
 }
 
 impl MultiInvSlottedProcess {
-    fn execute_recipe(&self, factory: &mut Factory, demand: Demand) -> AbortOnDrop<Result<(), String>> {
+    fn execute_recipe(&self, factory: &mut Factory, demand: Demand) -> ChildTask<Result<(), String>> {
         let mut bus_slots = Vec::new();
         let slots_to_free = Rc::new(RefCell::new(Vec::new()));
         let recipe = &self.recipes[demand.i_recipe];

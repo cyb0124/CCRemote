@@ -1,7 +1,8 @@
 use super::access::GetClient;
 use super::action::ActionRequest;
 use super::lua_value::{serialize, table_remove, vec_to_table, Parser, Table, Value};
-use super::util::{spawn, AbortOnDrop};
+use super::util::spawn;
+use abort_on_drop::ChildTask;
 use fnv::FnvHashMap;
 use futures_util::{
     sink::SinkExt,
@@ -27,7 +28,7 @@ use tokio_tungstenite::{accept_async, tungstenite::Message, WebSocketStream};
 pub struct Server {
     clients: Option<Rc<RefCell<Client>>>,
     logins: FnvHashMap<String, Weak<RefCell<Client>>>,
-    _acceptor: AbortOnDrop<()>,
+    _acceptor: ChildTask<()>,
 }
 
 impl Drop for Server {
@@ -45,7 +46,7 @@ impl Drop for Server {
 
 enum WriterState {
     NotWriting(SplitSink<WebSocketStream<TcpStream>, Message>),
-    Writing(AbortOnDrop<()>),
+    Writing(ChildTask<()>),
     Invalid,
 }
 
@@ -56,13 +57,13 @@ struct Client {
     prev: Option<Weak<RefCell<Client>>>,
     server: Weak<RefCell<Server>>,
     login: Option<String>,
-    _reader: AbortOnDrop<()>,
+    _reader: ChildTask<()>,
     request_queue: VecDeque<Vec<Rc<RefCell<dyn ActionRequest>>>>,
     request_queue_size: usize,
     next_request_id: usize,
     response_queue: FnvHashMap<usize, Rc<RefCell<dyn ActionRequest>>>,
     writer: WriterState,
-    timeout: Option<AbortOnDrop<()>>,
+    timeout: Option<ChildTask<()>>,
 }
 
 impl Drop for Client {

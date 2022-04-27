@@ -3,8 +3,9 @@ use super::super::action::{ActionFuture, Log, RedstoneInput, RedstoneOutput};
 use super::super::factory::Factory;
 use super::super::inventory::Inventory;
 use super::super::recipe::Outputs;
-use super::super::util::{alive, spawn, AbortOnDrop};
+use super::super::util::{alive, spawn};
 use super::{IntoProcess, Process};
+use abort_on_drop::ChildTask;
 use std::{
     cell::RefCell,
     rc::{Rc, Weak},
@@ -27,7 +28,7 @@ pub struct RedstoneEmitterConfig {
 }
 
 impl Process for RedstoneEmitterConfig {
-    fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>> {
+    fn run(&self, factory: &Factory) -> ChildTask<Result<(), String>> {
         let value = (self.output)(factory);
         let server = factory.get_server().borrow();
         let access = server.load_balance(&self.accesses);
@@ -69,7 +70,7 @@ impl<T: IntoProcess> IntoProcess for RedstoneConditionalConfig<T> {
 }
 
 impl<T: Process> Process for RedstoneConditionalProcess<T> {
-    fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>> {
+    fn run(&self, factory: &Factory) -> ChildTask<Result<(), String>> {
         let server = factory.get_server().borrow();
         let access = server.load_balance(&self.accesses);
         let action = ActionFuture::from(RedstoneInput { side: access.side, addr: access.addr, bit: access.bit });
@@ -90,7 +91,7 @@ impl<T: Process> Process for RedstoneConditionalProcess<T> {
                     return Ok(());
                 }
             };
-            task.into_future().await
+            task.await.unwrap()
         })
     }
 }

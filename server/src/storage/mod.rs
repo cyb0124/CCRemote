@@ -1,6 +1,6 @@
 use super::factory::Factory;
 use super::item::{Detail, DetailStack, Item};
-use super::util::AbortOnDrop;
+use abort_on_drop::ChildTask;
 use std::{
     cell::{Cell, RefCell},
     cmp::Ordering,
@@ -9,11 +9,11 @@ use std::{
 
 pub struct DepositResult {
     pub n_deposited: i32,
-    pub task: AbortOnDrop<Result<(), String>>,
+    pub task: ChildTask<Result<(), String>>,
 }
 
 pub trait Storage: 'static {
-    fn update(&self) -> AbortOnDrop<Result<(), String>>;
+    fn update(&self) -> ChildTask<Result<(), String>>;
     fn cleanup(&mut self);
     fn deposit_priority(&mut self, item: &Rc<Item>, detail: &Rc<Detail>) -> Option<i32>;
     fn deposit(&mut self, stack: &DetailStack, bus_slot: usize) -> DepositResult;
@@ -25,7 +25,7 @@ pub trait IntoStorage {
 }
 
 pub trait Extractor: 'static {
-    fn extract(&self, size: i32, bus_slot: usize) -> AbortOnDrop<Result<(), String>>;
+    fn extract(&self, size: i32, bus_slot: usize) -> ChildTask<Result<(), String>>;
 }
 
 pub struct Provider {

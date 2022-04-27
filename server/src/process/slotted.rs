@@ -6,8 +6,9 @@ use super::super::inventory::{list_inventory, Inventory};
 use super::super::item::{DetailStack, Filter};
 use super::super::recipe::{compute_demands, Demand, Input, Outputs, Recipe};
 use super::super::server::Server;
-use super::super::util::{alive, join_outputs, join_tasks, spawn, AbortOnDrop};
+use super::super::util::{alive, join_outputs, join_tasks, spawn};
 use super::{extract_output, ExtractFilter, IntoProcess, Process};
+use abort_on_drop::ChildTask;
 use fnv::{FnvHashMap, FnvHashSet};
 use std::{
     cell::RefCell,
@@ -61,7 +62,7 @@ impl_inventory!(SlottedProcess, BusAccess);
 impl_into_process!(SlottedConfig, SlottedProcess);
 
 impl Process for SlottedProcess {
-    fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>> {
+    fn run(&self, factory: &Factory) -> ChildTask<Result<(), String>> {
         if self.config.to_extract.is_none() && compute_demands(factory, &self.config.recipes).is_empty() {
             return spawn(async { Ok(()) });
         }
@@ -129,7 +130,7 @@ impl Process for SlottedProcess {
 }
 
 impl SlottedProcess {
-    fn execute_recipe(&self, factory: &mut Factory, demand: Demand) -> AbortOnDrop<Result<(), String>> {
+    fn execute_recipe(&self, factory: &mut Factory, demand: Demand) -> ChildTask<Result<(), String>> {
         let mut bus_slots = Vec::new();
         let slots_to_free = Rc::new(RefCell::new(Vec::new()));
         let recipe = &self.config.recipes[demand.i_recipe];

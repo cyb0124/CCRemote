@@ -5,8 +5,9 @@ use super::super::factory::Factory;
 use super::super::inventory::{list_inventory, Inventory};
 use super::super::item::{Detail, DetailStack, Filter, Item};
 use super::super::server::Server;
-use super::super::util::{alive, spawn, AbortOnDrop};
+use super::super::util::{alive, spawn};
 use super::{DepositResult, Extractor, IntoStorage, Provider, Storage};
+use abort_on_drop::ChildTask;
 use std::{
     cell::RefCell,
     rc::{Rc, Weak},
@@ -50,7 +51,7 @@ impl IntoStorage for DrawerConfig {
 }
 
 impl Storage for DrawerStorage {
-    fn update(&self) -> AbortOnDrop<Result<(), String>> {
+    fn update(&self) -> ChildTask<Result<(), String>> {
         let stacks = list_inventory(self);
         let weak = self.weak.clone();
         spawn(async move {
@@ -96,7 +97,7 @@ impl Storage for DrawerStorage {
 }
 
 impl Extractor for DrawerExtractor {
-    fn extract(&self, size: i32, bus_slot: usize) -> AbortOnDrop<Result<(), String>> {
+    fn extract(&self, size: i32, bus_slot: usize) -> ChildTask<Result<(), String>> {
         upgrade!(self.weak, this);
         let server = this.server.borrow();
         let access = server.load_balance(&this.config.accesses);

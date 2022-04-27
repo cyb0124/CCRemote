@@ -5,8 +5,9 @@ use super::super::inventory::{list_inventory, Inventory};
 use super::super::item::{DetailStack, Filter};
 use super::super::recipe::{compute_demands, resolve_inputs, Demand, Input, Outputs, Recipe};
 use super::super::server::Server;
-use super::super::util::{alive, join_tasks, spawn, AbortOnDrop};
+use super::super::util::{alive, join_tasks, spawn};
 use super::{extract_output, scattering_insert, ExtractFilter, IntoProcess, Process};
+use abort_on_drop::ChildTask;
 use fnv::FnvHashMap;
 use std::{
     cell::RefCell,
@@ -63,7 +64,7 @@ impl_inventory!(ScatteringProcess, BusAccess);
 impl_into_process!(ScatteringConfig, ScatteringProcess);
 
 impl Process for ScatteringProcess {
-    fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>> {
+    fn run(&self, factory: &Factory) -> ChildTask<Result<(), String>> {
         if self.config.to_extract.is_none() && compute_demands(factory, &self.config.recipes).is_empty() {
             return spawn(async { Ok(()) });
         }

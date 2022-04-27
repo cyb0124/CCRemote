@@ -5,8 +5,9 @@ use super::super::inventory::Inventory;
 use super::super::recipe::{
     compute_demands, resolve_inputs, CraftingGridRecipe, Demand, NonConsumable, ResolvedInputs,
 };
-use super::super::util::{alive, join_outputs, join_tasks, spawn, AbortOnDrop};
+use super::super::util::{alive, join_outputs, join_tasks, spawn};
 use super::{IntoProcess, Process};
+use abort_on_drop::ChildTask;
 use std::{
     cell::RefCell,
     cmp::min,
@@ -32,7 +33,7 @@ impl IntoProcess for WorkbenchConfig {
 }
 
 impl Process for WorkbenchProcess {
-    fn run(&self, factory: &Factory) -> AbortOnDrop<Result<(), String>> {
+    fn run(&self, factory: &Factory) -> ChildTask<Result<(), String>> {
         let mut tasks = Vec::new();
         for Demand { i_recipe, .. } in compute_demands(factory, &self.config.recipes) {
             let recipe = &self.config.recipes[i_recipe];
