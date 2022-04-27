@@ -1,11 +1,8 @@
 use super::detail_cache::DetailCache;
 use super::factory::{Factory, FactoryConfig};
 use super::server::Server;
-use super::{access::*, item::*, process::*, recipe::*, storage::*};
-use flexstr::LocalStr;
+use super::{access::*, config_util::*, process::*, recipe::*, storage::*};
 use std::{cell::RefCell, rc::Rc, time::Duration};
-
-fn s(x: &'static str) -> LocalStr { LocalStr::from_static(x) }
 
 pub fn build_factory() -> Rc<RefCell<Factory>> {
     FactoryConfig {

@@ -9,6 +9,7 @@ pub mod recipe;
 pub mod access;
 pub mod action;
 pub mod config;
+pub mod config_util;
 pub mod detail_cache;
 pub mod factory;
 pub mod item;
