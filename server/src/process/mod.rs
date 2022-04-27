@@ -5,10 +5,11 @@ use super::inventory::Inventory;
 use super::item::DetailStack;
 use super::util::{alive, join_tasks, spawn};
 use abort_on_drop::ChildTask;
+use flexstr::LocalStr;
 use std::{cell::RefCell, iter::once, rc::Rc};
 
 pub trait Process: 'static {
-    fn run(&self, factory: &Factory) -> ChildTask<Result<(), String>>;
+    fn run(&self, factory: &Factory) -> ChildTask<Result<(), LocalStr>>;
 }
 
 pub trait IntoProcess {
@@ -45,7 +46,7 @@ pub type SlotFilter = Box<dyn Fn(usize) -> bool>;
 pub type ExtractFilter = Box<dyn Fn(usize, &DetailStack) -> bool>;
 pub fn extract_all() -> Option<ExtractFilter> { Some(Box::new(|_, _| true)) }
 
-fn extract_output<T>(this: &T, factory: &mut Factory, slot: usize, size: i32) -> ChildTask<Result<(), String>>
+fn extract_output<T>(this: &T, factory: &mut Factory, slot: usize, size: i32) -> ChildTask<Result<(), LocalStr>>
 where
     T: Inventory<Access = BusAccess>,
 {
@@ -60,16 +61,16 @@ where
             let server = this.get_server().borrow();
             let access = server.load_balance(this.get_accesses());
             action = ActionFuture::from(Call {
-                addr: access.inv_addr,
+                addr: access.inv_addr.clone(),
                 args: vec![
                     "pushItems".into(),
-                    access.bus_addr.into(),
+                    access.bus_addr.clone().into(),
                     (slot + 1).into(),
                     size.into(),
                     (bus_slot + 1).into(),
                 ],
             });
-            server.enqueue_request_group(access.client, vec![action.clone().into()])
+            server.enqueue_request_group(&access.client, vec![action.clone().into()])
         }
         let result = action.await.map(|_| ());
         alive(&factory)?.borrow_mut().bus_deposit(once(bus_slot));
@@ -82,7 +83,7 @@ fn scattering_insert<T, U>(
     factory: &mut Factory,
     reservation: Reservation,
     insertions: U,
-) -> ChildTask<Result<(), String>>
+) -> ChildTask<Result<(), LocalStr>>
 where
     T: Inventory<Access = BusAccess>,
     U: IntoIterator<Item = (usize, i32)> + 'static,
@@ -101,16 +102,16 @@ where
                 for (inv_slot, size) in insertions.into_iter() {
                     let access = server.load_balance(this.get_accesses());
                     let action = ActionFuture::from(Call {
-                        addr: access.inv_addr,
+                        addr: access.inv_addr.clone(),
                         args: vec![
                             "pullItems".into(),
-                            access.bus_addr.into(),
+                            access.bus_addr.clone().into(),
                             (bus_slot + 1).into(),
                             size.into(),
                             (inv_slot + 1).into(),
                         ],
                     });
-                    server.enqueue_request_group(access.client, vec![action.clone().into()]);
+                    server.enqueue_request_group(&access.client, vec![action.clone().into()]);
                     tasks.push(spawn(async move { action.await.map(|_| ()) }))
                 }
             }

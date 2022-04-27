@@ -1,3 +1,5 @@
+use flexstr::LocalStr;
+
 pub trait GetClient {
     fn get_client(&self) -> &str;
 }
@@ -5,41 +7,41 @@ pub trait GetClient {
 macro_rules! impl_get_client {
     ($a:ident) => {
         impl GetClient for $a {
-            fn get_client(&self) -> &str { self.client }
+            fn get_client(&self) -> &str { &*self.client }
         }
     };
 }
 
 pub trait GetAddr {
-    fn get_addr(&self) -> &'static str;
+    fn get_addr(&self) -> &LocalStr;
 }
 
 impl_get_client!(BasicAccess);
 pub struct BasicAccess {
-    pub client: &'static str,
-    pub addr: &'static str,
+    pub client: LocalStr,
+    pub addr: LocalStr,
 }
 
 impl GetAddr for BasicAccess {
-    fn get_addr(&self) -> &'static str { self.addr }
+    fn get_addr(&self) -> &LocalStr { &self.addr }
 }
 
 impl_get_client!(BusAccess);
 pub struct BusAccess {
-    pub client: &'static str,
-    pub inv_addr: &'static str,
-    pub bus_addr: &'static str,
+    pub client: LocalStr,
+    pub inv_addr: LocalStr,
+    pub bus_addr: LocalStr,
 }
 
 impl GetAddr for BusAccess {
-    fn get_addr(&self) -> &'static str { self.inv_addr }
+    fn get_addr(&self) -> &LocalStr { &self.inv_addr }
 }
 
 impl_get_client!(RedstoneAccess);
 pub struct RedstoneAccess {
-    pub client: &'static str,
-    pub addr: Option<&'static str>,
-    pub side: &'static str,
+    pub client: LocalStr,
+    pub addr: Option<LocalStr>,
+    pub side: LocalStr,
     pub bit: Option<u8>, // for bundled cable only
 }
 
@@ -56,15 +58,15 @@ pub const EAST: &str = "east";
 
 impl_get_client!(CraftyAccess);
 pub struct CraftyAccess {
-    pub client: &'static str,
-    pub non_consumable_addr: &'static str,
-    pub turtle_addr: &'static str,
-    pub bus_addr: &'static str,
+    pub client: LocalStr,
+    pub non_consumable_addr: LocalStr,
+    pub turtle_addr: LocalStr,
+    pub bus_addr: LocalStr,
 }
 
 impl_get_client!(MultiInvAccess);
 pub struct MultiInvAccess {
-    pub client: &'static str,
-    pub inv_addrs: Vec<&'static str>,
-    pub bus_addr: &'static str,
+    pub client: LocalStr,
+    pub inv_addrs: Vec<LocalStr>,
+    pub bus_addr: LocalStr,
 }

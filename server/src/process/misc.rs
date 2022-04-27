@@ -9,6 +9,7 @@ use super::super::server::Server;
 use super::super::util::{alive, join_tasks, spawn};
 use super::{extract_output, scattering_insert, BufferedInput, IntoProcess, Process, ScatteringInput};
 use abort_on_drop::ChildTask;
+use flexstr::{local_fmt, LocalStr};
 use std::{
     cell::RefCell,
     fs::read_to_string,
@@ -36,7 +37,7 @@ impl<T: IntoProcess> IntoProcess for ConditionalConfig<T> {
 }
 
 impl<T: Process> Process for ConditionalProcess<T> {
-    fn run(&self, factory: &Factory) -> ChildTask<Result<(), String>> {
+    fn run(&self, factory: &Factory) -> ChildTask<Result<(), LocalStr>> {
         if (self.condition)(factory) {
             self.child.borrow().run(factory)
         } else {
@@ -46,7 +47,7 @@ impl<T: Process> Process for ConditionalProcess<T> {
 }
 
 pub struct SyncAndRestockConfig {
-    pub name: &'static str,
+    pub name: LocalStr,
     pub accesses: Vec<BusAccess>,
     pub accesses_in: Vec<RedstoneAccess>,
     pub accesses_out: Vec<RedstoneAccess>,
@@ -84,12 +85,16 @@ impl IntoProcess for SyncAndRestockConfig {
 }
 
 impl SyncAndRestockProcess {
-    fn output(&self, server: &Server, is_high: bool) -> impl Future<Output = Result<(), String>> {
+    fn output(&self, server: &Server, is_high: bool) -> impl Future<Output = Result<(), LocalStr>> {
         let access = server.load_balance(&self.config.accesses_out);
         let value = if is_high { 15 } else { 0 };
-        let action =
-            ActionFuture::from(RedstoneOutput { side: access.side, addr: access.addr, bit: access.bit, value });
-        server.enqueue_request_group(access.client, vec![action.clone().into()]);
+        let action = ActionFuture::from(RedstoneOutput {
+            side: access.side.clone(),
+            addr: access.addr.clone(),
+            bit: access.bit,
+            value,
+        });
+        server.enqueue_request_group(&access.client, vec![action.clone().into()]);
         let weak = self.weak.clone();
         async move {
             action.await?;
@@ -99,7 +104,7 @@ impl SyncAndRestockProcess {
         }
     }
 
-    fn restock(&self, weak: Weak<RefCell<Self>>) -> impl Future<Output = Result<bool, String>> {
+    fn restock(&self, weak: Weak<RefCell<Self>>) -> impl Future<Output = Result<bool, LocalStr>> {
         let stacks = list_inventory(self);
         async move {
             let mut stacks = stacks.await?;
@@ -146,7 +151,7 @@ impl SyncAndRestockProcess {
                             continue;
                         }
                         *remaining -= n_inserted;
-                        let reservation = factory.reserve_item(this.config.name, item, n_inserted);
+                        let reservation = factory.reserve_item(&this.config.name, item, n_inserted);
                         tasks.push(scattering_insert(this, factory, reservation, insertions))
                     }
                     if *remaining > 0 {
@@ -162,11 +167,12 @@ impl SyncAndRestockProcess {
 }
 
 impl Process for SyncAndRestockProcess {
-    fn run(&self, factory: &Factory) -> ChildTask<Result<(), String>> {
+    fn run(&self, factory: &Factory) -> ChildTask<Result<(), LocalStr>> {
         let server = factory.get_server().borrow();
         let access = server.load_balance(&self.config.accesses_in);
-        let action = ActionFuture::from(RedstoneInput { side: access.side, addr: access.addr, bit: access.bit });
-        server.enqueue_request_group(access.client, vec![action.clone().into()]);
+        let action =
+            ActionFuture::from(RedstoneInput { side: access.side.clone(), addr: access.addr.clone(), bit: access.bit });
+        server.enqueue_request_group(&access.client, vec![action.clone().into()]);
         let weak = self.weak.clone();
         spawn(async move {
             let is_high = action.await? > 0;
@@ -175,7 +181,7 @@ impl Process for SyncAndRestockProcess {
                 if this.waiting_for_low {
                     if !is_high {
                         upgrade!(this.factory, factory);
-                        factory.log(Log { text: format!("{}: leave", this.config.name), color: 10 });
+                        factory.log(Log { text: local_fmt!("{}: leave", this.config.name), color: 10 });
                     }
                     spawn(this.output(&*this.server.borrow(), is_high))
                 } else {
@@ -187,9 +193,9 @@ impl Process for SyncAndRestockProcess {
                                 alive!(weak, this);
                                 upgrade!(this.factory, factory);
                                 if skip {
-                                    factory.log(Log { text: format!("{}: unfilled", this.config.name), color: 10 });
+                                    factory.log(Log { text: local_fmt!("{}: unfilled", this.config.name), color: 10 });
                                 } else {
-                                    factory.log(Log { text: format!("{}: enter", this.config.name), color: 10 });
+                                    factory.log(Log { text: local_fmt!("{}: enter", this.config.name), color: 10 });
                                 }
                                 let server = this.server.borrow();
                                 this.output(&*server, !skip)
@@ -209,34 +215,34 @@ impl Process for SyncAndRestockProcess {
 pub struct LowAlert {
     item: Filter,
     n_wanted: i32,
-    log: String,
+    log: LocalStr,
 }
 
 impl LowAlert {
-    pub fn new(item: Filter, n_wanted: i32, log: Option<String>) -> Self {
-        let log = log.unwrap_or_else(|| match &item {
-            Filter::Label(x) => (*x).to_owned(),
-            Filter::Name(x) => format!("<{}>", x),
-            Filter::Both { label, name } => format!("{} <{}>", label, name),
-            Filter::Fn(_) => "<fn>".to_owned(),
-        });
+    pub fn new(item: Filter, n_wanted: i32) -> Self {
+        let log = match &item {
+            Filter::Label(x) => x.clone(),
+            Filter::Name(x) => local_fmt!("<{}>", x),
+            Filter::Both { label, name } => local_fmt!("{} <{}>", label, name),
+            Filter::Custom { desc, .. } => local_fmt!("<{}>", desc),
+        };
         Self { item, n_wanted, log }
     }
 }
 
 impl Process for LowAlert {
-    fn run(&self, factory: &Factory) -> ChildTask<Result<(), String>> {
+    fn run(&self, factory: &Factory) -> ChildTask<Result<(), LocalStr>> {
         let n_stored = factory.search_n_stored(&self.item);
         if n_stored < self.n_wanted {
-            factory.log(Log { text: format!("need {}*{}", self.log, self.n_wanted - n_stored), color: 6 })
+            factory.log(Log { text: local_fmt!("need {}*{}", self.log, self.n_wanted - n_stored), color: 6 })
         }
         spawn(async { Ok(()) })
     }
 }
 
 pub struct ItemCycleConfig {
-    pub name: &'static str,
-    pub file_name: &'static str,
+    pub name: LocalStr,
+    pub file_name: LocalStr,
     pub accesses: Vec<BusAccess>,
     pub slot: usize,
     pub items: Vec<ScatteringInput>,
@@ -255,7 +261,8 @@ pub struct ItemCycleProcess {
 impl IntoProcess for ItemCycleConfig {
     type Output = ItemCycleProcess;
     fn into_process(self, factory: &Factory) -> Rc<RefCell<Self::Output>> {
-        let next_item = read_to_string(self.file_name).ok().and_then(|x| usize::from_str(&x).ok()).unwrap_or_default();
+        let next_item =
+            read_to_string(&*self.file_name).ok().and_then(|x| usize::from_str(&x).ok()).unwrap_or_default();
         Rc::new_cyclic(|weak| {
             RefCell::new(Self::Output {
                 weak: weak.clone(),
@@ -273,7 +280,7 @@ impl IntoProcess for ItemCycleConfig {
 impl_inventory!(ItemCycleProcess, BusAccess);
 
 impl Process for ItemCycleProcess {
-    fn run(&self, _: &Factory) -> ChildTask<Result<(), String>> {
+    fn run(&self, _: &Factory) -> ChildTask<Result<(), LocalStr>> {
         let stacks = list_inventory(self);
         let weak = self.weak.clone();
         spawn(async move {
@@ -290,7 +297,7 @@ impl Process for ItemCycleProcess {
                     if info.borrow().get_availability(input.get_allow_backup(), input.get_extra_backup()) < 1 {
                         return Ok(());
                     }
-                    let reservation = factory.reserve_item(this.config.name, item, 1);
+                    let reservation = factory.reserve_item(&this.config.name, item, 1);
                     let bus_slot = factory.bus_allocate();
                     let weak = weak.clone();
                     let slot_to_free = &mut slot_to_free;
@@ -303,16 +310,16 @@ impl Process for ItemCycleProcess {
                             let server = this.server.borrow();
                             let access = server.load_balance(&this.config.accesses);
                             let action = ActionFuture::from(Call {
-                                addr: access.inv_addr,
+                                addr: access.inv_addr.clone(),
                                 args: vec![
                                     "pullItems".into(),
-                                    access.bus_addr.into(),
+                                    access.bus_addr.clone().into(),
                                     (bus_slot + 1).into(),
                                     1.into(),
                                     (this.config.slot + 1).into(),
                                 ],
                             });
-                            server.enqueue_request_group(access.client, vec![action.clone().into()]);
+                            server.enqueue_request_group(&access.client, vec![action.clone().into()]);
                             action
                         };
                         task.await?;
@@ -324,8 +331,8 @@ impl Process for ItemCycleProcess {
                         if this.next_item == this.config.items.len() {
                             this.next_item = 0
                         }
-                        std::fs::write(this.config.file_name, this.next_item.to_string())
-                            .map_err(|e| format!("{}: {}", this.config.name, e))
+                        std::fs::write(&*this.config.file_name, this.next_item.to_string())
+                            .map_err(|e| local_fmt!("{}: {}", this.config.name, e))
                     }
                 } else {
                     return Ok(());

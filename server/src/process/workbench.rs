@@ -8,6 +8,7 @@ use super::super::recipe::{
 use super::super::util::{alive, join_outputs, join_tasks, spawn};
 use super::{IntoProcess, Process};
 use abort_on_drop::ChildTask;
+use flexstr::LocalStr;
 use std::{
     cell::RefCell,
     cmp::min,
@@ -15,7 +16,7 @@ use std::{
 };
 
 pub struct WorkbenchConfig {
-    pub name: &'static str,
+    pub name: LocalStr,
     pub accesses: Vec<BusAccess>,
     pub recipes: Vec<CraftingGridRecipe>,
 }
@@ -33,7 +34,7 @@ impl IntoProcess for WorkbenchConfig {
 }
 
 impl Process for WorkbenchProcess {
-    fn run(&self, factory: &Factory) -> ChildTask<Result<(), String>> {
+    fn run(&self, factory: &Factory) -> ChildTask<Result<(), LocalStr>> {
         let mut tasks = Vec::new();
         for Demand { i_recipe, .. } in compute_demands(factory, &self.config.recipes) {
             let recipe = &self.config.recipes[i_recipe];
@@ -46,7 +47,7 @@ impl Process for WorkbenchProcess {
                 let slots_to_free = Rc::new(RefCell::new(Vec::new()));
                 for (i_input, (item, _)) in items.into_iter().enumerate() {
                     let reservation =
-                        factory.reserve_item(self.config.name, &item, n_sets * recipe.inputs[i_input].size);
+                        factory.reserve_item(&self.config.name, &item, n_sets * recipe.inputs[i_input].size);
                     let slots_to_free = slots_to_free.clone();
                     let weak = factory.get_weak().clone();
                     bus_slots.push(spawn(async move {
@@ -104,8 +105,10 @@ impl Process for WorkbenchProcess {
                                 store_non_consumable(&mut group, access, non_consumable)
                             }
                             let group: Vec<_> = group.into_iter().map(|x| ActionFuture::from(x)).collect();
-                            server
-                                .enqueue_request_group(access.client, group.iter().map(|x| x.clone().into()).collect());
+                            server.enqueue_request_group(
+                                &access.client,
+                                group.iter().map(|x| x.clone().into()).collect(),
+                            );
                             group.into_iter().map(|x| spawn(async move { x.await.map(|_| ()) })).collect()
                         };
                         join_tasks(tasks).await?;
@@ -127,10 +130,10 @@ impl Process for WorkbenchProcess {
 
 fn load_input(group: &mut Vec<Call>, access: &BusAccess, bus_slot: usize, inv_slot: usize, size: i32) {
     group.push(Call {
-        addr: access.inv_addr,
+        addr: access.inv_addr.clone(),
         args: vec![
             "pullItems".into(),
-            access.bus_addr.into(),
+            access.bus_addr.clone().into(),
             (bus_slot + 1).into(),
             size.into(),
             (inv_slot + 1).into(),
@@ -140,10 +143,10 @@ fn load_input(group: &mut Vec<Call>, access: &BusAccess, bus_slot: usize, inv_sl
 
 fn load_non_consumable(group: &mut Vec<Call>, access: &BusAccess, non_consumable: &NonConsumable) {
     group.push(Call {
-        addr: access.inv_addr,
+        addr: access.inv_addr.clone(),
         args: vec![
             "pushItems".into(),
-            access.inv_addr.into(),
+            access.inv_addr.clone().into(),
             (non_consumable.storage_slot + 11).into(),
             64.into(),
             (non_consumable.crafting_grid_slot + 1).into(),
@@ -154,18 +157,18 @@ fn load_non_consumable(group: &mut Vec<Call>, access: &BusAccess, non_consumable
 fn store_output(group: &mut Vec<Call>, access: &BusAccess, bus_slot: usize, n_sets: i32) {
     for _ in 0..n_sets {
         group.push(Call {
-            addr: access.inv_addr,
-            args: vec!["pushItems".into(), access.bus_addr.into(), 10.into(), 64.into(), (bus_slot + 1).into()],
+            addr: access.inv_addr.clone(),
+            args: vec!["pushItems".into(), access.bus_addr.clone().into(), 10.into(), 64.into(), (bus_slot + 1).into()],
         })
     }
 }
 
 fn store_non_consumable(group: &mut Vec<Call>, access: &BusAccess, non_consumable: &NonConsumable) {
     group.push(Call {
-        addr: access.inv_addr,
+        addr: access.inv_addr.clone(),
         args: vec![
             "pushItems".into(),
-            access.inv_addr.into(),
+            access.inv_addr.clone().into(),
             (non_consumable.crafting_grid_slot + 1).into(),
             64.into(),
             (non_consumable.storage_slot + 11).into(),

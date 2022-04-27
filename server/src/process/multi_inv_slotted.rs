@@ -10,6 +10,7 @@ use super::super::server::Server;
 use super::super::util::{alive, join_outputs, join_tasks, spawn};
 use super::extract_output;
 use abort_on_drop::ChildTask;
+use flexstr::LocalStr;
 use fnv::{FnvHashMap, FnvHashSet};
 use std::cell::RefCell;
 use std::cmp::min;
@@ -44,7 +45,7 @@ pub type MultiInvExtractFilter = Box<dyn Fn(usize, usize, &DetailStack) -> bool>
 pub fn multi_inv_extract_all() -> Option<MultiInvExtractFilter> { Some(Box::new(|_, _, _| true)) }
 
 pub struct MultiInvSlottedConfig {
-    pub name: &'static str,
+    pub name: LocalStr,
     pub input_slots: Vec<Vec<usize>>,
     pub accesses: Vec<MultiInvAccess>,
     pub to_extract: Option<MultiInvExtractFilter>,
@@ -68,7 +69,7 @@ impl_inventory!(EachInv, BusAccess);
 
 pub struct MultiInvSlottedProcess {
     weak: Weak<RefCell<MultiInvSlottedProcess>>,
-    name: &'static str,
+    name: LocalStr,
     accesses: Vec<MultiInvAccess>,
     factory: Weak<RefCell<Factory>>,
     server: Rc<RefCell<Server>>,
@@ -94,9 +95,9 @@ impl IntoProcess for MultiInvSlottedConfig {
                                 accesses: accesses
                                     .iter()
                                     .map(|access| BusAccess {
-                                        client: access.client,
-                                        inv_addr: access.inv_addrs[i],
-                                        bus_addr: access.bus_addr,
+                                        client: access.client.clone(),
+                                        inv_addr: access.inv_addrs[i].clone(),
+                                        bus_addr: access.bus_addr.clone(),
                                     })
                                     .collect(),
                                 input_slots,
@@ -123,7 +124,7 @@ impl IntoProcess for MultiInvSlottedConfig {
 }
 
 impl Process for MultiInvSlottedProcess {
-    fn run(&self, factory: &Factory) -> ChildTask<Result<(), String>> {
+    fn run(&self, factory: &Factory) -> ChildTask<Result<(), LocalStr>> {
         if self.to_extract.is_none() && compute_demands(factory, &self.recipes).is_empty() {
             return spawn(async { Ok(()) });
         }
@@ -201,13 +202,13 @@ impl Process for MultiInvSlottedProcess {
 }
 
 impl MultiInvSlottedProcess {
-    fn execute_recipe(&self, factory: &mut Factory, demand: Demand) -> ChildTask<Result<(), String>> {
+    fn execute_recipe(&self, factory: &mut Factory, demand: Demand) -> ChildTask<Result<(), LocalStr>> {
         let mut bus_slots = Vec::new();
         let slots_to_free = Rc::new(RefCell::new(Vec::new()));
         let recipe = &self.recipes[demand.i_recipe];
         for (i_input, input) in recipe.inputs.iter().enumerate() {
             let reservation =
-                factory.reserve_item(self.name, &demand.inputs.items[i_input].0, demand.inputs.n_sets * input.size);
+                factory.reserve_item(&self.name, &demand.inputs.items[i_input].0, demand.inputs.n_sets * input.size);
             let bus_slot = factory.bus_allocate();
             let slots_to_free = slots_to_free.clone();
             bus_slots.push(spawn(async move {
@@ -238,10 +239,10 @@ impl MultiInvSlottedProcess {
                         let size_per_slot = input.size / input.slots.len() as i32;
                         for (inv, inv_slot, _) in &input.slots {
                             let action = ActionFuture::from(Call {
-                                addr: access.inv_addrs[*inv],
+                                addr: access.inv_addrs[*inv].clone(),
                                 args: vec![
                                     "pullItems".into(),
-                                    access.bus_addr.into(),
+                                    access.bus_addr.clone().into(),
                                     (bus_slots[i_input] + 1).into(),
                                     (demand.inputs.n_sets * size_per_slot).into(),
                                     (inv_slot + 1).into(),
@@ -251,7 +252,7 @@ impl MultiInvSlottedProcess {
                             tasks.push(spawn(async move { action.await.map(|_| ()) }));
                         }
                     }
-                    server.enqueue_request_group(access.client, group)
+                    server.enqueue_request_group(&access.client, group)
                 }
                 join_tasks(tasks).await?;
                 alive_mut!(factory, factory);

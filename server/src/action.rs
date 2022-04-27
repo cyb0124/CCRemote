@@ -1,4 +1,5 @@
 use super::lua_value::{vec_to_table, Table, Value};
+use flexstr::LocalStr;
 use std::{
     cell::RefCell,
     convert::TryInto,
@@ -11,32 +12,32 @@ use std::{
 pub trait Action: 'static {
     type Output;
     fn build_request(self, table: &mut Table);
-    fn parse_response(response: Value) -> Result<Self::Output, String>;
+    fn parse_response(response: Value) -> Result<Self::Output, LocalStr>;
 }
 
 struct ActionState<T: Action> {
-    result: Option<Result<T::Output, String>>,
+    result: Option<Result<T::Output, LocalStr>>,
     waker: Option<Waker>,
     action: Option<T>,
 }
 
 pub trait ActionRequest {
     fn build_request(&mut self, table: &mut Table);
-    fn on_fail(&mut self, reason: String);
-    fn on_response(&mut self, result: Value) -> Result<(), String>;
+    fn on_fail(&mut self, reason: LocalStr);
+    fn on_response(&mut self, result: Value) -> Result<(), LocalStr>;
 }
 
 impl<T: Action> ActionRequest for ActionState<T> {
     fn build_request(&mut self, table: &mut Table) { self.action.take().unwrap().build_request(table) }
 
-    fn on_fail(&mut self, reason: String) {
+    fn on_fail(&mut self, reason: LocalStr) {
         self.result = Some(Err(reason));
         if let Some(waker) = self.waker.take() {
             waker.wake()
         }
     }
 
-    fn on_response(&mut self, result: Value) -> Result<(), String> {
+    fn on_response(&mut self, result: Value) -> Result<(), LocalStr> {
         let result = T::parse_response(result);
         let ret = if let Err(ref e) = result { Err(e.clone()) } else { Ok(()) };
         self.result = Some(result);
@@ -54,7 +55,7 @@ impl<T: Action> Clone for ActionFuture<T> {
 }
 
 impl<T: Action> Future for ActionFuture<T> {
-    type Output = Result<T::Output, String>;
+    type Output = Result<T::Output, LocalStr>;
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let this = self.get_mut();
         let mut this = this.0.borrow_mut();
@@ -79,7 +80,7 @@ impl<T: Action> From<ActionFuture<T>> for Rc<RefCell<dyn ActionRequest>> {
 
 #[derive(Clone)]
 pub struct Log {
-    pub text: String,
+    pub text: LocalStr,
     pub color: u8,
 }
 
@@ -92,11 +93,11 @@ impl Action for Log {
         table.insert("t".into(), self.text.into());
     }
 
-    fn parse_response(_response: Value) -> Result<(), String> { Ok(()) }
+    fn parse_response(_: Value) -> Result<(), LocalStr> { Ok(()) }
 }
 
 pub struct Call {
-    pub addr: &'static str,
+    pub addr: LocalStr,
     pub args: Vec<Value>,
 }
 
@@ -109,12 +110,12 @@ impl Action for Call {
         table.insert("v".into(), vec_to_table(self.args).into());
     }
 
-    fn parse_response(response: Value) -> Result<Value, String> { Ok(response) }
+    fn parse_response(response: Value) -> Result<Value, LocalStr> { Ok(response) }
 }
 
 pub struct RedstoneInput {
-    pub side: &'static str,
-    pub addr: Option<&'static str>,
+    pub side: LocalStr,
+    pub addr: Option<LocalStr>,
     pub bit: Option<u8>,
 }
 
@@ -132,12 +133,12 @@ impl Action for RedstoneInput {
         }
     }
 
-    fn parse_response(response: Value) -> Result<u8, String> { response.try_into() }
+    fn parse_response(response: Value) -> Result<u8, LocalStr> { response.try_into() }
 }
 
 pub struct RedstoneOutput {
-    pub side: &'static str,
-    pub addr: Option<&'static str>,
+    pub side: LocalStr,
+    pub addr: Option<LocalStr>,
     pub bit: Option<u8>,
     pub value: u8,
 }
@@ -157,11 +158,11 @@ impl Action for RedstoneOutput {
         }
     }
 
-    fn parse_response(_response: Value) -> Result<(), String> { Ok(()) }
+    fn parse_response(_: Value) -> Result<(), LocalStr> { Ok(()) }
 }
 
 pub struct TurtleCall {
-    pub func: &'static str,
+    pub func: LocalStr,
     pub args: Vec<Value>,
 }
 
@@ -174,5 +175,5 @@ impl Action for TurtleCall {
         table.insert("v".into(), vec_to_table(self.args).into());
     }
 
-    fn parse_response(response: Value) -> Result<Value, String> { Ok(response) }
+    fn parse_response(response: Value) -> Result<Value, LocalStr> { Ok(response) }
 }

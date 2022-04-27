@@ -3,6 +3,7 @@ use super::action::ActionRequest;
 use super::lua_value::{serialize, table_remove, vec_to_table, Parser, Table, Value};
 use super::util::spawn;
 use abort_on_drop::ChildTask;
+use flexstr::{local_fmt, LocalStr};
 use fnv::FnvHashMap;
 use futures_util::{
     sink::SinkExt,
@@ -13,7 +14,7 @@ use std::{
     cell::RefCell,
     collections::VecDeque,
     convert::TryInto,
-    fmt::Display,
+    fmt::Write,
     mem::replace,
     net::{Ipv6Addr, SocketAddr},
     rc::{Rc, Weak},
@@ -27,7 +28,7 @@ use tokio_tungstenite::{accept_async, tungstenite::Message, WebSocketStream};
 
 pub struct Server {
     clients: Option<Rc<RefCell<Client>>>,
-    logins: FnvHashMap<String, Weak<RefCell<Client>>>,
+    logins: FnvHashMap<LocalStr, Weak<RefCell<Client>>>,
     _acceptor: ChildTask<()>,
 }
 
@@ -52,11 +53,11 @@ enum WriterState {
 
 struct Client {
     weak: Weak<RefCell<Client>>,
-    name: String,
+    log_prefix: String,
     next: Option<Rc<RefCell<Client>>>,
     prev: Option<Weak<RefCell<Client>>>,
     server: Weak<RefCell<Server>>,
-    login: Option<String>,
+    login: Option<LocalStr>,
     _reader: ChildTask<()>,
     request_queue: VecDeque<Vec<Rc<RefCell<dyn ActionRequest>>>>,
     request_queue_size: usize,
@@ -68,21 +69,21 @@ struct Client {
 
 impl Drop for Client {
     fn drop(&mut self) {
-        self.log("disconnected");
-        self.name += " disconnected";
+        self.log(format_args!("disconnected"));
+        let message: LocalStr = [&self.log_prefix, " disconnected"].into_iter().collect();
         for x in &self.request_queue {
             for x in x {
-                x.borrow_mut().on_fail(self.name.clone())
+                x.borrow_mut().on_fail(message.clone())
             }
         }
         for x in &self.response_queue {
-            x.1.borrow_mut().on_fail(self.name.clone())
+            x.1.borrow_mut().on_fail(message.clone())
         }
     }
 }
 
 impl Client {
-    fn log(&self, x: &(impl Display + ?Sized)) { println!("{}: {}", self.name, x) }
+    fn log(&self, args: std::fmt::Arguments) { println!("{}: {}", self.log_prefix, args) }
     fn disconnect(&mut self) { self.disconnect_by_server(&mut self.server.upgrade().unwrap().borrow_mut()); }
 
     fn disconnect_by_server(&mut self, server: &mut Server) {
@@ -99,8 +100,8 @@ impl Client {
         }
     }
 
-    fn log_and_disconnect(&mut self, x: &(impl Display + ?Sized)) {
-        self.log(x);
+    fn log_and_disconnect(&mut self, args: std::fmt::Arguments) {
+        self.log(args);
         self.disconnect();
     }
 
@@ -130,7 +131,7 @@ impl Client {
 async fn timeout_main(client: Weak<RefCell<Client>>) {
     sleep(Duration::from_secs(30)).await;
     if let Some(this) = client.upgrade() {
-        this.borrow_mut().log_and_disconnect("request timeout")
+        this.borrow_mut().log_and_disconnect(format_args!("request timeout"))
     }
 }
 
@@ -153,7 +154,7 @@ async fn writer_main(client: Weak<RefCell<Client>>, mut sink: SplitSink<WebSocke
                 }
                 serialize(&vec_to_table(value).into(), &mut data);
                 #[cfg(feature = "dump_traffic")]
-                this.log(&format!("out: {}", data.iter().map(|x| char::from(*x)).collect::<String>()));
+                this.log(format_args!("out: {}", data.iter().map(|x| char::from(*x)).collect::<String>()));
             } else {
                 this.writer = WriterState::NotWriting(sink);
                 break;
@@ -163,14 +164,14 @@ async fn writer_main(client: Weak<RefCell<Client>>, mut sink: SplitSink<WebSocke
         }
         if let Err(e) = sink.send(Message::Binary(data)).await {
             if let Some(this) = client.upgrade() {
-                this.borrow_mut().log_and_disconnect(&format!("error writing: {}", e))
+                this.borrow_mut().log_and_disconnect(format_args!("error writing: {}", e))
             }
             break;
         }
     }
 }
 
-fn on_packet(client: &Rc<RefCell<Client>>, value: Value) -> Result<(), String> {
+fn on_packet(client: &Rc<RefCell<Client>>, value: Value) -> Result<(), LocalStr> {
     let mut client_ref = client.borrow_mut();
     let this = &mut *client_ref;
     if let Some(_) = &this.login {
@@ -178,24 +179,24 @@ fn on_packet(client: &Rc<RefCell<Client>>, value: Value) -> Result<(), String> {
         let id = table_remove(&mut table, "i")?;
         let value = table.remove(&"r".into()).unwrap_or(Value::N);
         if !table.is_empty() {
-            Err(format!("garbage in packet: {:?}", table))
+            Err(local_fmt!("garbage in packet: {:?}", table))
         } else if let Some(request) = this.response_queue.remove(&id) {
             this.update_timeout(true);
             request.borrow_mut().on_response(value)
         } else {
-            Err(format!("unexpected response: {:?}", value))
+            Err(local_fmt!("unexpected response: {:?}", value))
         }
     } else if let Value::S(login) = value {
         upgrade_mut!(this.server, server);
-        this.name += &format!("[{}]", login);
-        this.log("logged in");
+        write!(this.log_prefix, "[{}]", login);
+        this.log(format_args!("logged in"));
         this.login = Some(login.clone());
         drop(this);
         drop(client_ref);
         server.login(login, Rc::downgrade(client));
         Ok(())
     } else {
-        Err(format!("invalid login packet: {:?}", value))
+        Err(local_fmt!("invalid login packet: {:?}", value))
     }
 }
 
@@ -206,23 +207,23 @@ async fn reader_main(client: Weak<RefCell<Client>>, mut stream: SplitStream<WebS
         if let Some(this) = client.upgrade() {
             match data {
                 Some(Err(e)) => {
-                    this.borrow_mut().log_and_disconnect(&format!("error reading: {}", e));
+                    this.borrow_mut().log_and_disconnect(format_args!("error reading: {}", e));
                     break;
                 }
                 Some(Ok(Message::Binary(data))) => {
                     #[cfg(feature = "dump_traffic")]
-                    this.borrow().log(&format!("in: {}", data.iter().map(|x| char::from(*x)).collect::<String>()));
+                    this.borrow().log(format_args!("in: {}", data.iter().map(|x| char::from(*x)).collect::<String>()));
                     if let Err(e) = parser.shift(&data, &mut |x| on_packet(&this, x)) {
-                        this.borrow_mut().log_and_disconnect(&format!("error decoding packet: {}", e));
+                        this.borrow_mut().log_and_disconnect(format_args!("error decoding packet: {}", e));
                         break;
                     }
                 }
                 Some(Ok(data)) => {
-                    this.borrow_mut().log_and_disconnect(&format!("non-binary data: {}", data));
+                    this.borrow_mut().log_and_disconnect(format_args!("non-binary data: {}", data));
                     break;
                 }
                 None => {
-                    this.borrow_mut().log_and_disconnect("client disconnected");
+                    this.borrow_mut().log_and_disconnect(format_args!("client disconnected"));
                     break;
                 }
             }
@@ -238,12 +239,12 @@ async fn handshake_main(client: Weak<RefCell<Client>>, stream: TcpStream) {
         let mut this = this.borrow_mut();
         match result {
             Ok(socket) => {
-                this.log("handshaked");
+                this.log(format_args!("handshaked"));
                 let (sink, stream) = socket.split();
                 this._reader = spawn(reader_main(client, stream));
                 this.writer = WriterState::NotWriting(sink)
             }
-            Err(e) => this.log_and_disconnect(&format!("handshake failed: {}", e)),
+            Err(e) => this.log_and_disconnect(format_args!("handshake failed: {}", e)),
         }
     }
 }
@@ -268,7 +269,7 @@ async fn acceptor_main(server: Weak<RefCell<Server>>, listener: TcpListener) {
                 this.clients = Some(Rc::new_cyclic(|weak| {
                     let client = Client {
                         weak: weak.clone(),
-                        name: addr.to_string(),
+                        log_prefix: addr.to_string(),
                         next: this.clients.take(),
                         prev: None,
                         server: server.clone(),
@@ -284,7 +285,7 @@ async fn acceptor_main(server: Weak<RefCell<Server>>, listener: TcpListener) {
                     if let Some(ref next) = client.next {
                         next.borrow_mut().prev = Some(weak.clone())
                     }
-                    client.log("connected");
+                    client.log(format_args!("connected"));
                     RefCell::new(client)
                 }))
             }
@@ -303,10 +304,10 @@ impl Server {
         })
     }
 
-    fn login(&mut self, name: String, client: Weak<RefCell<Client>>) {
+    fn login(&mut self, name: LocalStr, client: Weak<RefCell<Client>>) {
         if let Some(old) = self.logins.insert(name, client) {
             upgrade_mut!(old, old);
-            old.log("logged in from another address");
+            old.log(format_args!("logged in from another address"));
             old.login = None;
             old.disconnect_by_server(self)
         }
@@ -316,7 +317,7 @@ impl Server {
         if let Some(client) = self.logins.get(client) {
             client.upgrade().unwrap().borrow_mut().enqueue_request_group(group)
         } else {
-            let reason = format!("{} isn't connected", client);
+            let reason = local_fmt!("{} isn't connected", client);
             for x in group {
                 x.borrow_mut().on_fail(reason.clone())
             }

@@ -4,7 +4,7 @@ use super::lua_value::Value;
 use super::server::Server;
 use super::util::spawn;
 use abort_on_drop::ChildTask;
-use fnv::FnvHashSet;
+use flexstr::LocalStr;
 use ordered_float::NotNan;
 use std::cell::RefCell;
 use std::collections::VecDeque;
@@ -14,11 +14,10 @@ use tokio::io::{stdin, AsyncBufReadExt, BufReader};
 const QUEUE_SIZE: usize = 8;
 struct Context {
     server: Rc<RefCell<Server>>,
-    leaks: FnvHashSet<&'static str>,
     queue: VecDeque<ChildTask<()>>,
 }
 
-fn run_command(ctx: Rc<RefCell<Context>>, client: String, args: Vec<String>) -> ChildTask<()> {
+fn run_command(ctx: Rc<RefCell<Context>>, client: LocalStr, args: Vec<LocalStr>) -> ChildTask<()> {
     spawn(async move {
         if let Ok(n) = args[0].parse::<usize>() {
             if args.len() < 2 {
@@ -39,19 +38,14 @@ fn run_command(ctx: Rc<RefCell<Context>>, client: String, args: Vec<String>) -> 
             }
         } else {
             let mut ctx = ctx.borrow_mut();
-            let first = &args[0];
+            let mut args = args.into_iter();
+            let mut first = args.next().unwrap();
             let is_call = first.starts_with('-');
-            let first = if is_call { &first[1..] } else { first as &str };
-            let first = ctx.leaks.get(first).map(|x| *x).unwrap_or_else(|| {
-                let leaked = Box::leak(first.to_owned().into_boxed_str());
-                ctx.leaks.insert(leaked);
-                leaked
-            });
-            let args = args
-                .iter()
-                .skip(1)
-                .map(|arg| if let Ok(arg) = arg.parse::<NotNan<f64>>() { Value::F(arg) } else { arg.to_owned().into() })
-                .collect();
+            if is_call {
+                first = (&first[1..]).into()
+            }
+            let args =
+                args.map(|x| if let Ok(x) = x.parse::<NotNan<f64>>() { Value::F(x) } else { x.into() }).collect();
             let task = if is_call {
                 let action = ActionFuture::from(Call { addr: first, args });
                 ctx.server.borrow().enqueue_request_group(&client, vec![action.clone().into()]);
@@ -70,7 +64,7 @@ fn run_command(ctx: Rc<RefCell<Context>>, client: String, args: Vec<String>) -> 
 }
 
 pub async fn run(server: Rc<RefCell<Server>>) {
-    let ctx = Rc::new(RefCell::new(Context { server, leaks: FnvHashSet::default(), queue: VecDeque::new() }));
+    let ctx = Rc::new(RefCell::new(Context { server, queue: VecDeque::new() }));
     let mut stdin = BufReader::new(stdin());
     let mut client = None;
     loop {
@@ -88,11 +82,11 @@ pub async fn run(server: Rc<RefCell<Server>>) {
             if args.len() != 2 {
                 println!("expect 2 args")
             } else {
-                client = Some(args[1].to_owned());
+                client = Some(LocalStr::from(args[1]));
                 println!("client set")
             }
         } else if let Some(client) = client.as_ref() {
-            run_command(ctx.clone(), client.clone(), args.iter().map(|x| (*x).to_owned()).collect()).await.unwrap()
+            run_command(ctx.clone(), client.clone(), args.iter().map(|x| (*x).into()).collect()).await.unwrap()
         } else {
             println!("set client first")
         }

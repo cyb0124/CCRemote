@@ -6,6 +6,7 @@ use super::super::recipe::{compute_demands, resolve_inputs, CraftingGridRecipe, 
 use super::super::util::{alive, join_outputs, join_tasks, spawn};
 use super::{IntoProcess, Process};
 use abort_on_drop::ChildTask;
+use flexstr::{local_str, LocalStr};
 use std::{
     cell::RefCell,
     cmp::min,
@@ -14,12 +15,12 @@ use std::{
 };
 
 pub struct CraftyTurtle {
-    pub client: &'static str,
+    pub client: LocalStr,
     pub accesses: Vec<CraftyAccess>,
 }
 
 pub struct CraftyConfig {
-    pub name: &'static str,
+    pub name: LocalStr,
     pub turtles: Vec<CraftyTurtle>,
     pub recipes: Vec<CraftingGridRecipe>,
 }
@@ -35,7 +36,7 @@ struct Job {
     i_recipe: usize,
     n_sets: i32,
     slots_to_free: Rc<RefCell<Vec<usize>>>,
-    bus_slots: Vec<ChildTask<Result<usize, String>>>,
+    bus_slots: Vec<ChildTask<Result<usize, LocalStr>>>,
 }
 
 struct JobRef<'a> {
@@ -69,7 +70,7 @@ impl CraftyProcess {
                 let slots_to_free = Rc::new(RefCell::new(Vec::new()));
                 for (i_input, (item, _)) in items.into_iter().enumerate() {
                     let reservation =
-                        factory.reserve_item(self.config.name, &item, n_sets * recipe.inputs[i_input].size);
+                        factory.reserve_item(&self.config.name, &item, n_sets * recipe.inputs[i_input].size);
                     let slots_to_free = slots_to_free.clone();
                     let bus_slot = factory.bus_allocate();
                     bus_slots.push(spawn(async move {
@@ -94,7 +95,7 @@ impl CraftyProcess {
         None
     }
 
-    fn load_inputs(&self, job: &JobRef) -> Vec<ChildTask<Result<(), String>>> {
+    fn load_inputs(&self, job: &JobRef) -> Vec<ChildTask<Result<(), LocalStr>>> {
         upgrade!(self.factory, factory);
         let server = factory.get_server().borrow();
         let access = server.load_balance(&self.config.turtles[job.i_turtle].accesses);
@@ -104,10 +105,10 @@ impl CraftyProcess {
             let size_per_slot = input.size / input.slots.len() as i32;
             for inv_slot in &input.slots {
                 group.push(Call {
-                    addr: access.bus_addr,
+                    addr: access.bus_addr.clone(),
                     args: vec![
                         "pushItems".into(),
-                        access.turtle_addr.into(),
+                        access.turtle_addr.clone().into(),
                         (job.bus_slots[i_input] + 1).into(),
                         (size_per_slot * job.n_sets).into(),
                         (map_turtle_grid(*inv_slot) + 1).into(),
@@ -117,10 +118,10 @@ impl CraftyProcess {
         }
         for non_consumable in &recipe.non_consumables {
             group.push(Call {
-                addr: access.non_consumable_addr,
+                addr: access.non_consumable_addr.clone(),
                 args: vec![
                     "pushItems".into(),
-                    access.turtle_addr.into(),
+                    access.turtle_addr.clone().into(),
                     (non_consumable.storage_slot + 1).into(),
                     64.into(),
                     (map_turtle_grid(non_consumable.crafting_grid_slot) + 1).into(),
@@ -128,28 +129,28 @@ impl CraftyProcess {
             })
         }
         let group: Vec<_> = group.into_iter().map(|x| ActionFuture::from(x)).collect();
-        server.enqueue_request_group(access.client, group.iter().map(|x| x.clone().into()).collect());
+        server.enqueue_request_group(&access.client, group.iter().map(|x| x.clone().into()).collect());
         group.into_iter().map(|x| spawn(async move { x.await.map(|_| ()) })).collect()
     }
 
     fn craft(&self, job: &JobRef) -> ActionFuture<TurtleCall> {
-        let action = ActionFuture::from(TurtleCall { func: "craft", args: vec![] });
+        let action = ActionFuture::from(TurtleCall { func: local_str!("craft"), args: vec![] });
         upgrade!(self.factory, factory);
         let server = factory.get_server().borrow();
-        server.enqueue_request_group(self.config.turtles[job.i_turtle].client, vec![action.clone().into()]);
+        server.enqueue_request_group(&self.config.turtles[job.i_turtle].client, vec![action.clone().into()]);
         action
     }
 
-    fn store_outputs(&self, job: &JobRef, output_bus_slot: usize) -> Vec<ChildTask<Result<(), String>>> {
+    fn store_outputs(&self, job: &JobRef, output_bus_slot: usize) -> Vec<ChildTask<Result<(), LocalStr>>> {
         upgrade!(self.factory, factory);
         let server = factory.get_server().borrow();
         let access = server.load_balance(&self.config.turtles[job.i_turtle].accesses);
         let mut group = Vec::new();
         group.push(Call {
-            addr: access.bus_addr,
+            addr: access.bus_addr.clone(),
             args: vec![
                 "pullItems".into(),
-                access.turtle_addr.into(),
+                access.turtle_addr.clone().into(),
                 1.into(),
                 64.into(),
                 (output_bus_slot + 1).into(),
@@ -157,10 +158,10 @@ impl CraftyProcess {
         });
         for non_consumable in &self.config.recipes[job.i_recipe].non_consumables {
             group.push(Call {
-                addr: access.non_consumable_addr,
+                addr: access.non_consumable_addr.clone(),
                 args: vec![
                     "pullItems".into(),
-                    access.turtle_addr.into(),
+                    access.turtle_addr.clone().into(),
                     (map_turtle_grid(non_consumable.crafting_grid_slot) + 1).into(),
                     64.into(),
                     (non_consumable.storage_slot + 1).into(),
@@ -168,12 +169,12 @@ impl CraftyProcess {
             })
         }
         let group: Vec<_> = group.into_iter().map(|x| ActionFuture::from(x)).collect();
-        server.enqueue_request_group(access.client, group.iter().map(|x| x.clone().into()).collect());
+        server.enqueue_request_group(&access.client, group.iter().map(|x| x.clone().into()).collect());
         group.into_iter().map(|x| spawn(async move { x.await.map(|_| ()) })).collect()
     }
 }
 
-async fn worker_main(weak: Weak<RefCell<CraftyProcess>>, i_turtle: usize) -> Result<(), String> {
+async fn worker_main(weak: Weak<RefCell<CraftyProcess>>, i_turtle: usize) -> Result<(), LocalStr> {
     loop {
         let Job { i_recipe, n_sets, slots_to_free, bus_slots } =
             if let Some(job) = alive(&weak)?.borrow_mut().next_job() { job } else { break Ok(()) };
@@ -196,7 +197,7 @@ async fn worker_main(weak: Weak<RefCell<CraftyProcess>>, i_turtle: usize) -> Res
             while slots_to_free.len() > 1 {
                 factory.bus_free(slots_to_free.pop().unwrap())
             }
-            Result::<(), String>::Ok(())
+            Result::<(), LocalStr>::Ok(())
         };
         let result = task.await;
         alive_mut!(weak, this);
@@ -223,7 +224,7 @@ impl IntoProcess for CraftyConfig {
 }
 
 impl Process for CraftyProcess {
-    fn run(&self, factory: &Factory) -> ChildTask<Result<(), String>> {
+    fn run(&self, factory: &Factory) -> ChildTask<Result<(), LocalStr>> {
         let jobs = compute_demands(factory, &self.config.recipes).into_iter().map(|x| x.i_recipe).collect();
         let weak = self.weak.clone();
         spawn(async move {

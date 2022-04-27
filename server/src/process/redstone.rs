@@ -6,6 +6,7 @@ use super::super::recipe::Outputs;
 use super::super::util::{alive, spawn};
 use super::{IntoProcess, Process};
 use abort_on_drop::ChildTask;
+use flexstr::{local_fmt, LocalStr};
 use std::{
     cell::RefCell,
     rc::{Rc, Weak},
@@ -15,7 +16,7 @@ pub type RedstoneFn = Box<dyn Fn(&Factory) -> u8>;
 pub fn emit_when_want_item(name: &'static str, off: u8, on: u8, outputs: Box<dyn Outputs>) -> RedstoneFn {
     Box::new(move |factory| {
         if outputs.get_priority(&factory).is_some() {
-            factory.log(Log { text: format!("{}: on", name), color: 10 });
+            factory.log(Log { text: local_fmt!("{}: on", name), color: 10 });
             return on;
         }
         off
@@ -28,19 +29,23 @@ pub struct RedstoneEmitterConfig {
 }
 
 impl Process for RedstoneEmitterConfig {
-    fn run(&self, factory: &Factory) -> ChildTask<Result<(), String>> {
+    fn run(&self, factory: &Factory) -> ChildTask<Result<(), LocalStr>> {
         let value = (self.output)(factory);
         let server = factory.get_server().borrow();
         let access = server.load_balance(&self.accesses);
-        let action =
-            ActionFuture::from(RedstoneOutput { side: access.side, addr: access.addr, bit: access.bit, value });
-        server.enqueue_request_group(access.client, vec![action.clone().into()]);
+        let action = ActionFuture::from(RedstoneOutput {
+            side: access.side.clone(),
+            addr: access.addr.clone(),
+            bit: access.bit,
+            value,
+        });
+        server.enqueue_request_group(&access.client, vec![action.clone().into()]);
         spawn(async move { action.await.map(|_| ()) })
     }
 }
 
 pub struct RedstoneConditionalConfig<T: IntoProcess> {
-    pub name: Option<&'static str>,
+    pub name: Option<LocalStr>,
     pub accesses: Vec<RedstoneAccess>,
     pub condition: Box<dyn Fn(u8) -> bool>,
     pub child: T,
@@ -48,7 +53,7 @@ pub struct RedstoneConditionalConfig<T: IntoProcess> {
 
 pub struct RedstoneConditionalProcess<T: Process> {
     weak: Weak<RefCell<RedstoneConditionalProcess<T>>>,
-    name: Option<&'static str>,
+    name: Option<LocalStr>,
     accesses: Vec<RedstoneAccess>,
     condition: Box<dyn Fn(u8) -> bool>,
     child: Rc<RefCell<T>>,
@@ -70,11 +75,12 @@ impl<T: IntoProcess> IntoProcess for RedstoneConditionalConfig<T> {
 }
 
 impl<T: Process> Process for RedstoneConditionalProcess<T> {
-    fn run(&self, factory: &Factory) -> ChildTask<Result<(), String>> {
+    fn run(&self, factory: &Factory) -> ChildTask<Result<(), LocalStr>> {
         let server = factory.get_server().borrow();
         let access = server.load_balance(&self.accesses);
-        let action = ActionFuture::from(RedstoneInput { side: access.side, addr: access.addr, bit: access.bit });
-        server.enqueue_request_group(access.client, vec![action.clone().into()]);
+        let action =
+            ActionFuture::from(RedstoneInput { side: access.side.clone(), addr: access.addr.clone(), bit: access.bit });
+        server.enqueue_request_group(&access.client, vec![action.clone().into()]);
         let weak = self.weak.clone();
         let factory = factory.get_weak().clone();
         spawn(async move {
@@ -85,8 +91,8 @@ impl<T: Process> Process for RedstoneConditionalProcess<T> {
                 if (this.condition)(value) {
                     this.child.borrow().run(factory)
                 } else {
-                    if let Some(name) = this.name {
-                        factory.log(Log { text: format!("{}: skipped", name), color: 10 })
+                    if let Some(name) = &this.name {
+                        factory.log(Log { text: local_fmt!("{}: skipped", name), color: 10 })
                     }
                     return Ok(());
                 }

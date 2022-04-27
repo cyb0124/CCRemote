@@ -1,6 +1,7 @@
 use super::item::{Detail, Item};
 use super::util::{make_local_one_shot, spawn, LocalReceiver, LocalSender};
 use abort_on_drop::ChildTask;
+use flexstr::local_str;
 use fnv::FnvHashMap;
 use std::{
     cell::RefCell,
@@ -39,7 +40,7 @@ async fn resolver_main(
                 if correct {
                     return;
                 }
-                "data race detected on inventory".to_owned()
+                local_str!("data race detected on inventory")
             }
             Err(e) => e,
         };

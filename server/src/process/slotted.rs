@@ -9,6 +9,7 @@ use super::super::server::Server;
 use super::super::util::{alive, join_outputs, join_tasks, spawn};
 use super::{extract_output, ExtractFilter, IntoProcess, Process};
 use abort_on_drop::ChildTask;
+use flexstr::LocalStr;
 use fnv::{FnvHashMap, FnvHashSet};
 use std::{
     cell::RefCell,
@@ -42,7 +43,7 @@ pub struct SlottedRecipe {
 impl_recipe!(SlottedRecipe, SlottedInput);
 
 pub struct SlottedConfig {
-    pub name: &'static str,
+    pub name: LocalStr,
     pub accesses: Vec<BusAccess>,
     pub input_slots: Vec<usize>,
     pub to_extract: Option<ExtractFilter>,
@@ -62,7 +63,7 @@ impl_inventory!(SlottedProcess, BusAccess);
 impl_into_process!(SlottedConfig, SlottedProcess);
 
 impl Process for SlottedProcess {
-    fn run(&self, factory: &Factory) -> ChildTask<Result<(), String>> {
+    fn run(&self, factory: &Factory) -> ChildTask<Result<(), LocalStr>> {
         if self.config.to_extract.is_none() && compute_demands(factory, &self.config.recipes).is_empty() {
             return spawn(async { Ok(()) });
         }
@@ -130,13 +131,13 @@ impl Process for SlottedProcess {
 }
 
 impl SlottedProcess {
-    fn execute_recipe(&self, factory: &mut Factory, demand: Demand) -> ChildTask<Result<(), String>> {
+    fn execute_recipe(&self, factory: &mut Factory, demand: Demand) -> ChildTask<Result<(), LocalStr>> {
         let mut bus_slots = Vec::new();
         let slots_to_free = Rc::new(RefCell::new(Vec::new()));
         let recipe = &self.config.recipes[demand.i_recipe];
         for (i_input, input) in recipe.inputs.iter().enumerate() {
             let reservation = factory.reserve_item(
-                self.config.name,
+                &self.config.name,
                 &demand.inputs.items[i_input].0,
                 demand.inputs.n_sets * input.size,
             );
@@ -170,10 +171,10 @@ impl SlottedProcess {
                         let size_per_slot = input.size / input.slots.len() as i32;
                         for (inv_slot, _) in &input.slots {
                             let action = ActionFuture::from(Call {
-                                addr: access.inv_addr,
+                                addr: access.inv_addr.clone(),
                                 args: vec![
                                     "pullItems".into(),
-                                    access.bus_addr.into(),
+                                    access.bus_addr.clone().into(),
                                     (bus_slots[i_input] + 1).into(),
                                     (demand.inputs.n_sets * size_per_slot).into(),
                                     (inv_slot + 1).into(),
@@ -183,7 +184,7 @@ impl SlottedProcess {
                             tasks.push(spawn(async move { action.await.map(|_| ()) }));
                         }
                     }
-                    server.enqueue_request_group(access.client, group)
+                    server.enqueue_request_group(&access.client, group)
                 }
                 join_tasks(tasks).await?;
                 alive_mut!(factory, factory);

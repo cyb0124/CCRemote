@@ -8,6 +8,7 @@ use super::super::server::Server;
 use super::super::util::{alive, spawn};
 use super::{DepositResult, Extractor, IntoStorage, Provider, Storage};
 use abort_on_drop::ChildTask;
+use flexstr::LocalStr;
 use std::{
     cell::RefCell,
     cmp::min,
@@ -56,7 +57,7 @@ impl IntoStorage for ChestConfig {
 }
 
 impl Storage for ChestStorage {
-    fn update(&self) -> ChildTask<Result<(), String>> {
+    fn update(&self) -> ChildTask<Result<(), LocalStr>> {
         let stacks = list_inventory(self);
         let weak = self.weak.clone();
         spawn(async move {
@@ -122,38 +123,38 @@ impl Storage for ChestStorage {
         let server = self.server.borrow();
         let access = server.load_balance(&self.config.accesses);
         let action = ActionFuture::from(Call {
-            addr: access.inv_addr,
+            addr: access.inv_addr.clone(),
             args: vec![
                 "pullItems".into(),
-                access.bus_addr.into(),
+                access.bus_addr.clone().into(),
                 (bus_slot + 1).into(),
                 n_deposited.into(),
                 (inv_slot + 1).into(),
             ],
         });
-        server.enqueue_request_group(access.client, vec![action.clone().into()]);
+        server.enqueue_request_group(&access.client, vec![action.clone().into()]);
         let task = spawn(async move { action.await.map(|_| ()) });
         DepositResult { n_deposited, task }
     }
 }
 
 impl Extractor for ChestExtractor {
-    fn extract(&self, size: i32, bus_slot: usize) -> ChildTask<Result<(), String>> {
+    fn extract(&self, size: i32, bus_slot: usize) -> ChildTask<Result<(), LocalStr>> {
         let inv_slot = self.inv_slot;
         upgrade!(self.weak, this);
         let server = this.server.borrow();
         let access = server.load_balance(&this.config.accesses);
         let action = ActionFuture::from(Call {
-            addr: access.inv_addr,
+            addr: access.inv_addr.clone(),
             args: vec![
                 "pushItems".into(),
-                access.bus_addr.into(),
+                access.bus_addr.clone().into(),
                 (inv_slot + 1).into(),
                 size.into(),
                 (bus_slot + 1).into(),
             ],
         });
-        server.enqueue_request_group(access.client, vec![action.clone().into()]);
+        server.enqueue_request_group(&access.client, vec![action.clone().into()]);
         let weak = self.weak.clone();
         spawn(async move {
             action.await?;

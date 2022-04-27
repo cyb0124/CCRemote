@@ -2,7 +2,7 @@
 name = "cc-remote"
 version = "0.1.0"
 authors = ["Yibo Cao <cyb@ieee.org>"]
-edition = "2018"
+edition = "2021"
 
 [features]
 plethora = []
@@ -16,6 +16,7 @@ ordered-float = "2"
 futures-util = "0"
 num-traits = "0"
 socket2 = "0"
+flexstr = "0"
 fnv = "1"
 hex = "0"
 

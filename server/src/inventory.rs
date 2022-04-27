@@ -5,6 +5,7 @@ use super::item::{DetailStack, ItemStack};
 use super::lua_value::{call_result, table_to_vec, Value};
 use super::server::Server;
 use super::util::{alive, join_pair, join_tasks, spawn};
+use flexstr::LocalStr;
 use std::{
     cell::RefCell,
     future::Future,
@@ -35,21 +36,21 @@ macro_rules! impl_inventory {
     };
 }
 
-fn fetch_detail<T: Inventory>(this: &T, slot: usize) -> impl Future<Output = Result<DetailStack, String>> {
+fn fetch_detail<T: Inventory>(this: &T, slot: usize) -> impl Future<Output = Result<DetailStack, LocalStr>> {
     let server = this.get_server().borrow();
     let access = server.load_balance(this.get_accesses());
     let action = ActionFuture::from(Call {
-        addr: access.get_addr(),
+        addr: access.get_addr().clone(),
         args: vec![if cfg!(feature = "plethora") { "getItemMeta" } else { "getItemDetail" }.into(), (slot + 1).into()],
     });
     server.enqueue_request_group(access.get_client(), vec![action.clone().into()]);
     async move { DetailStack::parse(call_result(action.await?)?) }
 }
 
-fn fetch_detail_list<T: Inventory>(this: &T) -> impl Future<Output = Result<Vec<Option<DetailStack>>, String>> {
+fn fetch_detail_list<T: Inventory>(this: &T) -> impl Future<Output = Result<Vec<Option<DetailStack>>, LocalStr>> {
     let server = this.get_server().borrow();
     let access = server.load_balance(this.get_accesses());
-    let action = ActionFuture::from(Call { addr: access.get_addr(), args: vec!["list".into()] });
+    let action = ActionFuture::from(Call { addr: access.get_addr().clone(), args: vec!["list".into()] });
     server.enqueue_request_group(access.get_client(), vec![action.clone().into()]);
     let weak = this.get_weak().clone();
     async move {
@@ -91,10 +92,10 @@ fn fetch_detail_list<T: Inventory>(this: &T) -> impl Future<Output = Result<Vec<
     }
 }
 
-fn fetch_size<T: Inventory>(this: &T) -> impl Future<Output = Result<usize, String>> {
+fn fetch_size<T: Inventory>(this: &T) -> impl Future<Output = Result<usize, LocalStr>> {
     let server = this.get_server().borrow();
     let access = server.load_balance(this.get_accesses());
-    let action = ActionFuture::from(Call { addr: access.get_addr(), args: vec!["size".into()] });
+    let action = ActionFuture::from(Call { addr: access.get_addr().clone(), args: vec!["size".into()] });
     server.enqueue_request_group(access.get_client(), vec![action.clone().into()]);
     let weak = this.get_weak().clone();
     async move {
@@ -104,7 +105,7 @@ fn fetch_size<T: Inventory>(this: &T) -> impl Future<Output = Result<usize, Stri
     }
 }
 
-pub fn list_inventory<T: Inventory>(this: &T) -> impl Future<Output = Result<Vec<Option<DetailStack>>, String>> {
+pub fn list_inventory<T: Inventory>(this: &T) -> impl Future<Output = Result<Vec<Option<DetailStack>>, LocalStr>> {
     let stacks = fetch_detail_list(this);
     let size = this.get_size().ok_or_else(|| fetch_size(this));
     async move {

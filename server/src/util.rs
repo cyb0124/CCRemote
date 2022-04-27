@@ -1,4 +1,5 @@
 use abort_on_drop::ChildTask;
+use flexstr::{local_str, LocalStr};
 use futures_util::join;
 use std::{
     cell::RefCell,
@@ -11,31 +12,31 @@ use tokio::task::spawn_local;
 
 pub fn spawn<T: 'static>(future: impl Future<Output = T> + 'static) -> ChildTask<T> { spawn_local(future).into() }
 
-pub async fn join_tasks(tasks: Vec<ChildTask<Result<(), String>>>) -> Result<(), String> {
-    let mut result: Result<(), String> = Ok(());
+pub async fn join_tasks(tasks: Vec<ChildTask<Result<(), LocalStr>>>) -> Result<(), LocalStr> {
+    let mut result: Result<(), Vec<LocalStr>> = Ok(());
     for task in tasks {
         if let Err(e) = task.await.unwrap() {
             if let Err(ref mut result) = result {
-                result.push_str("; ");
-                result.push_str(&e)
+                result.push(local_str!("; "));
+                result.push(e)
             } else {
-                result = Err(e)
+                result = Err(vec![e])
             }
         }
     }
-    result
+    result.map_err(|x| x.into_iter().collect())
 }
 
-pub async fn join_outputs<T>(tasks: Vec<ChildTask<Result<T, String>>>) -> Result<Vec<T>, String> {
-    let mut result: Result<Vec<T>, String> = Ok(Vec::new());
+pub async fn join_outputs<T>(tasks: Vec<ChildTask<Result<T, LocalStr>>>) -> Result<Vec<T>, LocalStr> {
+    let mut result: Result<Vec<T>, Vec<LocalStr>> = Ok(Vec::new());
     for task in tasks {
         match task.await.unwrap() {
             Err(e) => {
                 if let Err(ref mut result) = result {
-                    result.push_str("; ");
-                    result.push_str(&e)
+                    result.push(local_str!("; "));
+                    result.push(e)
                 } else {
-                    result = Err(e)
+                    result = Err(vec![e])
                 }
             }
             Ok(output) => {
@@ -45,31 +46,27 @@ pub async fn join_outputs<T>(tasks: Vec<ChildTask<Result<T, String>>>) -> Result
             }
         }
     }
-    result
+    result.map_err(|x| x.into_iter().collect())
 }
 
 pub async fn join_pair<A, B>(
-    a: impl Future<Output = Result<A, String>>,
-    b: impl Future<Output = Result<B, String>>,
-) -> Result<(A, B), String> {
+    a: impl Future<Output = Result<A, LocalStr>>,
+    b: impl Future<Output = Result<B, LocalStr>>,
+) -> Result<(A, B), LocalStr> {
     match join!(a, b) {
         (Ok(a), Ok(b)) => Ok((a, b)),
         (Err(e), Ok(_)) => Err(e),
         (Ok(_), Err(e)) => Err(e),
-        (Err(mut a), Err(b)) => {
-            a.push_str("; ");
-            a.push_str(&b);
-            Err(a)
-        }
+        (Err(a), Err(b)) => Err([&a, "; ", &b].into_iter().collect()),
     }
 }
 
 struct LocalOneShotState<T> {
-    result: Option<Result<T, String>>,
+    result: Option<Result<T, LocalStr>>,
     waker: Option<Waker>,
 }
 
-fn send<T>(state: Weak<RefCell<LocalOneShotState<T>>>, result: Result<T, String>) {
+fn send<T>(state: Weak<RefCell<LocalOneShotState<T>>>, result: Result<T, LocalStr>) {
     if let Some(state) = state.upgrade() {
         let mut state = state.borrow_mut();
         state.result = Some(result);
@@ -82,7 +79,7 @@ fn send<T>(state: Weak<RefCell<LocalOneShotState<T>>>, result: Result<T, String>
 pub struct LocalReceiver<T>(Rc<RefCell<LocalOneShotState<T>>>);
 
 impl<T> Future for LocalReceiver<T> {
-    type Output = Result<T, String>;
+    type Output = Result<T, LocalStr>;
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let this = self.get_mut();
         let mut this = this.0.borrow_mut();
@@ -100,13 +97,13 @@ pub struct LocalSender<T>(Option<Weak<RefCell<LocalOneShotState<T>>>>);
 impl<T> Drop for LocalSender<T> {
     fn drop(&mut self) {
         if let Some(state) = self.0.take() {
-            send(state, Err("sender died".to_owned()))
+            send(state, Err(local_str!("sender died")))
         }
     }
 }
 
 impl<T> LocalSender<T> {
-    pub fn send(mut self, result: Result<T, String>) { send(self.0.take().unwrap(), result) }
+    pub fn send(mut self, result: Result<T, LocalStr>) { send(self.0.take().unwrap(), result) }
 }
 
 pub fn make_local_one_shot<T>() -> (LocalSender<T>, LocalReceiver<T>) {
@@ -130,7 +127,7 @@ macro_rules! upgrade_mut {
     };
 }
 
-pub fn alive<T>(weak: &Weak<T>) -> Result<Rc<T>, String> { weak.upgrade().ok_or_else(|| "shutdown".to_owned()) }
+pub fn alive<T>(weak: &Weak<T>) -> Result<Rc<T>, LocalStr> { weak.upgrade().ok_or_else(|| local_str!("owner died")) }
 
 macro_rules! alive {
     ($e:expr, $v:ident) => {

@@ -1,10 +1,11 @@
 use super::lua_value::{table_remove, Table, Value};
+use flexstr::{local_fmt, LocalStr};
 use hex::FromHex;
 use std::{cmp::min, convert::TryFrom, rc::Rc};
 
 #[derive(PartialEq, Eq, Hash)]
 pub struct Item {
-    pub name: String,
+    pub name: LocalStr,
     pub nbt_hash: Option<[u8; 16]>,
     #[cfg(feature = "plethora")]
     pub damage: i16,
@@ -15,19 +16,18 @@ pub struct ItemStack {
     pub size: i32,
 }
 
-fn get_nbt_hash(table: &mut Table) -> Result<Option<[u8; 16]>, String> {
+fn get_nbt_hash(table: &mut Table) -> Result<Option<[u8; 16]>, LocalStr> {
     table
         .remove(&if cfg!(feature = "plethora") { "nbtHash" } else { "nbt" }.into())
-        .map(String::try_from)
+        .map(LocalStr::try_from)
         .transpose()?
-        .as_ref()
-        .map(<_>::from_hex)
+        .map(|x| <_>::from_hex(&*x))
         .transpose()
-        .map_err(|e| format!("invalid nbt-hash: {}", e))
+        .map_err(|e| local_fmt!("invalid nbt-hash: {}", e))
 }
 
 impl ItemStack {
-    fn parse_ref(table: &mut Table) -> Result<Self, String> {
+    fn parse_ref(table: &mut Table) -> Result<Self, LocalStr> {
         Ok(Self {
             item: Rc::new(Item {
                 name: table_remove(table, "name")?,
@@ -39,13 +39,13 @@ impl ItemStack {
         })
     }
 
-    pub fn parse(value: Value) -> Result<Self, String> {
+    pub fn parse(value: Value) -> Result<Self, LocalStr> {
         let mut table = Table::try_from(value)?;
         let result = Self::parse_ref(&mut table)?;
         if table.is_empty() {
             Ok(result)
         } else {
-            Err(format!("unexpected fields: {:?}", table))
+            Err(local_fmt!("unexpected fields: {:?}", table))
         }
     }
 
@@ -55,7 +55,7 @@ impl ItemStack {
 }
 
 pub struct Detail {
-    pub label: String,
+    pub label: LocalStr,
     pub max_size: i32,
     pub others: Table,
 }
@@ -68,7 +68,7 @@ pub struct DetailStack {
 }
 
 impl DetailStack {
-    pub fn parse(mut table: Table) -> Result<Self, String> {
+    pub fn parse(mut table: Table) -> Result<Self, LocalStr> {
         let stack = ItemStack::parse_ref(&mut table)?;
         let label = table_remove(&mut table, "displayName")?;
         let max_size = table_remove(&mut table, "maxCount")?;
@@ -76,11 +76,12 @@ impl DetailStack {
     }
 }
 
+#[derive(Clone)]
 pub enum Filter {
-    Label(&'static str),
-    Name(&'static str),
-    Both { label: &'static str, name: &'static str },
-    Fn(Box<dyn Fn(&Item, &Detail) -> bool>),
+    Label(LocalStr),
+    Name(LocalStr),
+    Both { label: LocalStr, name: LocalStr },
+    Custom { desc: LocalStr, func: Rc<dyn Fn(&Item, &Detail) -> bool> },
 }
 
 impl Filter {
@@ -89,7 +90,7 @@ impl Filter {
             Filter::Label(label) => detail.label == *label,
             Filter::Name(name) => item.name == *name,
             Filter::Both { label, name } => detail.label == *label && item.name == *name,
-            Filter::Fn(filter) => filter(item, detail),
+            Filter::Custom { func, .. } => func(item, detail),
         }
     }
 }
@@ -97,8 +98,8 @@ impl Filter {
 pub fn jammer() -> DetailStack {
     thread_local!(static STACK: DetailStack = DetailStack {
         size: 1,
-        item: Rc::new(Item { name: String::new(), nbt_hash: None, #[cfg(feature = "plethora")] damage: 0 }),
-        detail: Rc::new(Detail { label: String::new(), max_size: 1, others: Table::new() })
+        item: Rc::new(Item { name: <_>::default(), nbt_hash: None, #[cfg(feature = "plethora")] damage: 0 }),
+        detail: Rc::new(Detail { label: <_>::default(), max_size: 1, others: Table::new() })
     });
     STACK.with(|stack| stack.clone())
 }

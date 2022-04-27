@@ -1,6 +1,7 @@
 use super::factory::Factory;
 use super::item::{Detail, DetailStack, Item};
 use abort_on_drop::ChildTask;
+use flexstr::LocalStr;
 use std::{
     cell::{Cell, RefCell},
     cmp::Ordering,
@@ -9,11 +10,11 @@ use std::{
 
 pub struct DepositResult {
     pub n_deposited: i32,
-    pub task: ChildTask<Result<(), String>>,
+    pub task: ChildTask<Result<(), LocalStr>>,
 }
 
 pub trait Storage: 'static {
-    fn update(&self) -> ChildTask<Result<(), String>>;
+    fn update(&self) -> ChildTask<Result<(), LocalStr>>;
     fn cleanup(&mut self);
     fn deposit_priority(&mut self, item: &Rc<Item>, detail: &Rc<Detail>) -> Option<i32>;
     fn deposit(&mut self, stack: &DetailStack, bus_slot: usize) -> DepositResult;
@@ -25,7 +26,7 @@ pub trait IntoStorage {
 }
 
 pub trait Extractor: 'static {
-    fn extract(&self, size: i32, bus_slot: usize) -> ChildTask<Result<(), String>>;
+    fn extract(&self, size: i32, bus_slot: usize) -> ChildTask<Result<(), LocalStr>>;
 }
 
 pub struct Provider {
