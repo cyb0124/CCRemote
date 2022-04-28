@@ -288,7 +288,10 @@ impl Process for ItemCycleProcess {
             let mut slot_to_free = None;
             let task = {
                 alive!(weak, this);
-                if this.config.slot >= stacks.len() || stacks[this.config.slot].is_some() {
+                if this.config.slot >= stacks.len() {
+                    return Err(local_fmt!("{}: invalid slot", this.config.name));
+                }
+                if stacks[this.config.slot].is_some() {
                     return Ok(());
                 }
                 upgrade_mut!(this.factory, factory);
