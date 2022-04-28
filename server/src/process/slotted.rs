@@ -168,15 +168,14 @@ impl SlottedProcess {
                     let mut group = Vec::new();
                     let recipe = &this.config.recipes[demand.i_recipe];
                     for (i_input, input) in recipe.inputs.iter().enumerate() {
-                        let size_per_slot = input.size / input.slots.len() as i32;
-                        for (inv_slot, _) in &input.slots {
+                        for (inv_slot, mult) in &input.slots {
                             let action = ActionFuture::from(Call {
                                 addr: access.inv_addr.clone(),
                                 args: vec![
                                     "pullItems".into(),
                                     access.bus_addr.clone().into(),
                                     (bus_slots[i_input] + 1).into(),
-                                    (demand.inputs.n_sets * size_per_slot).into(),
+                                    (demand.inputs.n_sets * mult).into(),
                                     (inv_slot + 1).into(),
                                 ],
                             });
