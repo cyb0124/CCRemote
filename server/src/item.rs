@@ -1,6 +1,6 @@
 use super::lua_value::{table_remove, Table, Value};
 use flexstr::{local_fmt, LocalStr};
-use hex::FromHex;
+use hex::{FromHex, ToHex};
 use std::{cmp::min, convert::TryFrom, rc::Rc};
 
 #[derive(PartialEq, Eq, Hash)]
@@ -11,14 +11,11 @@ pub struct Item {
     pub damage: i16,
 }
 
-pub struct ItemStack {
-    pub item: Rc<Item>,
-    pub size: i32,
-}
+const NBT_HASH_KEY: &'static str = if cfg!(feature = "plethora") { "nbtHash" } else { "nbt" };
 
-fn get_nbt_hash(table: &mut Table) -> Result<Option<[u8; 16]>, LocalStr> {
+fn remove_nbt_hash(table: &mut Table) -> Result<Option<[u8; 16]>, LocalStr> {
     table
-        .remove(&if cfg!(feature = "plethora") { "nbtHash" } else { "nbt" }.into())
+        .remove(&NBT_HASH_KEY.into())
         .map(LocalStr::try_from)
         .transpose()?
         .map(|x| <_>::from_hex(&*x))
@@ -26,22 +23,39 @@ fn get_nbt_hash(table: &mut Table) -> Result<Option<[u8; 16]>, LocalStr> {
         .map_err(|e| local_fmt!("invalid nbt-hash: {}", e))
 }
 
+impl Item {
+    pub fn parse_part(table: &mut Table) -> Result<Rc<Self>, LocalStr> {
+        Ok(Rc::new(Self {
+            name: table_remove(table, "name")?,
+            nbt_hash: remove_nbt_hash(table)?,
+            #[cfg(feature = "plethora")]
+            damage: table_remove(table, "damage")?,
+        }))
+    }
+
+    pub fn encode(&self, table: &mut Table) {
+        table.insert("name".into(), self.name.clone().into());
+        if let Some(nbt_hash) = self.nbt_hash {
+            table.insert(NBT_HASH_KEY.into(), nbt_hash.encode_hex::<LocalStr>().into());
+        }
+        #[cfg(feature = "plethora")]
+        table.insert("damage".into(), self.damage.into());
+    }
+}
+
+pub struct ItemStack {
+    pub item: Rc<Item>,
+    pub size: i32,
+}
+
 impl ItemStack {
-    fn parse_ref(table: &mut Table) -> Result<Self, LocalStr> {
-        Ok(Self {
-            item: Rc::new(Item {
-                name: table_remove(table, "name")?,
-                nbt_hash: get_nbt_hash(table)?,
-                #[cfg(feature = "plethora")]
-                damage: table_remove(table, "damage")?,
-            }),
-            size: table_remove(table, "count")?,
-        })
+    fn parse_part(table: &mut Table) -> Result<Self, LocalStr> {
+        Ok(Self { item: Item::parse_part(table)?, size: table_remove(table, "count")? })
     }
 
     pub fn parse(value: Value) -> Result<Self, LocalStr> {
         let mut table = Table::try_from(value)?;
-        let result = Self::parse_ref(&mut table)?;
+        let result = Self::parse_part(&mut table)?;
         if table.is_empty() {
             Ok(result)
         } else {
@@ -60,6 +74,21 @@ pub struct Detail {
     pub others: Table,
 }
 
+impl Detail {
+    pub fn parse(mut table: Table) -> Result<Rc<Self>, LocalStr> {
+        let label = table_remove(&mut table, "displayName")?;
+        let max_size = table_remove(&mut table, "maxCount")?;
+        Ok(Rc::new(Self { label, max_size, others: table }))
+    }
+
+    pub fn encode(&self) -> Table {
+        let mut table = self.others.clone();
+        table.insert("displayName".into(), self.label.clone().into());
+        table.insert("maxCount".into(), self.max_size.into());
+        table
+    }
+}
+
 #[derive(Clone)]
 pub struct DetailStack {
     pub item: Rc<Item>,
@@ -69,10 +98,8 @@ pub struct DetailStack {
 
 impl DetailStack {
     pub fn parse(mut table: Table) -> Result<Self, LocalStr> {
-        let stack = ItemStack::parse_ref(&mut table)?;
-        let label = table_remove(&mut table, "displayName")?;
-        let max_size = table_remove(&mut table, "maxCount")?;
-        Ok(stack.with_detail(Rc::new(Detail { label, max_size, others: table })))
+        let stack = ItemStack::parse_part(&mut table)?;
+        Ok(stack.with_detail(Detail::parse(table)?))
     }
 }
 
