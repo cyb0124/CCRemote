@@ -127,18 +127,18 @@ where
     })
 }
 
+mod blocking_output;
 mod buffered;
 mod crafty;
-mod inputless;
 mod misc;
 mod multi_inv_slotted;
 mod redstone;
 mod scattering;
 mod slotted;
 mod workbench;
+pub use blocking_output::*;
 pub use buffered::*;
 pub use crafty::*;
-pub use inputless::*;
 pub use misc::*;
 pub use multi_inv_slotted::*;
 pub use redstone::*;

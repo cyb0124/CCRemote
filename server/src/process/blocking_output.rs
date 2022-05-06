@@ -17,30 +17,30 @@ use std::{
     rc::{Rc, Weak},
 };
 
-pub struct InputlessConfig {
+pub struct BlockingOutputConfig {
     pub accesses: Vec<BusAccess>,
     pub slot_filter: Option<SlotFilter>,
     pub outputs: Vec<Output>,
 }
 
-pub struct InputlessProcess {
-    weak: Weak<RefCell<InputlessProcess>>,
-    config: InputlessConfig,
+pub struct BlockingOutputProcess {
+    weak: Weak<RefCell<BlockingOutputProcess>>,
+    config: BlockingOutputConfig,
     detail_cache: Rc<RefCell<DetailCache>>,
     factory: Weak<RefCell<Factory>>,
     server: Rc<RefCell<Server>>,
     size: Option<usize>,
 }
 
-impl_inventory!(InputlessProcess, BusAccess);
-impl_into_process!(InputlessConfig, InputlessProcess);
+impl_inventory!(BlockingOutputProcess, BusAccess);
+impl_into_process!(BlockingOutputConfig, BlockingOutputProcess);
 
-struct InputlessInfo {
+struct Info {
     n_stored: i32,
     n_wanted: i32,
 }
 
-impl Process for InputlessProcess {
+impl Process for BlockingOutputProcess {
     fn run(&self, factory: &Factory) -> ChildTask<Result<(), LocalStr>> {
         let mut enough = true;
         for output in &self.config.outputs {
@@ -60,7 +60,7 @@ impl Process for InputlessProcess {
             {
                 alive!(weak, this);
                 upgrade_mut!(this.factory, factory);
-                let mut infos = FnvHashMap::<&Rc<Item>, InputlessInfo>::default();
+                let mut infos = FnvHashMap::<&Rc<Item>, Info>::default();
                 for (slot, stack) in stacks.iter().enumerate() {
                     if let Some(ref slot_filter) = this.config.slot_filter {
                         if !slot_filter(slot) {
@@ -71,8 +71,7 @@ impl Process for InputlessProcess {
                         let info = match infos.entry(&stack.item) {
                             Entry::Occupied(entry) => entry.into_mut(),
                             Entry::Vacant(entry) => {
-                                let mut info =
-                                    InputlessInfo { n_wanted: 0, n_stored: factory.get_n_stored(&stack.item) };
+                                let mut info = Info { n_wanted: 0, n_stored: factory.get_n_stored(&stack.item) };
                                 for output in &this.config.outputs {
                                     if output.item.apply(&stack.item, &stack.detail) {
                                         info.n_wanted = max(info.n_wanted, output.n_wanted)
