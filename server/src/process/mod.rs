@@ -130,6 +130,7 @@ where
 mod blocking_output;
 mod buffered;
 mod crafty;
+mod drone;
 mod misc;
 mod multi_inv_slotted;
 mod redstone;
@@ -139,6 +140,7 @@ mod workbench;
 pub use blocking_output::*;
 pub use buffered::*;
 pub use crafty::*;
+pub use drone::*;
 pub use misc::*;
 pub use multi_inv_slotted::*;
 pub use redstone::*;

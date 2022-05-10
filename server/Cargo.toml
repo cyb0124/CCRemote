@@ -15,8 +15,10 @@ abort-on-drop = "0"
 ordered-float = "2"
 futures-util = "0"
 num-traits = "0"
+serde_json = "1"
 socket2 = "0"
 flexstr = "0"
+serde = { version = "1", features = ["derive"] }
 fnv = "1"
 hex = "0"
 

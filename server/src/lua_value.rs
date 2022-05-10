@@ -70,6 +70,10 @@ impl From<&'static str> for Value {
     fn from(string: &'static str) -> Value { LocalStr::from_static(string).into() }
 }
 
+impl From<bool> for Value {
+    fn from(boolean: bool) -> Value { Value::B(boolean) }
+}
+
 impl From<Table> for Value {
     fn from(table: Table) -> Value { Value::T(table) }
 }
@@ -83,6 +87,11 @@ impl TryFrom<Value> for NotNan<f64> {
             Err(local_fmt!("non-numeric: {:?}", value))
         }
     }
+}
+
+impl TryFrom<Value> for f64 {
+    type Error = LocalStr;
+    fn try_from(value: Value) -> Result<Self, LocalStr> { NotNan::try_from(value).map(|x| x.into_inner()) }
 }
 
 impl TryFrom<Value> for u8 {
@@ -112,6 +121,17 @@ impl TryFrom<Value> for LocalStr {
             Ok(result)
         } else {
             Err(local_fmt!("non-string: {:?}", value))
+        }
+    }
+}
+
+impl TryFrom<Value> for bool {
+    type Error = LocalStr;
+    fn try_from(value: Value) -> Result<Self, LocalStr> {
+        if let Value::B(result) = value {
+            Ok(result)
+        } else {
+            Err(local_fmt!("non-boolean: {:?}", value))
         }
     }
 }
