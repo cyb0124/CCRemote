@@ -44,8 +44,19 @@ fn run_command(ctx: Rc<RefCell<Context>>, client: LocalStr, args: Vec<LocalStr>)
             if is_call {
                 first = (&first[1..]).into()
             }
-            let args =
-                args.map(|x| if let Ok(x) = x.parse::<NotNan<f64>>() { Value::F(x) } else { x.into() }).collect();
+            let args = args
+                .map(|x| {
+                    if let Ok(x) = x.parse::<NotNan<f64>>() {
+                        Value::F(x)
+                    } else if x == "true" {
+                        Value::B(true)
+                    } else if x == "false" {
+                        Value::B(false)
+                    } else {
+                        x.into()
+                    }
+                })
+                .collect();
             let task = if is_call {
                 let action = ActionFuture::from(Call { addr: first, args });
                 ctx.server.borrow().enqueue_request_group(&client, vec![action.clone().into()]);
