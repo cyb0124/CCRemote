@@ -144,7 +144,7 @@ pub struct DroneProcess {
     factory: Weak<RefCell<Factory>>,
     name: LocalStr,
     accesses: Vec<BasicAccess>,
-    sync_task: Option<Box<dyn FnOnce(&Factory)>>,
+    sync_queue: Vec<Box<dyn FnOnce(&Factory)>>,
     _task: ChildTask<()>,
 }
 
@@ -162,7 +162,7 @@ impl<State: Serialize + for<'a> Deserialize<'a>, Task: Future<Output = ()> + 'st
                 factory: factory.get_weak().clone(),
                 name: self.name,
                 accesses: self.accesses,
-                sync_task: None,
+                sync_queue: Vec::new(),
                 _task: spawn((self.program)(context, state)),
             })
         })
@@ -175,7 +175,7 @@ impl Process for DroneProcess {
         spawn(async move {
             alive_mut!(weak, this);
             upgrade!(this.factory, factory);
-            for sync_task in this.sync_task.take() {
+            for sync_task in std::mem::take(&mut this.sync_queue) {
                 sync_task(factory)
             }
             Ok(())
@@ -191,7 +191,7 @@ impl DroneProcess {
 
     fn sync<T: 'static>(&mut self, f: impl FnOnce(&Factory) -> T + 'static) -> ChildTask<T> {
         let (sender, receiver) = make_local_one_shot();
-        self.sync_task = Some(Box::new(move |factory| sender.send(Ok(f(factory)))));
+        self.sync_queue.push(Box::new(move |factory| sender.send(Ok(f(factory)))));
         spawn(async move {
             if let Ok(x) = receiver.await {
                 x
