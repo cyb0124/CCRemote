@@ -1,5 +1,5 @@
 local url, clientName = ...
-local terms = {term.native(), peripheral.find 'monitor'}
+local terms = { term.native(), peripheral.find 'monitor' }
 
 for _, term in ipairs(terms) do
   if term.setTextScale then term.setTextScale(0.5) end
@@ -92,23 +92,22 @@ local function callRS(p, f, ...)
   else return rs[f](...) end
 end
 
-local function exec(p)
-  local d = {i = p.i}
+local function exec(p, r)
   if p.o == 'l' then log(p)
-  elseif p.o == 'c' then d.r = {peripheral.call(p.p, table.unpack(p.v))}
+  elseif p.o == 'c' then r.r = { peripheral.call(p.p, table.unpack(p.v)) }
   elseif p.o == 'i' then
     if p.b then
-      if bit.band(callRS(p.p, 'getBundledInput', p.s), p.b) ~= 0 then d.r = 15 else d.r = 0 end
-    else d.r = callRS(p.p, 'getAnalogInput', p.s) end
+      if bit.band(callRS(p.p, 'getBundledInput', p.s), p.b) ~= 0 then r.r = 15 else r.r = 0 end
+    else r.r = callRS(p.p, 'getAnalogInput', p.s) end
   elseif p.o == 'o' then
     if p.b then
       local v = callRS(p.p, 'getBundledOutput', p.s)
       if p.v ~= 0 then v = bit.bor(v, p.b) else v = bit.band(v, bit.bnot(p.b)) end
       callRS(p.p, 'setBundledOutput', p.s, v)
     else callRS(p.p, 'setAnalogOutput', p.s, p.v) end
-  elseif p.o == 't' then d.r = {turtle[p.f](table.unpack(p.v))}
+  elseif p.o == 't' then r.r = { turtle[p.f](table.unpack(p.v)) }
   else error('invalid op: ' .. tostring(p.o)) end
-  return d
+  return 0
 end
 
 while true do
@@ -117,13 +116,13 @@ while true do
   log { t = 'Connecting to ' .. clientName .. '@' .. url, c = 4 }
   http.websocketAsync(url)
   while true do
-    local e = {os.pullEvent()}
+    local e = { os.pullEvent() }
     if e[1] == 'timer' then
       if e[2] == tid then log { t = 'Timed out', c = 14 } break end
     elseif e[1] == 'websocket_failure' then
       if e[2] == url then
         log { t = e[3], c = 14 }
-        while e[1] ~= 'timer' or e[2] ~= tid do e = {os.pullEvent()} end
+        while e[1] ~= 'timer' or e[2] ~= tid do e = { os.pullEvent() } end
         break
       end
     elseif e[1] == 'websocket_success' then
@@ -136,9 +135,14 @@ while true do
     local handler = dec(function(p)
       for _, p in ipairs(p) do
         local task = coroutine.create(exec)
-        local e, d = coroutine.resume(task, p)
-        if not e or type(d) == 'table' then out = out .. enc(d)
-        else tasks[#tasks + 1] = { task = task, filter = d } end
+        local r = { i = p.i }
+        local e, d = coroutine.resume(task, p, r)
+        if not e then
+          r.r = nil
+          r.e = d
+          out = out .. enc(r)
+        elseif type(d) == 'number' then out = out .. enc(r)
+        else tasks[#tasks + 1] = { task = task, filter = d, r = r } end
       end
     end)
     while true do
@@ -151,7 +155,7 @@ while true do
         out = out:sub(n + 1)
       end
       if not e then break end
-      e = {os.pullEvent()}
+      e = { os.pullEvent() }
       if e[1] == 'timer' then
         if e[2] == tid then tid = nil end
       elseif e[1] == 'websocket_closed' then
@@ -163,12 +167,16 @@ while true do
       for _, v in ipairs(tasks) do
         if not v.filter or v.filter == e[1] then
           local e, d = coroutine.resume(v.task, table.unpack(e))
-          if not e or type(d) == 'table' then out = out .. enc(d)
-          else newTasks[#newTasks + 1] = { task = v.task, filter = d } end
+          if not e then
+            v.r.r = nil
+            v.r.e = d
+            out = out .. enc(v.r)
+          elseif type(d) == 'number' then out = out .. enc(v.r)
+          else newTasks[#newTasks + 1] = { task = v.task, filter = d, r = v.r } end
         else newTasks[#newTasks + 1] = v end
       end
       tasks = newTasks
     end
-    if tid then repeat local e = {os.pullEvent()} until e[1] ~= 'timer' or e[2] ~= tid end
+    if tid then repeat local e = { os.pullEvent() } until e[1] ~= 'timer' or e[2] ~= tid end
   end
 end

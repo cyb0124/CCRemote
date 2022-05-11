@@ -177,14 +177,21 @@ fn on_packet(client: &Rc<RefCell<Client>>, value: Value) -> Result<(), LocalStr>
     if let Some(_) = &this.login {
         let mut table: Table = value.try_into()?;
         let id = table_remove(&mut table, "i")?;
-        let value = table.remove(&"r".into()).unwrap_or(Value::N);
+        let response = match table.remove(&"e".into()) {
+            Some(Value::S(error)) => Err(error),
+            Some(x) => return Err(local_fmt!("non-string error: {:?}", x)),
+            None => Ok(table.remove(&"r".into()).unwrap_or(Value::N)),
+        };
         if !table.is_empty() {
             Err(local_fmt!("garbage in packet: {:?}", table))
         } else if let Some(request) = this.response_queue.remove(&id) {
             this.update_timeout(true);
-            request.borrow_mut().on_response(value)
+            match response {
+                Ok(x) => request.borrow_mut().on_response(x),
+                Err(e) => Ok(request.borrow_mut().on_fail(e)),
+            }
         } else {
-            Err(local_fmt!("unexpected response: {:?}", value))
+            Err(local_fmt!("unexpected response: {:?}", response))
         }
     } else if let Value::S(login) = value {
         upgrade_mut!(this.server, server);
