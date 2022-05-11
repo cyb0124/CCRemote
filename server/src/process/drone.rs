@@ -88,10 +88,47 @@ impl<State: Serialize> DroneContext<State> {
         self.call_raw(args, call_result)
     }
 
+    pub async fn is_action_done(&self) -> bool { self.call_result(vec!["isActionDone".into()]).await.unwrap() }
+    pub async fn get_pressure(&self) -> f64 { self.call_result(vec!["getDronePressure".into()]).await.unwrap() }
+    pub async fn abort_action(&self) { self.call_void(vec!["abortAction".into()]).await.unwrap() }
+    pub async fn clear_area(&self) { self.call_void(vec!["clearArea".into()]).await.unwrap() }
+    pub async fn clear_whitelist_text(&self) { self.call_void(vec!["clearWhitelistText".into()]).await.unwrap() }
+
     pub async fn wait_for_done(&self) {
-        while !self.call_result::<bool>(vec!["isActionDone".into()]).await.unwrap() {
+        while !self.is_action_done().await {
             self.sync(|_| ()).await.unwrap()
         }
+    }
+
+    pub async fn set_action(&self, action: LocalStr) {
+        self.call_void(vec!["setAction".into(), action.into()]).await.unwrap()
+    }
+
+    pub async fn set_side(&self, side: LocalStr, enabled: bool) {
+        self.call_void(vec!["setSide".into(), side.into(), enabled.into()]).await.unwrap()
+    }
+
+    pub async fn add_point(&self, x: i32, y: i32, z: i32) {
+        self.call_void(vec!["addArea".into(), x.into(), y.into(), z.into()]).await.unwrap()
+    }
+
+    pub async fn add_area(&self, x1: i32, y1: i32, z1: i32, x2: i32, y2: i32, z2: i32) {
+        self.call_void(vec![
+            "addArea".into(),
+            x1.into(),
+            y1.into(),
+            z1.into(),
+            x2.into(),
+            y2.into(),
+            z2.into(),
+            "filled".into(),
+        ])
+        .await
+        .unwrap()
+    }
+
+    pub async fn add_whitelist_text(&self, text: LocalStr) {
+        self.call_void(vec!["addWhitelistText".into(), text.into()]).await.unwrap()
     }
 }
 
