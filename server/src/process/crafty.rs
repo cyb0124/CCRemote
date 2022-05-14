@@ -102,7 +102,6 @@ impl CraftyProcess {
         let mut group = Vec::new();
         let recipe = &self.config.recipes[job.i_recipe];
         for (i_input, input) in recipe.inputs.iter().enumerate() {
-            let size_per_slot = input.size / input.slots.len() as i32;
             for inv_slot in &input.slots {
                 group.push(Call {
                     addr: access.bus_addr.clone(),
@@ -110,7 +109,7 @@ impl CraftyProcess {
                         "pushItems".into(),
                         access.turtle_addr.clone().into(),
                         (job.bus_slots[i_input] + 1).into(),
-                        (size_per_slot * job.n_sets).into(),
+                        job.n_sets.into(),
                         (map_turtle_grid(*inv_slot) + 1).into(),
                     ],
                 })
