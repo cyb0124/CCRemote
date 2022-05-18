@@ -20,12 +20,6 @@ pub struct TurtleContext<State: Serialize> {
 }
 
 impl<State: Serialize> TurtleContext<State> {
-    pub fn log(&self, args: std::fmt::Arguments, color: u8) {
-        if let Some(this) = self.weak.upgrade() {
-            this.borrow().log(args, color);
-        }
-    }
-
     pub fn save(&self, state: &State) {
         if let Some(this) = self.weak.upgrade() {
             let result = File::create(&*self.file_name)
@@ -37,34 +31,43 @@ impl<State: Serialize> TurtleContext<State> {
         }
     }
 
+    pub fn log(&self, args: std::fmt::Arguments, color: u8) {
+        if let Some(this) = self.weak.upgrade() {
+            this.borrow().log(args, color);
+        }
+    }
+
     pub fn sync<T: 'static>(&self, f: impl FnOnce(&Factory) -> T + 'static) -> ChildTask<T> {
         if let Some(this) = self.weak.upgrade() {
-            this.borrow_mut().sync(f)
+            spawn(this.borrow_mut().sync(f))
         } else {
             spawn(pending())
         }
     }
 
-    pub fn call_raw<T: 'static>(
+    pub fn call_raw(&self, func: LocalStr, args: Vec<Value>) -> ChildTask<Result<Value, LocalStr>> {
+        if let Some(this) = self.weak.upgrade() {
+            spawn(this.borrow().call_raw(func, args))
+        } else {
+            spawn(pending())
+        }
+    }
+
+    pub fn call_retry<T: 'static>(
         &self,
         func: LocalStr,
         args: Vec<Value>,
-        parse: impl Fn(Value) -> Result<T, LocalStr> + 'static,
+        parse: impl Fn(Result<Value, LocalStr>) -> Result<T, LocalStr> + 'static,
     ) -> ChildTask<T> {
         let weak = self.weak.clone();
         spawn(async move {
             loop {
                 let task = if let Some(this) = weak.upgrade() {
-                    let this = this.borrow();
-                    upgrade!(this.factory, factory);
-                    let server = factory.get_server().borrow();
-                    let action = ActionFuture::from(TurtleCall { func: func.clone(), args: args.clone() });
-                    server.enqueue_request_group(&this.client, vec![action.clone().into()]);
-                    action
+                    this.borrow().call_raw(func.clone(), args.clone())
                 } else {
                     pending().await
                 };
-                match task.await.and_then(&parse) {
+                match parse(task.await) {
                     Ok(x) => return x,
                     Err(e) => {
                         if let Some(this) = weak.upgrade() {
@@ -73,7 +76,7 @@ impl<State: Serialize> TurtleContext<State> {
                                 this.log(format_args!("{}", e), 14);
                                 this.sync(|_| ())
                             };
-                            task.await.unwrap()
+                            task.await
                         }
                     }
                 }
@@ -81,14 +84,16 @@ impl<State: Serialize> TurtleContext<State> {
         })
     }
 
-    pub fn call_void(&self, func: LocalStr, args: Vec<Value>) -> ChildTask<()> { self.call_raw(func, args, |_| Ok(())) }
+    pub fn call_void(&self, func: LocalStr, args: Vec<Value>) -> ChildTask<()> {
+        self.call_retry(func, args, |x| x.map(|_| ()))
+    }
 
     pub fn call_result<T: TryFrom<Value, Error = LocalStr> + 'static>(
         &self,
         func: LocalStr,
         args: Vec<Value>,
     ) -> ChildTask<T> {
-        self.call_raw(func, args, call_result)
+        self.call_retry(func, args, |x| x.and_then(call_result))
     }
 }
 
@@ -149,15 +154,23 @@ impl TurtleProcess {
         factory.log(Log { text: local_fmt!("{}: {}", self.name, args), color })
     }
 
-    fn sync<T: 'static>(&mut self, f: impl FnOnce(&Factory) -> T + 'static) -> ChildTask<T> {
+    fn sync<T: 'static>(&mut self, f: impl FnOnce(&Factory) -> T + 'static) -> impl Future<Output = T> {
         let (sender, receiver) = make_local_one_shot();
         self.sync_queue.push(Box::new(move |factory| sender.send(Ok(f(factory)))));
-        spawn(async move {
+        async move {
             if let Ok(x) = receiver.await {
                 x
             } else {
                 pending().await
             }
-        })
+        }
+    }
+
+    fn call_raw(&self, func: LocalStr, args: Vec<Value>) -> ActionFuture<TurtleCall> {
+        upgrade!(self.factory, factory);
+        let server = factory.get_server().borrow();
+        let action = ActionFuture::from(TurtleCall { func: func.clone(), args: args.clone() });
+        server.enqueue_request_group(&self.client, vec![action.clone().into()]);
+        action
     }
 }

@@ -12,7 +12,7 @@ use futures_util::future::pending;
 use serde::{Deserialize, Serialize};
 use std::io::{BufReader, BufWriter};
 use std::rc::{Rc, Weak};
-use std::{cell::RefCell, convert::TryFrom, fs::File, future::Future, marker::PhantomData};
+use std::{cell::RefCell, convert::TryFrom, fs::File, future::Future, iter::once, marker::PhantomData};
 
 pub struct DroneContext<State: Serialize> {
     _phantom: PhantomData<dyn Fn(State) -> ()>,
@@ -21,12 +21,6 @@ pub struct DroneContext<State: Serialize> {
 }
 
 impl<State: Serialize> DroneContext<State> {
-    pub fn log(&self, args: std::fmt::Arguments, color: u8) {
-        if let Some(this) = self.weak.upgrade() {
-            this.borrow().log(args, color);
-        }
-    }
-
     pub fn save(&self, state: &State) {
         if let Some(this) = self.weak.upgrade() {
             let result = File::create(&*self.file_name)
@@ -38,34 +32,42 @@ impl<State: Serialize> DroneContext<State> {
         }
     }
 
+    pub fn log(&self, args: std::fmt::Arguments, color: u8) {
+        if let Some(this) = self.weak.upgrade() {
+            this.borrow().log(args, color);
+        }
+    }
+
     pub fn sync<T: 'static>(&self, f: impl FnOnce(&Factory) -> T + 'static) -> ChildTask<T> {
         if let Some(this) = self.weak.upgrade() {
-            this.borrow_mut().sync(f)
+            spawn(this.borrow_mut().sync(f))
         } else {
             spawn(pending())
         }
     }
 
-    pub fn call_raw<T: 'static>(
+    pub fn call_raw(&self, args: Vec<Value>) -> ChildTask<Result<Value, LocalStr>> {
+        if let Some(this) = self.weak.upgrade() {
+            spawn(this.borrow().call_raw(args))
+        } else {
+            spawn(pending())
+        }
+    }
+
+    pub fn call_retry<T: 'static>(
         &self,
         args: Vec<Value>,
-        parse: impl Fn(Value) -> Result<T, LocalStr> + 'static,
+        parse: impl Fn(Result<Value, LocalStr>) -> Result<T, LocalStr> + 'static,
     ) -> ChildTask<T> {
         let weak = self.weak.clone();
         spawn(async move {
             loop {
                 let task = if let Some(this) = weak.upgrade() {
-                    let this = this.borrow();
-                    upgrade!(this.factory, factory);
-                    let server = factory.get_server().borrow();
-                    let access = server.load_balance(&this.accesses);
-                    let action = ActionFuture::from(Call { addr: access.addr.clone(), args: args.clone() });
-                    server.enqueue_request_group(&access.client, vec![action.clone().into()]);
-                    action
+                    this.borrow().call_raw(args.clone())
                 } else {
                     pending().await
                 };
-                match task.await.and_then(&parse) {
+                match parse(task.await) {
                     Ok(x) => return x,
                     Err(e) => {
                         if let Some(this) = weak.upgrade() {
@@ -74,7 +76,7 @@ impl<State: Serialize> DroneContext<State> {
                                 this.log(format_args!("{}", e), 14);
                                 this.sync(|_| ())
                             };
-                            task.await.unwrap()
+                            task.await
                         }
                     }
                 }
@@ -82,13 +84,22 @@ impl<State: Serialize> DroneContext<State> {
         })
     }
 
-    pub fn call_void(&self, args: Vec<Value>) -> ChildTask<()> { self.call_raw(args, |_| Ok(())) }
+    pub fn call_void(&self, args: Vec<Value>) -> ChildTask<()> { self.call_retry(args, |x| x.map(|_| ())) }
 
     pub fn call_result<T: TryFrom<Value, Error = LocalStr> + 'static>(&self, args: Vec<Value>) -> ChildTask<T> {
-        self.call_raw(args, call_result)
+        self.call_retry(args, |x| x.and_then(call_result))
     }
 
-    pub async fn is_action_done(&self) -> bool { self.call_result(vec!["isActionDone".into()]).await.unwrap() }
+    pub async fn is_action_done(&self) -> bool {
+        self.call_retry(vec!["isActionDone".into()], |x| match x {
+            Ok(x) => call_result(x),
+            Err(e) if e.ends_with("There's no action active!") => Ok(true),
+            Err(e) => Err(e),
+        })
+        .await
+        .unwrap()
+    }
+
     pub async fn get_pressure(&self) -> f64 { self.call_result(vec!["getDronePressure".into()]).await.unwrap() }
     pub async fn abort_action(&self) { self.call_void(vec!["abortAction".into()]).await.unwrap() }
     pub async fn clear_area(&self) { self.call_void(vec!["clearArea".into()]).await.unwrap() }
@@ -106,6 +117,10 @@ impl<State: Serialize> DroneContext<State> {
 
     pub async fn set_side(&self, side: LocalStr, enabled: bool) {
         self.call_void(vec!["setSide".into(), side.into(), enabled.into()]).await.unwrap()
+    }
+
+    pub async fn set_sides(&self, sides: [bool; 6]) {
+        self.call_void(once(Value::from("setSides")).chain(sides.into_iter().map(Value::from)).collect()).await.unwrap()
     }
 
     pub async fn add_point(&self, x: i32, y: i32, z: i32) {
@@ -189,15 +204,24 @@ impl DroneProcess {
         factory.log(Log { text: local_fmt!("{}: {}", self.name, args), color })
     }
 
-    fn sync<T: 'static>(&mut self, f: impl FnOnce(&Factory) -> T + 'static) -> ChildTask<T> {
+    fn sync<T: 'static>(&mut self, f: impl FnOnce(&Factory) -> T + 'static) -> impl Future<Output = T> {
         let (sender, receiver) = make_local_one_shot();
         self.sync_queue.push(Box::new(move |factory| sender.send(Ok(f(factory)))));
-        spawn(async move {
+        async move {
             if let Ok(x) = receiver.await {
                 x
             } else {
                 pending().await
             }
-        })
+        }
+    }
+
+    fn call_raw(&self, args: Vec<Value>) -> ActionFuture<Call> {
+        upgrade!(self.factory, factory);
+        let server = factory.get_server().borrow();
+        let access = server.load_balance(&self.accesses);
+        let action = ActionFuture::from(Call { addr: access.addr.clone(), args: args.clone() });
+        server.enqueue_request_group(&access.client, vec![action.clone().into()]);
+        action
     }
 }
