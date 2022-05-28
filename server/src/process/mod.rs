@@ -43,8 +43,8 @@ macro_rules! impl_into_process {
 }
 
 pub type SlotFilter = Box<dyn Fn(usize) -> bool>;
-pub type ExtractFilter = Box<dyn Fn(usize, &DetailStack) -> bool>;
-pub fn extract_all() -> Option<ExtractFilter> { Some(Box::new(|_, _| true)) }
+pub type ExtractFilter = Box<dyn Fn(&Factory, usize, &DetailStack) -> bool>;
+pub fn extract_all() -> Option<ExtractFilter> { Some(Box::new(|_, _, _| true)) }
 
 fn extract_output<T>(this: &T, factory: &mut Factory, slot: usize, size: i32) -> ChildTask<Result<(), LocalStr>>
 where
