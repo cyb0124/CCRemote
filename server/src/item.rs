@@ -1,7 +1,7 @@
 use super::lua_value::{table_remove, Table, Value};
 use flexstr::{local_fmt, LocalStr};
 use hex::{FromHex, ToHex};
-use std::{cmp::min, convert::TryFrom, rc::Rc};
+use std::{cmp::min, rc::Rc};
 
 #[derive(PartialEq, Eq, Hash)]
 pub struct Item {

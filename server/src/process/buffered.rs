@@ -14,7 +14,6 @@ use fnv::FnvHashMap;
 use std::{
     cell::RefCell,
     cmp::min,
-    mem::drop,
     rc::{Rc, Weak},
 };
 

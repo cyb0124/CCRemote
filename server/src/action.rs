@@ -2,7 +2,6 @@ use super::lua_value::{vec_to_table, Table, Value};
 use flexstr::LocalStr;
 use std::{
     cell::RefCell,
-    convert::TryInto,
     future::Future,
     pin::Pin,
     rc::Rc,

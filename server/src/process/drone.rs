@@ -12,7 +12,7 @@ use futures_util::future::pending;
 use serde::{Deserialize, Serialize};
 use std::io::{BufReader, BufWriter};
 use std::rc::{Rc, Weak};
-use std::{cell::RefCell, convert::TryFrom, fs::File, future::Future, iter::once, marker::PhantomData};
+use std::{cell::RefCell, fs::File, future::Future, iter::once, marker::PhantomData};
 
 pub struct DroneContext<State: Serialize> {
     _phantom: PhantomData<dyn Fn(State) -> ()>,

@@ -13,7 +13,6 @@ use socket2::{Domain, SockAddr, Socket, Type};
 use std::{
     cell::RefCell,
     collections::VecDeque,
-    convert::TryInto,
     fmt::Write,
     mem::replace,
     net::{Ipv6Addr, SocketAddr},
