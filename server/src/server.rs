@@ -46,7 +46,7 @@ impl Drop for Server {
 
 enum WriterState {
     NotWriting(SplitSink<WebSocketStream<TcpStream>, Message>),
-    Writing(ChildTask<()>),
+    Writing { _writer: ChildTask<()> },
     Invalid,
 }
 
@@ -110,7 +110,7 @@ impl Client {
         let writer = replace(&mut self.writer, WriterState::Invalid);
         if let WriterState::NotWriting(stream) = writer {
             self.update_timeout(false);
-            self.writer = WriterState::Writing(spawn(writer_main(self.weak.clone(), stream)))
+            self.writer = WriterState::Writing { _writer: spawn(writer_main(self.weak.clone(), stream)) }
         } else {
             self.writer = writer
         }
@@ -197,7 +197,6 @@ fn on_packet(client: &Rc<RefCell<Client>>, value: Value) -> Result<(), LocalStr>
         write!(this.log_prefix, "[{}]", login).unwrap();
         this.log(format_args!("logged in"));
         this.login = Some(login.clone());
-        drop(this);
         drop(client_ref);
         server.login(login, Rc::downgrade(client));
         Ok(())

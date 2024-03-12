@@ -17,7 +17,16 @@ use std::{
 
 pub struct ChestConfig {
     pub accesses: Vec<BusAccess>,
-    pub override_max_stack_size: Option<i32>,
+    pub override_max_stack_size: Option<Box<dyn Fn(i32) -> i32>>,
+}
+
+impl ChestConfig {
+    fn max_size(&self, orig_max_size: i32) -> i32 {
+        match &self.override_max_stack_size {
+            Some(f) => f(orig_max_size),
+            None => orig_max_size,
+        }
+    }
 }
 
 pub struct ChestStorage {
@@ -85,7 +94,7 @@ impl Storage for ChestStorage {
         let mut size_of_best_slot = None;
         for (inv_slot, stack) in self.stacks.iter().enumerate() {
             if let Some(stack) = stack {
-                if stack.item == *item && stack.size < self.config.override_max_stack_size.unwrap_or(detail.max_size) {
+                if stack.item == *item && stack.size < self.config.max_size(detail.max_size) {
                     if let Some(best_size) = size_of_best_slot {
                         if stack.size <= best_size {
                             continue;
@@ -111,10 +120,7 @@ impl Storage for ChestStorage {
         let inv_stack = &mut self.stacks[inv_slot];
         let n_deposited;
         if let Some(inv_stack) = inv_stack {
-            n_deposited = min(
-                stack.size,
-                self.config.override_max_stack_size.unwrap_or(inv_stack.detail.max_size) - inv_stack.size,
-            );
+            n_deposited = min(stack.size, self.config.max_size(inv_stack.detail.max_size) - inv_stack.size);
             inv_stack.size += n_deposited
         } else {
             n_deposited = stack.size;

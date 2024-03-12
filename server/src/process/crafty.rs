@@ -11,6 +11,7 @@ use std::{
     cell::RefCell,
     cmp::min,
     collections::VecDeque,
+    future::Future,
     rc::{Rc, Weak},
 };
 
@@ -171,9 +172,55 @@ impl CraftyProcess {
         server.enqueue_request_group(&access.client, group.iter().map(|x| x.clone().into()).collect());
         group.into_iter().map(|x| spawn(async move { x.await.map(|_| ()) })).collect()
     }
+
+    fn initial_cleanup(&self, i_turtle: usize) -> impl Future<Output = Result<(), LocalStr>> {
+        upgrade_mut!(self.factory, factory);
+        let slots_to_free = Rc::new(RefCell::new(Vec::new()));
+        let task = join_tasks(Vec::from_iter((0..9).map(|i| {
+            let slots_to_free = slots_to_free.clone();
+            let bus_slot = factory.bus_allocate();
+            let turtle_slot = map_turtle_grid(i);
+            let weak = self.weak.clone();
+            spawn(async move {
+                let bus_slot = bus_slot.await?;
+                slots_to_free.borrow_mut().push(bus_slot);
+                let task;
+                {
+                    alive!(weak, this);
+                    upgrade!(this.factory, factory);
+                    let server = factory.get_server().borrow_mut();
+                    let access = server.load_balance(&this.config.turtles[i_turtle].accesses);
+                    task = ActionFuture::from(Call {
+                        addr: access.bus_addr.clone(),
+                        args: vec![
+                            "pullItems".into(),
+                            access.turtle_addr.clone().into(),
+                            (turtle_slot + 1).into(),
+                            64.into(),
+                            (bus_slot + 1).into(),
+                        ],
+                    });
+                    server.enqueue_request_group(&access.client, vec![task.clone().into()])
+                }
+                task.await.map(|_| ())
+            })
+        })));
+        let factory = self.factory.clone();
+        async move {
+            let result = task.await;
+            let slots_to_free = Rc::try_unwrap(slots_to_free)
+                .map_err(|_| "slots_to_free should be exclusively owned here")
+                .unwrap()
+                .into_inner();
+            alive(&factory)?.borrow_mut().bus_deposit(slots_to_free);
+            result
+        }
+    }
 }
 
 async fn worker_main(weak: Weak<RefCell<CraftyProcess>>, i_turtle: usize) -> Result<(), LocalStr> {
+    let task = alive(&weak)?.borrow().initial_cleanup(i_turtle);
+    task.await?;
     loop {
         let Job { i_recipe, n_sets, slots_to_free, bus_slots } =
             if let Some(job) = alive(&weak)?.borrow_mut().next_job() { job } else { break Ok(()) };
