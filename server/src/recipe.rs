@@ -183,7 +183,7 @@ pub struct Demand {
     priority: f64,
 }
 
-pub fn compute_demands(factory: &Factory, recipes: &Vec<impl Recipe>) -> Vec<Demand> {
+pub fn compute_demands(factory: &Factory, recipes: &[impl Recipe]) -> Vec<Demand> {
     let mut result = Vec::new();
     for (i_recipe, recipe) in recipes.iter().enumerate() {
         if let Some(priority) = recipe.get_outputs().get_priority(factory) {

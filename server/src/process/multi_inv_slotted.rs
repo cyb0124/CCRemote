@@ -18,8 +18,8 @@ use std::rc::{Rc, Weak};
 
 pub struct MultiInvSlottedInput {
     item: Filter,
-    size: i32,
-    slots: Vec<(usize, usize, i32)>,
+    pub size: i32,
+    pub slots: Vec<(usize, usize, i32)>,
     allow_backup: bool,
     extra_backup: i32,
 }
@@ -27,7 +27,7 @@ pub struct MultiInvSlottedInput {
 impl MultiInvSlottedInput {
     pub fn new(item: Filter, slots: Vec<(usize, usize, i32)>) -> Self {
         let size = slots.iter().map(|(_, _, size)| size).sum();
-        MultiInvSlottedInput { item, size, slots, allow_backup: false, extra_backup: 0 }
+        Self { item, size, slots, allow_backup: false, extra_backup: 0 }
     }
 }
 
@@ -41,8 +41,8 @@ pub struct MultiInvSlottedRecipe {
 
 impl_recipe!(MultiInvSlottedRecipe, MultiInvSlottedInput);
 
-pub type MultiInvExtractFilter = Box<dyn Fn(usize, usize, &DetailStack) -> bool>;
-pub fn multi_inv_extract_all() -> Option<MultiInvExtractFilter> { Some(Box::new(|_, _, _| true)) }
+pub type MultiInvExtractFilter = Box<dyn Fn(&Factory, usize, usize, &DetailStack) -> bool>;
+pub fn multi_inv_extract_all() -> Option<MultiInvExtractFilter> { Some(Box::new(|_, _, _, _| true)) }
 
 pub struct MultiInvSlottedConfig {
     pub name: LocalStr,
@@ -52,17 +52,17 @@ pub struct MultiInvSlottedConfig {
     pub recipes: Vec<MultiInvSlottedRecipe>,
 }
 
-struct EachInvConfig {
+pub struct EachInvConfig {
     pub accesses: Vec<BusAccess>,
     pub input_slots: Vec<usize>,
 }
 
-struct EachInv {
-    weak: Weak<RefCell<EachInv>>,
-    config: EachInvConfig,
-    detail_cache: Rc<RefCell<DetailCache>>,
-    server: Rc<RefCell<Server>>,
-    size: Option<usize>,
+pub struct EachInv {
+    pub weak: Weak<RefCell<EachInv>>,
+    pub config: EachInvConfig,
+    pub detail_cache: Rc<RefCell<DetailCache>>,
+    pub server: Rc<RefCell<Server>>,
+    pub size: Option<usize>,
 }
 
 impl_inventory!(EachInv, BusAccess);
@@ -128,7 +128,7 @@ impl Process for MultiInvSlottedProcess {
         if self.to_extract.is_none() && compute_demands(factory, &self.recipes).is_empty() {
             return spawn(async { Ok(()) });
         }
-        let stacks: Vec<_> = self.invs.iter().map(|inv| spawn(list_inventory(&*inv.borrow()))).collect();
+        let stacks = Vec::from_iter(self.invs.iter().map(|inv| spawn(list_inventory(&*inv.borrow()))));
         let weak = self.weak.clone();
         spawn(async move {
             let stacks = join_outputs(stacks).await?;
@@ -148,7 +148,7 @@ impl Process for MultiInvSlottedProcess {
                             if let Some(existing_input) = existing_inputs.get_mut(&(i, slot)) {
                                 *existing_input = Some(stack)
                             } else if let Some(ref to_extract) = this.to_extract {
-                                if to_extract(i, slot, &stack) {
+                                if to_extract(factory, i, slot, &stack) {
                                     tasks.push(extract_output(
                                         &*this.invs[i].borrow(),
                                         factory,

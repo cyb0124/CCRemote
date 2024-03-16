@@ -1,5 +1,6 @@
 use crate::access::BasicAccess;
 use crate::access::FluidAccess;
+use crate::access::GetClient;
 use crate::access::TankAccess;
 use crate::action::Call;
 use crate::action::{ActionFuture, Log};
@@ -8,6 +9,8 @@ use crate::inventory::{list_inventory, Inventory};
 use crate::item::{Detail, DetailStack, Filter, Item};
 use crate::lua_value::call_result;
 use crate::lua_value::table_remove;
+use crate::lua_value::try_into_integer;
+use crate::lua_value::Key;
 use crate::lua_value::Table;
 use crate::process::{IntoProcess, Process};
 use crate::server::Server;
@@ -17,6 +20,7 @@ use crate::util::{alive, join_tasks, make_local_one_shot, spawn, LocalReceiver, 
 use abort_on_drop::ChildTask;
 use flexstr::{local_fmt, local_str, LocalStr};
 use fnv::{FnvHashMap, FnvHashSet};
+use std::collections::BTreeMap;
 use std::{
     cell::RefCell,
     cmp::{max, min},
@@ -94,7 +98,7 @@ impl FluidReservation {
                 {
                     alive!(storage, storage);
                     upgrade!(storage.factory, factory);
-                    let server = factory.config.server.borrow();
+                    let server = factory.get_server().borrow();
                     let access = server.load_balance(&storage.config.accesses);
                     task = ActionFuture::from(Call {
                         addr: access.fluid_bus_addrs[bus].clone(),
@@ -143,7 +147,7 @@ struct FluidStorage {
 pub struct Factory {
     weak: Weak<RefCell<Factory>>,
     _task: ChildTask<Result<(), LocalStr>>,
-    config: FactoryConfig,
+    pub config: FactoryConfig,
     storages: Vec<Rc<RefCell<dyn Storage>>>,
     processes: Vec<Rc<RefCell<dyn Process>>>,
     fluid_storages: Vec<Rc<RefCell<FluidStorage>>>,
@@ -411,7 +415,7 @@ impl Factory {
         tasks: &mut Vec<ChildTask<Result<(), LocalStr>>>,
     ) {
         self.log(Log { text: local_fmt!("{fluid}*{qty}"), color: 1 });
-        let server = self.config.server.borrow();
+        let server = self.get_server().borrow();
         while qty > 0 {
             let mut best: Option<(&Rc<RefCell<FluidStorage>>, i64)> = None;
             for storage in &self.fluid_storages {
@@ -440,13 +444,13 @@ impl Factory {
                 server.enqueue_request_group(&access.client, vec![task.clone().into()]);
                 tasks.push(spawn(async move { task.await.map(|_| ()) }))
             } else {
-                tasks.push(spawn(async move { Err(local_fmt!("full {fluid}")) }));
+                tasks.push(spawn(async move { Err(local_fmt!("{fluid} is full")) }));
                 break;
             }
         }
     }
 
-    pub fn reserve_fluid(&self, reason: &str, fluid: LocalStr, mut qty: i64) -> FluidReservation {
+    pub fn reserve_fluid(&self, reason: &str, fluid: &str, mut qty: i64) -> FluidReservation {
         self.log(Log { text: local_fmt!("{reason}: {fluid}*{qty}",), color: 3 });
         let mut extractors = Vec::new();
         while qty > 0 {
@@ -655,17 +659,9 @@ async fn fluid_bus_update(factory: &Weak<RefCell<Factory>>) -> Result<bool, Loca
         this.n_fluid_bus_updates += 1;
         let Some(acceess) = this.config.fluid_bus_accesses.first() else { return Ok(false) };
         let n_buses = acceess.fluid_bus_addrs.len();
-        let server = this.config.server.borrow();
+        let server = this.get_server().borrow();
         join_outputs(Vec::from_iter((0..n_buses).map(|i| {
-            let access = server.load_balance(&this.config.fluid_bus_accesses);
-            spawn(read_tanks(
-                &*server,
-                [&TankAccess {
-                    client: access.client.clone(),
-                    tank_addr: access.fluid_bus_addrs[i].clone(),
-                    fluid_bus_addrs: Vec::new(),
-                }],
-            ))
+            spawn(read_tanks(&*server, &this.config.fluid_bus_accesses, |access| access.fluid_bus_addrs[i].clone()))
         })))
     };
     let buses = buses.await?;
@@ -678,7 +674,7 @@ async fn fluid_bus_update(factory: &Weak<RefCell<Factory>>) -> Result<bool, Loca
                 if tanks.is_empty() {
                     empty_buses.push(i)
                 } else {
-                    for (fluid, qty) in tanks {
+                    for (fluid, qty) in tanks_to_fluid_map(&tanks) {
                         this.fluid_deposit(i, fluid, qty, &mut tasks)
                     }
                 }
@@ -701,41 +697,57 @@ async fn fluid_bus_update(factory: &Weak<RefCell<Factory>>) -> Result<bool, Loca
     Ok(ever_freed || ever_deposited && !this.fluid_bus_wait_queue.is_empty())
 }
 
-fn read_tanks<'a>(
+pub fn read_tanks<'a, T: GetClient + 'a>(
     server: &Server,
-    accesses: impl IntoIterator<Item = &'a TankAccess>,
-) -> impl Future<Output = Result<FnvHashMap<LocalStr, i64>, LocalStr>> + 'static {
+    accesses: impl IntoIterator<Item = &'a T>,
+    tank_addr: impl Fn(&'a T) -> LocalStr,
+) -> impl Future<Output = Result<BTreeMap<usize, (LocalStr, i64)>, LocalStr>> + 'static {
     let access = server.load_balance(accesses);
-    let action = ActionFuture::from(Call { addr: access.tank_addr.clone(), args: vec!["tanks".into()] });
-    server.enqueue_request_group(&access.client, vec![action.clone().into()]);
+    let action = ActionFuture::from(Call { addr: tank_addr(access), args: vec!["tanks".into()] });
+    server.enqueue_request_group(access.get_client(), vec![action.clone().into()]);
     async move {
-        let mut result = FnvHashMap::default();
-        for (_, v) in call_result::<Table>(action.await?)? {
+        let mut result = BTreeMap::new();
+        for (k, v) in call_result::<Table>(action.await?)? {
+            let Key::F(k) = k else { return Err(local_fmt!("non-numeric index: {:?}", k)) };
+            let i: usize = try_into_integer(k.into_inner() - 1.0)?;
             let mut v = Table::try_from(v)?;
             let name: LocalStr = table_remove(&mut v, "name")?;
             let qty: i64 = table_remove(&mut v, "amount")?;
             if qty > 0 {
-                *result.entry(name).or_default() += qty
+                result.insert(i, (name, qty));
             }
         }
         Ok(result)
     }
 }
 
+pub fn tanks_to_fluid_map(tanks: &BTreeMap<usize, (LocalStr, i64)>) -> FnvHashMap<LocalStr, i64> {
+    let mut result = FnvHashMap::default();
+    for (_, (fluid, qty)) in tanks {
+        *result.entry(fluid.clone()).or_default() += qty
+    }
+    result
+}
+
 impl FluidStorage {
     fn update(&self) -> ChildTask<Result<(), LocalStr>> {
-        let task = read_tanks(&*self.factory.upgrade().unwrap().borrow().config.server.borrow(), &self.config.accesses);
+        let task = read_tanks(
+            &*self.factory.upgrade().unwrap().borrow().get_server().borrow(),
+            &self.config.accesses,
+            |access| access.tank_addr.clone(),
+        );
         let weak = self.weak.clone();
         spawn(async move {
-            let mut tanks = task.await?;
+            let tanks = task.await?;
             alive_mut!(weak, this);
-            if let Some(qty) = tanks.remove(&this.config.fluid) {
-                this.n_stored_hi += qty;
-                this.n_stored_lo += qty
-            }
-            for (fluid, _) in tanks {
-                upgrade!(this.factory, factory);
-                factory.log(Log { text: local_fmt!("unexpected {fluid} stored"), color: 14 })
+            for (_, (fluid, qty)) in tanks {
+                if fluid == this.config.fluid {
+                    this.n_stored_hi += qty;
+                    this.n_stored_lo += qty
+                } else {
+                    upgrade!(this.factory, factory);
+                    factory.log(Log { text: local_fmt!("unexpected {fluid} stored"), color: 14 })
+                }
             }
             Ok(())
         })
