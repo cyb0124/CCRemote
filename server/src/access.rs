@@ -70,3 +70,25 @@ pub struct MultiInvAccess {
     pub inv_addrs: Vec<LocalStr>,
     pub bus_addr: LocalStr,
 }
+
+impl_get_client!(FluidAccess);
+pub struct FluidAccess {
+    pub client: LocalStr,
+    pub fluid_bus_addrs: Vec<LocalStr>,
+}
+
+impl_get_client!(TankAccess);
+pub struct TankAccess {
+    pub client: LocalStr,
+    pub tank_addr: LocalStr,
+    pub fluid_bus_addrs: Vec<LocalStr>,
+}
+
+impl_get_client!(InvTankAccess);
+pub struct InvTankAccess {
+    pub client: LocalStr,
+    pub inv_addrs: Vec<LocalStr>,
+    pub tank_addrs: Vec<LocalStr>,
+    pub bus_addr: LocalStr,
+    pub fluid_bus_addrs: Vec<LocalStr>,
+}

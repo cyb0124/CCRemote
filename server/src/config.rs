@@ -11,6 +11,8 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         min_cycle_time: Duration::from_secs(1),
         log_clients: vec![s("1a")],
         bus_accesses: vec![BasicAccess { client: s("1a"), addr: s("enderstorage:ender_chest_1") }],
+        fluid_bus_accesses: vec![],
+        fluid_bus_capacity: 0,
         backups: vec![],
     }
     .build(|factory| {

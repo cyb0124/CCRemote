@@ -3,7 +3,7 @@ use num_traits::cast::{AsPrimitive, FromPrimitive};
 use ordered_float::NotNan;
 use std::{collections::BTreeMap, io::Write};
 
-fn try_into_integer<I>(f: f64) -> Result<I, LocalStr>
+pub fn try_into_integer<I>(f: f64) -> Result<I, LocalStr>
 where
     f64: AsPrimitive<I>,
     I: AsPrimitive<f64>,
@@ -58,6 +58,10 @@ impl From<i32> for Value {
     fn from(number: i32) -> Value { Value::F(NotNan::from_i32(number).unwrap()) }
 }
 
+impl From<i64> for Value {
+    fn from(number: i64) -> Value { Value::F(NotNan::from_i64(number).unwrap()) }
+}
+
 impl From<usize> for Value {
     fn from(number: usize) -> Value { Value::F(NotNan::from_usize(number).unwrap()) }
 }
@@ -105,6 +109,11 @@ impl TryFrom<Value> for i16 {
 }
 
 impl TryFrom<Value> for i32 {
+    type Error = LocalStr;
+    fn try_from(value: Value) -> Result<Self, LocalStr> { try_into_integer(NotNan::try_from(value)?.into_inner()) }
+}
+
+impl TryFrom<Value> for i64 {
     type Error = LocalStr;
     fn try_from(value: Value) -> Result<Self, LocalStr> { try_into_integer(NotNan::try_from(value)?.into_inner()) }
 }
@@ -157,16 +166,13 @@ pub fn vec_to_table(vec: Vec<Value>) -> Table {
 
 pub fn table_to_vec(table: Table) -> Result<Vec<Value>, LocalStr> {
     let mut result = Vec::new();
-    for (k, v) in table.into_iter() {
-        if let Key::F(k) = k {
-            let i = try_into_integer(k.into_inner() - 1.0)?;
-            if result.len() <= i {
-                result.resize_with(i + 1, || Value::N)
-            }
-            result[i] = v
-        } else {
-            return Err(local_fmt!("non-numeric index: {:?}", k));
+    for (k, v) in table {
+        let Key::F(k) = k else { return Err(local_fmt!("non-numeric index: {:?}", k)) };
+        let i = try_into_integer(k.into_inner() - 1.0)?;
+        if result.len() <= i {
+            result.resize_with(i + 1, || Value::N)
         }
+        result[i] = v
     }
     Ok(result)
 }

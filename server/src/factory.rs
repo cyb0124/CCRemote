@@ -1,15 +1,24 @@
-use super::access::BasicAccess;
-use super::action::{ActionFuture, Log};
-use super::detail_cache::DetailCache;
-use super::inventory::{list_inventory, Inventory};
-use super::item::{Detail, DetailStack, Filter, Item};
-use super::process::{IntoProcess, Process};
-use super::server::Server;
-use super::storage::{DepositResult, Extractor, IntoStorage, Provider, Storage};
-use super::util::{alive, join_tasks, make_local_one_shot, spawn, LocalReceiver, LocalSender};
+use crate::access::BasicAccess;
+use crate::access::FluidAccess;
+use crate::access::TankAccess;
+use crate::action::Call;
+use crate::action::{ActionFuture, Log};
+use crate::detail_cache::DetailCache;
+use crate::inventory::{list_inventory, Inventory};
+use crate::item::{Detail, DetailStack, Filter, Item};
+use crate::lua_value::table_remove;
+use crate::lua_value::try_into_integer;
+use crate::lua_value::Key;
+use crate::lua_value::Table;
+use crate::process::{IntoProcess, Process};
+use crate::server::Server;
+use crate::storage::{DepositResult, Extractor, IntoStorage, Provider, Storage};
+use crate::util::join_outputs;
+use crate::util::{alive, join_tasks, make_local_one_shot, spawn, LocalReceiver, LocalSender};
 use abort_on_drop::ChildTask;
 use flexstr::{local_fmt, local_str, LocalStr};
 use fnv::{FnvHashMap, FnvHashSet};
+use std::collections::BTreeMap;
 use std::{
     cell::RefCell,
     cmp::{max, min},
@@ -81,7 +90,23 @@ pub struct FactoryConfig {
     pub min_cycle_time: Duration,
     pub log_clients: Vec<LocalStr>,
     pub bus_accesses: Vec<BasicAccess>,
+    pub fluid_bus_accesses: Vec<FluidAccess>,
+    pub fluid_bus_capacity: i32,
     pub backups: Vec<(Filter, i32)>,
+}
+
+pub struct FluidStorageConfig {
+    pub accesses: Vec<TankAccess>,
+    pub fluid: LocalStr,
+    pub capacity: i64,
+}
+
+struct FluidStorage {
+    weak: Weak<RefCell<FluidStorage>>,
+    factory: Weak<RefCell<Factory>>,
+    config: FluidStorageConfig,
+    n_stored_hi: i64,
+    n_stored_lo: i64,
 }
 
 pub struct Factory {
@@ -90,6 +115,7 @@ pub struct Factory {
     config: FactoryConfig,
     storages: Vec<Rc<RefCell<dyn Storage>>>,
     processes: Vec<Rc<RefCell<dyn Process>>>,
+    fluid_storages: Vec<Rc<RefCell<FluidStorage>>>,
 
     items: FnvHashMap<Rc<Item>, RefCell<ItemInfo>>,
     label_map: FnvHashMap<LocalStr, Vec<Rc<Item>>>,
@@ -101,6 +127,12 @@ pub struct Factory {
     bus_free_queue: Vec<usize>,
     bus_size: Option<usize>,
     n_bus_updates: usize,
+
+    fluid_bus_task: Option<ChildTask<Result<(), LocalStr>>>,
+    fluid_bus_allocations: FnvHashSet<usize>,
+    fluid_bus_wait_queue: VecDeque<LocalSender<usize>>,
+    fluid_bus_free_queue: Vec<usize>,
+    n_fluid_bus_updates: usize,
 }
 
 impl FactoryConfig {
@@ -112,6 +144,7 @@ impl FactoryConfig {
                 config: self,
                 storages: Vec::new(),
                 processes: Vec::new(),
+                fluid_storages: Vec::new(),
 
                 items: FnvHashMap::default(),
                 label_map: FnvHashMap::default(),
@@ -123,6 +156,12 @@ impl FactoryConfig {
                 bus_free_queue: Vec::new(),
                 bus_size: None,
                 n_bus_updates: 0,
+
+                fluid_bus_task: None,
+                fluid_bus_allocations: FnvHashSet::default(),
+                fluid_bus_wait_queue: VecDeque::new(),
+                fluid_bus_free_queue: Vec::new(),
+                n_fluid_bus_updates: 0,
             };
             builder(&mut factory);
             RefCell::new(factory)
@@ -144,6 +183,17 @@ impl Factory {
     pub fn add_storage(&mut self, storage: impl IntoStorage) { self.storages.push(storage.into_storage(self)) }
     pub fn add_process(&mut self, process: impl IntoProcess) { self.processes.push(process.into_process(self)) }
     pub fn get_n_stored(&self, item: &Rc<Item>) -> i32 { self.items.get(item).map_or(0, |info| info.borrow().n_stored) }
+    pub fn add_fluid_storage(&mut self, config: FluidStorageConfig) {
+        self.fluid_storages.push(Rc::new_cyclic(|weak| {
+            RefCell::new(FluidStorage {
+                weak: weak.clone(),
+                factory: self.weak.clone(),
+                config,
+                n_stored_hi: 0,
+                n_stored_lo: 0,
+            })
+        }))
+    }
 
     pub fn log(&self, action: Log) {
         println!("{}", action.text);
@@ -257,14 +307,9 @@ impl Factory {
         while stack.size > 0 {
             let mut best: Option<(&Rc<RefCell<dyn Storage>>, i32)> = None;
             for storage in &self.storages {
-                let priority = storage.borrow_mut().deposit_priority(&stack.item, &stack.detail);
-                if let Some(priority) = priority {
-                    if let Some((_, best)) = best {
-                        if priority <= best {
-                            continue;
-                        }
-                    }
-                    best = Some((storage, priority))
+                let Some(prio) = storage.borrow_mut().deposit_priority(&stack.item, &stack.detail) else { continue };
+                if best.as_ref().map_or(true, |&(_, best)| prio > best) {
+                    best = Some((storage, prio))
                 }
             }
             if let Some((storage, _)) = best {
@@ -273,6 +318,44 @@ impl Factory {
                 tasks.push(task)
             } else {
                 tasks.push(spawn(async { Err(local_str!("storage is full")) }));
+                break;
+            }
+        }
+    }
+
+    fn fluid_deposit(
+        &self,
+        bus: usize,
+        fluid: LocalStr,
+        mut qty: i64,
+        tasks: &mut Vec<ChildTask<Result<(), LocalStr>>>,
+    ) {
+        self.log(Log { text: local_fmt!("{fluid}*{qty}"), color: 1 });
+        let server = self.config.server.borrow();
+        while qty > 0 {
+            let mut best: Option<(&Rc<RefCell<FluidStorage>>, i64)> = None;
+            for storage in &self.fluid_storages {
+                let sto = storage.borrow();
+                if sto.config.fluid == fluid
+                    && sto.n_stored_hi < sto.config.capacity
+                    && best.as_ref().map_or(true, |&(_, best)| sto.n_stored_hi > best)
+                {
+                    best = Some((storage, sto.n_stored_hi))
+                }
+            }
+            if let Some((storage, _)) = best {
+                let sto = storage.borrow();
+                let n_deposited = qty.min(sto.config.capacity - sto.n_stored_hi);
+                qty -= n_deposited;
+                let access = server.load_balance(&sto.config.accesses);
+                let task = ActionFuture::from(Call {
+                    addr: access.fluid_bus_addrs[bus].clone(),
+                    args: vec!["pushFluid".into(), n_deposited.into(), fluid.clone().into()],
+                });
+                server.enqueue_request_group(&access.client, vec![task.clone().into()]);
+                tasks.push(spawn(async move { task.await.map(|_| ()) }))
+            } else {
+                tasks.push(spawn(async move { Err(local_str!("full {fluid}")) }));
                 break;
             }
         }
@@ -287,6 +370,10 @@ impl Factory {
     fn end_of_cycle(&mut self) {
         for storage in &self.storages {
             storage.borrow_mut().cleanup()
+        }
+        for storage in &self.fluid_storages {
+            storage.borrow_mut().n_stored_hi = 0;
+            storage.borrow_mut().n_stored_lo = 0
         }
         self.items.clear();
         self.label_map.clear();
@@ -320,9 +407,11 @@ async fn factory_main(factory: Weak<RefCell<Factory>>) -> Result<(), LocalStr> {
         }
         .await;
         let mut bus_task;
+        let mut fluid_bus_task;
         {
             alive_mut!(factory, this);
             bus_task = this.bus_task.take();
+            fluid_bus_task = this.fluid_bus_task.take();
             if let Err(e) = result {
                 this.log(Log { text: local_fmt!("cycle failed: {}", e), color: 14 })
             } else {
@@ -330,9 +419,12 @@ async fn factory_main(factory: Weak<RefCell<Factory>>) -> Result<(), LocalStr> {
                 if bus_task.is_none() && this.n_bus_updates == 0 {
                     bus_task = Some(spawn(bus_main(factory.clone())))
                 }
+                if fluid_bus_task.is_none() && this.n_fluid_bus_updates == 0 {
+                    fluid_bus_task = Some(spawn(fluid_bus_main(factory.clone())))
+                }
             }
         }
-        if let Some(task) = bus_task {
+        for task in [bus_task, fluid_bus_task].into_iter().flatten() {
             task.await.unwrap()?
         }
         let min_cycle_time = {
@@ -346,7 +438,12 @@ async fn factory_main(factory: Weak<RefCell<Factory>>) -> Result<(), LocalStr> {
 }
 
 async fn update_storages(factory: &Weak<RefCell<Factory>>) -> Result<(), LocalStr> {
-    let tasks = alive(factory)?.borrow().storages.iter().map(|storage| storage.borrow().update()).collect();
+    let mut tasks = Vec::new();
+    {
+        alive!(factory, factory);
+        tasks.extend(factory.storages.iter().map(|storage| storage.borrow().update()));
+        tasks.extend(factory.fluid_storages.iter().map(|storage| storage.borrow().update()))
+    };
     join_tasks(tasks).await?;
     alive!(factory, this);
     let mut n_total = 0;
@@ -425,4 +522,124 @@ async fn bus_update(factory: &Weak<RefCell<Factory>>) -> Result<bool, LocalStr> 
         ever_freed = true
     }
     Ok(ever_freed || ever_deposited && !this.bus_wait_queue.is_empty())
+}
+
+async fn fluid_bus_main(factory: Weak<RefCell<Factory>>) -> Result<(), LocalStr> {
+    loop {
+        let result = fluid_bus_update(&factory).await;
+        alive_mut!(factory, this);
+        match result {
+            Err(e) => {
+                let text = local_fmt!("fluid bus update failed: {}", e);
+                for sender in take(&mut this.fluid_bus_wait_queue) {
+                    sender.send(Err(text.clone()))
+                }
+                this.log(Log { text, color: 14 });
+            }
+            Ok(true) => continue,
+            Ok(false) => (),
+        }
+        this.fluid_bus_task = None;
+        break Ok(());
+    }
+}
+
+async fn fluid_bus_update(factory: &Weak<RefCell<Factory>>) -> Result<bool, LocalStr> {
+    let buses = {
+        alive_mut!(factory, this);
+        this.n_fluid_bus_updates += 1;
+        let Some(acceess) = this.config.fluid_bus_accesses.first() else { return Ok(false) };
+        let n_buses = acceess.fluid_bus_addrs.len();
+        let server = this.config.server.borrow();
+        join_outputs(Vec::from_iter((0..n_buses).map(|i| {
+            let access = server.load_balance(&this.config.fluid_bus_accesses);
+            spawn(read_tanks(
+                &*server,
+                [&TankAccess {
+                    client: access.client.clone(),
+                    tank_addr: access.fluid_bus_addrs[i].clone(),
+                    fluid_bus_addrs: Vec::new(),
+                }],
+            ))
+        })))
+    };
+    let buses = buses.await?;
+    let mut tasks = Vec::new();
+    {
+        alive_mut!(factory, this);
+        let mut empty_buses = Vec::new();
+        for (i, tanks) in buses.into_iter().enumerate() {
+            if !this.fluid_bus_allocations.contains(&i) {
+                if tanks.is_empty() {
+                    empty_buses.push(i)
+                } else {
+                    let mut fluid_map = FnvHashMap::<LocalStr, i64>::default();
+                    for (_, (fluid, qty)) in tanks {
+                        *fluid_map.entry(fluid).or_default() += qty
+                    }
+                    for (fluid, qty) in fluid_map {
+                        this.fluid_deposit(i, fluid, qty, &mut tasks)
+                    }
+                }
+            }
+        }
+        while !empty_buses.is_empty() && !this.fluid_bus_wait_queue.is_empty() {
+            let bus = empty_buses.pop().unwrap();
+            this.fluid_bus_allocations.insert(bus);
+            this.fluid_bus_wait_queue.pop_front().unwrap().send(Ok(bus))
+        }
+    }
+    let ever_deposited = !tasks.is_empty();
+    join_tasks(tasks).await?;
+    alive_mut!(factory, this);
+    let mut ever_freed = false;
+    for slot in take(&mut this.fluid_bus_free_queue) {
+        this.fluid_bus_allocations.remove(&slot);
+        ever_freed = true
+    }
+    Ok(ever_freed || ever_deposited && !this.fluid_bus_wait_queue.is_empty())
+}
+
+fn read_tanks<'a>(
+    server: &Server,
+    accesses: impl IntoIterator<Item = &'a TankAccess>,
+) -> impl Future<Output = Result<BTreeMap<usize, (LocalStr, i64)>, LocalStr>> + 'static {
+    let access = server.load_balance(accesses);
+    let action = ActionFuture::from(Call { addr: access.tank_addr.clone(), args: vec!["tanks".into()] });
+    server.enqueue_request_group(&access.client, vec![action.clone().into()]);
+    async move {
+        let mut result = BTreeMap::new();
+        for (k, v) in Table::try_from(action.await?)? {
+            let Key::F(k) = k else { return Err(local_fmt!("non-numeric index: {:?}", k)) };
+            let i: usize = try_into_integer(k.into_inner() - 1.0)?;
+            let mut v = Table::try_from(v)?;
+            let name: LocalStr = table_remove(&mut v, "name")?;
+            let qty: i64 = table_remove(&mut v, "amount")?;
+            if qty > 0 {
+                result.insert(i, (name, qty));
+            }
+        }
+        Ok(result)
+    }
+}
+
+impl FluidStorage {
+    fn update(&self) -> ChildTask<Result<(), LocalStr>> {
+        let task = read_tanks(&*self.factory.upgrade().unwrap().borrow().config.server.borrow(), &self.config.accesses);
+        let weak = self.weak.clone();
+        spawn(async move {
+            let tanks = task.await?;
+            alive_mut!(weak, this);
+            for (_, (fluid, qty)) in tanks {
+                if fluid == this.config.fluid {
+                    this.n_stored_hi += qty;
+                    this.n_stored_lo += qty
+                } else {
+                    upgrade!(this.factory, factory);
+                    factory.log(Log { text: local_fmt!("unexpected {fluid} stored"), color: 14 })
+                }
+            }
+            Ok(())
+        })
+    }
 }
