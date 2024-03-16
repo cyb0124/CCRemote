@@ -127,6 +127,7 @@ where
     })
 }
 
+mod blocking_fluid_output;
 mod blocking_output;
 mod buffered;
 mod crafty;
@@ -139,6 +140,7 @@ mod scattering;
 mod slotted;
 mod turtle;
 mod workbench;
+pub use blocking_fluid_output::*;
 pub use blocking_output::*;
 pub use buffered::*;
 pub use crafty::*;

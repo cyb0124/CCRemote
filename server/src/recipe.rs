@@ -59,8 +59,8 @@ impl Outputs for Output {
 }
 
 pub struct FluidOutput {
-    fluid: LocalStr,
-    n_wanted: i64,
+    pub fluid: LocalStr,
+    pub n_wanted: i64,
 }
 
 impl FluidOutput {
