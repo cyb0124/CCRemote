@@ -6,6 +6,7 @@ use crate::action::{ActionFuture, Log};
 use crate::detail_cache::DetailCache;
 use crate::inventory::{list_inventory, Inventory};
 use crate::item::{Detail, DetailStack, Filter, Item};
+use crate::lua_value::call_result;
 use crate::lua_value::table_remove;
 use crate::lua_value::try_into_integer;
 use crate::lua_value::Key;
@@ -355,7 +356,7 @@ impl Factory {
                 server.enqueue_request_group(&access.client, vec![task.clone().into()]);
                 tasks.push(spawn(async move { task.await.map(|_| ()) }))
             } else {
-                tasks.push(spawn(async move { Err(local_str!("full {fluid}")) }));
+                tasks.push(spawn(async move { Err(local_fmt!("full {fluid}")) }));
                 break;
             }
         }
@@ -390,9 +391,10 @@ async fn factory_main(factory: Weak<RefCell<Factory>>) -> Result<(), LocalStr> {
             alive_mut!(factory, this);
             let text = if let Some(last) = cycle_start_last {
                 local_fmt!(
-                    "OCRemote #{}, nBusUpdates={}, cycleTime={:.3}",
+                    "OCRemote #{}, nBusUpdates={},{}, cycleTime={:.3}",
                     n_cycles,
                     this.n_bus_updates,
+                    this.n_fluid_bus_updates,
                     (cycle_start_time - last).as_secs_f64()
                 )
             } else {
@@ -400,6 +402,7 @@ async fn factory_main(factory: Weak<RefCell<Factory>>) -> Result<(), LocalStr> {
             };
             this.log(Log { text, color: 0 });
             this.n_bus_updates = 0;
+            this.n_fluid_bus_updates = 0
         }
         let result = async {
             update_storages(&factory).await?;
@@ -609,7 +612,7 @@ fn read_tanks<'a>(
     server.enqueue_request_group(&access.client, vec![action.clone().into()]);
     async move {
         let mut result = BTreeMap::new();
-        for (k, v) in Table::try_from(action.await?)? {
+        for (k, v) in call_result::<Table>(action.await?)? {
             let Key::F(k) = k else { return Err(local_fmt!("non-numeric index: {:?}", k)) };
             let i: usize = try_into_integer(k.into_inner() - 1.0)?;
             let mut v = Table::try_from(v)?;
