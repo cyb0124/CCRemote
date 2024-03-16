@@ -1,5 +1,6 @@
 use super::factory::Factory;
 use super::item::{Detail, Filter, Item};
+use flexstr::LocalStr;
 use fnv::FnvHashMap;
 use std::{
     cmp::{max_by, min, min_by},
@@ -48,6 +49,27 @@ impl Output {
 impl Outputs for Output {
     fn get_priority(&self, factory: &Factory) -> Option<f64> {
         let n_stored = factory.search_n_stored(&self.item);
+        let n_needed = self.n_wanted - n_stored;
+        if n_needed > 0 {
+            Some(n_needed as f64 / self.n_wanted as f64)
+        } else {
+            None
+        }
+    }
+}
+
+pub struct FluidOutput {
+    fluid: LocalStr,
+    n_wanted: i64,
+}
+
+impl FluidOutput {
+    pub fn new(fluid: LocalStr, n_wanted: i64) -> Box<dyn Outputs> { Box::new(Self { fluid, n_wanted }) }
+}
+
+impl Outputs for FluidOutput {
+    fn get_priority(&self, factory: &Factory) -> Option<f64> {
+        let n_stored = factory.search_n_fluid(&self.fluid);
         let n_needed = self.n_wanted - n_stored;
         if n_needed > 0 {
             Some(n_needed as f64 / self.n_wanted as f64)

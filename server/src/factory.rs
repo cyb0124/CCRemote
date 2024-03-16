@@ -8,8 +8,6 @@ use crate::inventory::{list_inventory, Inventory};
 use crate::item::{Detail, DetailStack, Filter, Item};
 use crate::lua_value::call_result;
 use crate::lua_value::table_remove;
-use crate::lua_value::try_into_integer;
-use crate::lua_value::Key;
 use crate::lua_value::Table;
 use crate::process::{IntoProcess, Process};
 use crate::server::Server;
@@ -19,7 +17,6 @@ use crate::util::{alive, join_tasks, make_local_one_shot, spawn, LocalReceiver, 
 use abort_on_drop::ChildTask;
 use flexstr::{local_fmt, local_str, LocalStr};
 use fnv::{FnvHashMap, FnvHashSet};
-use std::collections::BTreeMap;
 use std::{
     cell::RefCell,
     cmp::{max, min},
@@ -363,6 +360,17 @@ impl Factory {
         info.reserve(size)
     }
 
+    pub fn search_n_fluid(&self, fluid: &str) -> i64 {
+        let mut sum = 0;
+        for storage in &self.fluid_storages {
+            let storage = storage.borrow();
+            if storage.config.fluid == fluid {
+                sum += storage.n_stored_lo
+            }
+        }
+        sum
+    }
+
     pub fn fluid_bus_allocate(&mut self) -> LocalReceiver<usize> {
         let (sender, receiver) = make_local_one_shot();
         self.fluid_bus_wait_queue.push_back(sender);
@@ -670,11 +678,7 @@ async fn fluid_bus_update(factory: &Weak<RefCell<Factory>>) -> Result<bool, Loca
                 if tanks.is_empty() {
                     empty_buses.push(i)
                 } else {
-                    let mut fluid_map = FnvHashMap::<LocalStr, i64>::default();
-                    for (_, (fluid, qty)) in tanks {
-                        *fluid_map.entry(fluid).or_default() += qty
-                    }
-                    for (fluid, qty) in fluid_map {
+                    for (fluid, qty) in tanks {
                         this.fluid_deposit(i, fluid, qty, &mut tasks)
                     }
                 }
@@ -700,20 +704,18 @@ async fn fluid_bus_update(factory: &Weak<RefCell<Factory>>) -> Result<bool, Loca
 fn read_tanks<'a>(
     server: &Server,
     accesses: impl IntoIterator<Item = &'a TankAccess>,
-) -> impl Future<Output = Result<BTreeMap<usize, (LocalStr, i64)>, LocalStr>> + 'static {
+) -> impl Future<Output = Result<FnvHashMap<LocalStr, i64>, LocalStr>> + 'static {
     let access = server.load_balance(accesses);
     let action = ActionFuture::from(Call { addr: access.tank_addr.clone(), args: vec!["tanks".into()] });
     server.enqueue_request_group(&access.client, vec![action.clone().into()]);
     async move {
-        let mut result = BTreeMap::new();
-        for (k, v) in call_result::<Table>(action.await?)? {
-            let Key::F(k) = k else { return Err(local_fmt!("non-numeric index: {:?}", k)) };
-            let i: usize = try_into_integer(k.into_inner() - 1.0)?;
+        let mut result = FnvHashMap::default();
+        for (_, v) in call_result::<Table>(action.await?)? {
             let mut v = Table::try_from(v)?;
             let name: LocalStr = table_remove(&mut v, "name")?;
             let qty: i64 = table_remove(&mut v, "amount")?;
             if qty > 0 {
-                result.insert(i, (name, qty));
+                *result.entry(name).or_default() += qty
             }
         }
         Ok(result)
@@ -725,16 +727,15 @@ impl FluidStorage {
         let task = read_tanks(&*self.factory.upgrade().unwrap().borrow().config.server.borrow(), &self.config.accesses);
         let weak = self.weak.clone();
         spawn(async move {
-            let tanks = task.await?;
+            let mut tanks = task.await?;
             alive_mut!(weak, this);
-            for (_, (fluid, qty)) in tanks {
-                if fluid == this.config.fluid {
-                    this.n_stored_hi += qty;
-                    this.n_stored_lo += qty
-                } else {
-                    upgrade!(this.factory, factory);
-                    factory.log(Log { text: local_fmt!("unexpected {fluid} stored"), color: 14 })
-                }
+            if let Some(qty) = tanks.remove(&this.config.fluid) {
+                this.n_stored_hi += qty;
+                this.n_stored_lo += qty
+            }
+            for (fluid, _) in tanks {
+                upgrade!(this.factory, factory);
+                factory.log(Log { text: local_fmt!("unexpected {fluid} stored"), color: 14 })
             }
             Ok(())
         })
