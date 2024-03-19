@@ -52,6 +52,7 @@ pub struct MultiInvSlottedConfig {
     pub accesses: Vec<MultiInvAccess>,
     pub to_extract: Option<MultiInvExtractFilter>,
     pub recipes: Vec<MultiInvSlottedRecipe>,
+    pub strict_priority: bool,
 }
 
 pub struct EachInvConfig {
@@ -77,6 +78,7 @@ pub struct MultiInvSlottedProcess {
     server: Rc<RefCell<Server>>,
     to_extract: Option<MultiInvExtractFilter>,
     recipes: Vec<MultiInvSlottedRecipe>,
+    strict_priority: bool,
     invs: Vec<Rc<RefCell<EachInv>>>,
 }
 
@@ -119,6 +121,7 @@ impl IntoProcess for MultiInvSlottedConfig {
                 server: factory.get_server().clone(),
                 to_extract: self.to_extract,
                 recipes: self.recipes,
+                strict_priority: self.strict_priority,
                 invs,
             })
         })
@@ -162,7 +165,10 @@ impl Process for MultiInvSlottedProcess {
                         }
                     }
                 }
-                let demands = compute_demands(factory, &this.recipes);
+                let mut demands = compute_demands(factory, &this.recipes);
+                if this.strict_priority {
+                    demands.truncate(1)
+                }
                 'recipe: for mut demand in demands.into_iter() {
                     let recipe = &this.recipes[demand.i_recipe];
                     let mut used_slots = FnvHashSet::<(usize, usize)>::default();

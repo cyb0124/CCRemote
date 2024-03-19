@@ -50,6 +50,7 @@ pub struct SlottedConfig {
     pub input_slots: Vec<usize>,
     pub to_extract: Option<ExtractFilter>,
     pub recipes: Vec<SlottedRecipe>,
+    pub strict_priority: bool,
 }
 
 pub struct SlottedProcess {
@@ -92,7 +93,10 @@ impl Process for SlottedProcess {
                         }
                     }
                 }
-                let demands = compute_demands(factory, &this.config.recipes);
+                let mut demands = compute_demands(factory, &this.config.recipes);
+                if this.config.strict_priority {
+                    demands.truncate(1)
+                }
                 'recipe: for mut demand in demands.into_iter() {
                     let recipe = &this.config.recipes[demand.i_recipe];
                     let mut used_slots = FnvHashSet::<usize>::default();

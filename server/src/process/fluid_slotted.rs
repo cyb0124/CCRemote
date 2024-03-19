@@ -71,6 +71,7 @@ pub struct FluidSlottedConfig {
     pub to_extract: Option<MultiInvExtractFilter>,
     pub fluid_extract: Option<FluidExtractFilter>,
     pub recipes: Vec<FluidSlottedRecipe>,
+    pub strict_priority: bool,
 }
 
 pub struct FluidSlottedProcess {
@@ -82,6 +83,7 @@ pub struct FluidSlottedProcess {
     to_extract: Option<MultiInvExtractFilter>,
     fluid_extract: Option<FluidExtractFilter>,
     recipes: Vec<FluidSlottedRecipe>,
+    strict_priority: bool,
     invs: Vec<Rc<RefCell<EachInv>>>,
     input_tanks: Vec<Vec<usize>>,
 }
@@ -126,6 +128,7 @@ impl IntoProcess for FluidSlottedConfig {
                 to_extract: self.to_extract,
                 fluid_extract: self.fluid_extract,
                 recipes: self.recipes,
+                strict_priority: self.strict_priority,
                 invs,
                 input_tanks: self.input_tanks,
             })
@@ -203,7 +206,10 @@ impl Process for FluidSlottedProcess {
                     }
                     fluid_map
                 }));
-                let demands = compute_fluid_demands(factory, &this.recipes);
+                let mut demands = compute_fluid_demands(factory, &this.recipes);
+                if this.strict_priority {
+                    demands.truncate(1)
+                }
                 'recipe: for mut demand in demands.into_iter() {
                     let recipe = &this.recipes[demand.i_recipe];
                     let mut used_slots = FnvHashSet::<(usize, usize)>::default();
