@@ -16,6 +16,7 @@ use std::cell::RefCell;
 use std::cmp::min;
 use std::rc::{Rc, Weak};
 
+#[derive(Clone)]
 pub struct MultiInvSlottedInput {
     item: Filter,
     pub size: i32,
@@ -33,8 +34,9 @@ impl MultiInvSlottedInput {
 
 impl_input!(MultiInvSlottedInput);
 
+#[derive(Clone)]
 pub struct MultiInvSlottedRecipe {
-    pub outputs: Box<dyn Outputs>,
+    pub outputs: Rc<dyn Outputs>,
     pub inputs: Vec<MultiInvSlottedInput>,
     pub max_sets: i32,
 }

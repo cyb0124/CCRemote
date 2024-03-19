@@ -21,21 +21,21 @@ pub trait BoxedOutputs {
     fn or(self, other: Self) -> Self;
 }
 
-impl BoxedOutputs for Box<dyn Outputs> {
+impl BoxedOutputs for Rc<dyn Outputs> {
     fn and(self, other: Self) -> Self {
-        Box::new(move |factory: &_| {
+        Rc::new(move |factory: &_| {
             max_by(self.get_priority(factory), other.get_priority(factory), |x, y| x.partial_cmp(y).unwrap())
         })
     }
 
     fn or(self, other: Self) -> Self {
-        Box::new(move |factory: &_| {
+        Rc::new(move |factory: &_| {
             min_by(self.get_priority(factory), other.get_priority(factory), |x, y| x.partial_cmp(y).unwrap())
         })
     }
 }
 
-pub fn ignore_outputs(priority: f64) -> Box<dyn Outputs> { Box::new(move |_: &_| Some(priority)) }
+pub fn ignore_outputs(priority: f64) -> Rc<dyn Outputs> { Rc::new(move |_: &_| Some(priority)) }
 
 pub struct Output {
     pub item: Filter,
@@ -43,7 +43,7 @@ pub struct Output {
 }
 
 impl Output {
-    pub fn new(item: Filter, n_wanted: i32) -> Box<dyn Outputs> { Box::new(Self { item, n_wanted }) }
+    pub fn new(item: Filter, n_wanted: i32) -> Rc<dyn Outputs> { Rc::new(Self { item, n_wanted }) }
 }
 
 impl Outputs for Output {
@@ -64,7 +64,7 @@ pub struct FluidOutput {
 }
 
 impl FluidOutput {
-    pub fn new(fluid: LocalStr, n_wanted: i64) -> Box<dyn Outputs> { Box::new(Self { fluid, n_wanted }) }
+    pub fn new(fluid: LocalStr, n_wanted: i64) -> Rc<dyn Outputs> { Rc::new(Self { fluid, n_wanted }) }
 }
 
 impl Outputs for FluidOutput {
@@ -109,7 +109,7 @@ macro_rules! impl_input {
     };
 }
 
-pub trait Recipe {
+pub trait Recipe: Clone {
     type In: Input;
     fn get_outputs(&self) -> &dyn Outputs;
     fn get_inputs(&self) -> &Vec<Self::In>;
@@ -196,6 +196,7 @@ pub fn compute_demands(factory: &Factory, recipes: &[impl Recipe]) -> Vec<Demand
     result
 }
 
+#[derive(Clone)]
 pub struct CraftingGridInput {
     item: Filter,
     pub size: i32,
@@ -212,13 +213,15 @@ impl CraftingGridInput {
 
 impl_input!(CraftingGridInput);
 
+#[derive(Clone)]
 pub struct NonConsumable {
     pub storage_slot: usize,
     pub crafting_grid_slot: usize,
 }
 
+#[derive(Clone)]
 pub struct CraftingGridRecipe {
-    pub outputs: Box<dyn Outputs>,
+    pub outputs: Rc<dyn Outputs>,
     // slots:
     //   0, 1, 2
     //   3, 4, 5

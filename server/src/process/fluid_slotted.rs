@@ -19,6 +19,7 @@ use std::{
     rc::{Rc, Weak},
 };
 
+#[derive(Clone)]
 pub struct FluidSlottedInput {
     fluid: LocalStr,
     size: i64,
@@ -38,8 +39,9 @@ impl FluidSlottedInput {
     }
 }
 
+#[derive(Clone)]
 pub struct FluidSlottedRecipe {
-    pub outputs: Box<dyn Outputs>,
+    pub outputs: Rc<dyn Outputs>,
     pub inputs: Vec<MultiInvSlottedInput>,
     pub fluids: Vec<FluidSlottedInput>,
     pub max_sets: i32,

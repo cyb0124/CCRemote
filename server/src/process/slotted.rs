@@ -17,6 +17,7 @@ use std::{
     rc::{Rc, Weak},
 };
 
+#[derive(Clone)]
 pub struct SlottedInput {
     item: Filter,
     pub size: i32,
@@ -34,8 +35,9 @@ impl SlottedInput {
 
 impl_input!(SlottedInput);
 
+#[derive(Clone)]
 pub struct SlottedRecipe {
-    pub outputs: Box<dyn Outputs>,
+    pub outputs: Rc<dyn Outputs>,
     pub inputs: Vec<SlottedInput>,
     pub max_sets: i32,
 }

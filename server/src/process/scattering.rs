@@ -16,6 +16,7 @@ use std::{
     rc::{Rc, Weak},
 };
 
+#[derive(Clone)]
 pub struct ScatteringInput {
     item: Filter,
     size: i32,
@@ -29,13 +30,14 @@ impl ScatteringInput {
 
 impl_input!(ScatteringInput);
 
+#[derive(Clone)]
 pub struct ScatteringRecipe {
-    outputs: Box<dyn Outputs>,
+    outputs: Rc<dyn Outputs>,
     inputs: Vec<ScatteringInput>,
 }
 
 impl ScatteringRecipe {
-    pub fn new(outputs: Box<dyn Outputs>, input: ScatteringInput) -> Self {
+    pub fn new(outputs: Rc<dyn Outputs>, input: ScatteringInput) -> Self {
         ScatteringRecipe { outputs, inputs: vec![input] }
     }
 }

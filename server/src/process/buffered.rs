@@ -17,6 +17,7 @@ use std::{
     rc::{Rc, Weak},
 };
 
+#[derive(Clone)]
 pub struct BufferedInput {
     item: Filter,
     size: i32,
@@ -30,8 +31,9 @@ impl BufferedInput {
 
 impl_input!(BufferedInput);
 
+#[derive(Clone)]
 pub struct BufferedRecipe {
-    pub outputs: Box<dyn Outputs>,
+    pub outputs: Rc<dyn Outputs>,
     pub inputs: Vec<BufferedInput>,
     pub max_inputs: i32,
 }
