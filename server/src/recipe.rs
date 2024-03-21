@@ -19,6 +19,7 @@ impl<T: Fn(&Factory) -> Option<f64>> Outputs for T {
 pub trait BoxedOutputs {
     fn and(self, other: Self) -> Self;
     fn or(self, other: Self) -> Self;
+    fn map_priority(self, f: impl Fn(f64) -> f64 + 'static) -> Self;
 }
 
 impl BoxedOutputs for Rc<dyn Outputs> {
@@ -32,6 +33,10 @@ impl BoxedOutputs for Rc<dyn Outputs> {
         Rc::new(move |factory: &_| {
             min_by(self.get_priority(factory), other.get_priority(factory), |x, y| x.partial_cmp(y).unwrap())
         })
+    }
+
+    fn map_priority(self, f: impl Fn(f64) -> f64 + 'static) -> Self {
+        Rc::new(move |factory: &_| self.get_priority(factory).map(&f))
     }
 }
 
