@@ -14,6 +14,7 @@ pub fn build_factory() -> Rc<RefCell<Factory>> {
         fluid_bus_accesses: vec![],
         fluid_bus_capacity: 0,
         backups: vec![],
+        fluid_backups: vec![],
     }
     .build(|factory| {
         factory.add_storage(ChestConfig {

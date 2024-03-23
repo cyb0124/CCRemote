@@ -15,7 +15,7 @@ use flexstr::LocalStr;
 use fnv::{FnvHashMap, FnvHashSet};
 use std::{
     cell::RefCell,
-    collections::BTreeMap,
+    collections::{hash_map::Entry, BTreeMap},
     rc::{Rc, Weak},
 };
 
@@ -24,17 +24,23 @@ pub struct FluidSlottedInput {
     fluid: LocalStr,
     size: i64,
     tanks: Vec<(usize, i64)>,
-    backup: i64,
+    allow_backup: bool,
+    extra_backup: i64,
 }
 
 impl FluidSlottedInput {
     pub fn new(fluid: LocalStr, tanks: Vec<(usize, i64)>) -> Self {
         let size = tanks.iter().map(|(_, size)| size).sum();
-        Self { fluid, size, tanks, backup: 0 }
+        Self { fluid, size, tanks, allow_backup: false, extra_backup: 0 }
     }
 
-    pub fn backup(mut self, size: i64) -> Self {
-        self.backup += size;
+    pub fn allow_backup(mut self) -> Self {
+        self.allow_backup = true;
+        self
+    }
+
+    pub fn extra_backup(mut self, size: i64) -> Self {
+        self.extra_backup += size;
         self
     }
 }
@@ -136,14 +142,34 @@ impl IntoProcess for FluidSlottedConfig {
     }
 }
 
+struct InputInfo {
+    n_available: i64,
+    n_needed: i64,
+}
+
 fn compute_fluid_demands(factory: &Factory, recipes: &[FluidSlottedRecipe]) -> Vec<Demand> {
     let mut result = compute_demands(factory, recipes);
     result.retain_mut(|demand| {
         let recipe = &recipes[demand.i_recipe];
+        let mut infos = FnvHashMap::<LocalStr, InputInfo>::default();
         for input in &recipe.fluids {
-            let n_avail =
-                (factory.search_n_fluid(&*input.fluid) - input.backup).clamp(0, factory.config.fluid_bus_capacity);
-            let n_sets = (n_avail / input.size).min(i32::MAX as _) as i32;
+            match infos.entry(input.fluid.clone()) {
+                Entry::Occupied(input_info) => input_info.into_mut().n_needed += input.size,
+                Entry::Vacant(input_info) => {
+                    input_info.insert(InputInfo {
+                        // Note: backup params are considered for only the first input of the same fluid.
+                        n_available: factory.get_fluid_availability(
+                            &*input.fluid,
+                            input.allow_backup,
+                            input.extra_backup,
+                        ),
+                        n_needed: input.size,
+                    });
+                }
+            }
+        }
+        for (_, input_info) in infos {
+            let n_sets = (input_info.n_available / input_info.n_needed).min(i32::MAX as _) as i32;
             demand.inputs.n_sets = demand.inputs.n_sets.min(n_sets)
         }
         demand.inputs.n_sets > 0
@@ -240,20 +266,15 @@ impl Process for FluidSlottedProcess {
                             continue 'recipe;
                         }
                     }
-                    let mut mismatched_fluids = FnvHashSet::from_iter(
-                        existing_fluids
-                            .iter()
-                            .enumerate()
-                            .flat_map(|(i, fluid_map)| fluid_map.keys().map(move |fluid| (i, fluid.clone()))),
-                    );
+                    let mut mismatched_fluids = (existing_fluids.iter().enumerate())
+                        .flat_map(|(i, fluid_map)| fluid_map.keys().map(move |fluid| (i, fluid.clone())))
+                        .collect::<FnvHashSet<_>>();
                     for input in &recipe.fluids {
                         for &(i, mult) in &input.tanks {
                             mismatched_fluids.remove(&(i, input.fluid.clone()));
                             let fluid_map = &existing_fluids[i];
                             let existing_size = fluid_map.get(&input.fluid).copied().unwrap_or_default();
-                            demand.inputs.n_sets = demand
-                                .inputs
-                                .n_sets
+                            demand.inputs.n_sets = (demand.inputs.n_sets)
                                 .min(((recipe.max_sets as i64 * mult - existing_size) / mult).clamp(0, i32::MAX as _)
                                     as _);
                             if demand.inputs.n_sets <= 0 {

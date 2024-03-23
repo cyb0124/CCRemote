@@ -138,7 +138,6 @@ pub struct ResolvedInputs {
 struct InputInfo {
     n_available: i32,
     n_needed: i32,
-    allow_backup: bool,
 }
 
 pub fn resolve_inputs(factory: &Factory, recipe: &impl Recipe) -> Option<ResolvedInputs> {
@@ -151,20 +150,13 @@ pub fn resolve_inputs(factory: &Factory, recipe: &impl Recipe) -> Option<Resolve
             let item_info = item_info.borrow();
             items.push((item.clone(), item_info.detail.clone()));
             match infos.entry(item) {
+                Entry::Occupied(input_info) => input_info.into_mut().n_needed += input.get_size(),
                 Entry::Vacant(input_info) => {
                     input_info.insert(InputInfo {
+                        // Note: backup params are considered for only the first input of the same item.
                         n_available: item_info.get_availability(input.get_allow_backup(), input.get_extra_backup()),
                         n_needed: input.get_size(),
-                        allow_backup: input.get_allow_backup(),
                     });
-                }
-                Entry::Occupied(input_info) => {
-                    let input_info = input_info.into_mut();
-                    input_info.n_needed += input.get_size();
-                    if input_info.allow_backup && !input.get_allow_backup() {
-                        input_info.allow_backup = false;
-                        input_info.n_available = item_info.get_availability(false, input.get_extra_backup())
-                    }
                 }
             }
             n_sets = min(n_sets, item_info.detail.max_size / input.get_size());

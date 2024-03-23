@@ -128,6 +128,7 @@ pub struct FactoryConfig {
     pub fluid_bus_accesses: Vec<FluidAccess>,
     pub fluid_bus_capacity: i64,
     pub backups: Vec<(Filter, i32)>,
+    pub fluid_backups: Vec<(LocalStr, i64)>,
 }
 
 pub struct FluidStorageConfig {
@@ -147,7 +148,7 @@ struct FluidStorage {
 pub struct Factory {
     weak: Weak<RefCell<Factory>>,
     _task: ChildTask<Result<(), LocalStr>>,
-    pub config: FactoryConfig,
+    config: FactoryConfig,
     storages: Vec<Rc<RefCell<dyn Storage>>>,
     processes: Vec<Rc<RefCell<dyn Process>>>,
     fluid_storages: Vec<Rc<RefCell<FluidStorage>>>,
@@ -155,6 +156,7 @@ pub struct Factory {
     items: FnvHashMap<Rc<Item>, RefCell<ItemInfo>>,
     label_map: FnvHashMap<LocalStr, Vec<Rc<Item>>>,
     name_map: FnvHashMap<LocalStr, Vec<Rc<Item>>>,
+    fluid_backups: FnvHashMap<LocalStr, i64>,
 
     bus_task: Option<ChildTask<Result<(), LocalStr>>>,
     bus_allocations: FnvHashSet<usize>,
@@ -172,6 +174,10 @@ pub struct Factory {
 
 impl FactoryConfig {
     pub fn build(self, builder: impl FnOnce(&mut Factory)) -> Rc<RefCell<Factory>> {
+        let mut fluid_backups = FnvHashMap::default();
+        for (fluid, qty) in &self.fluid_backups {
+            *fluid_backups.entry(fluid.clone()).or_default() += qty
+        }
         Rc::new_cyclic(|weak| {
             let mut factory = Factory {
                 weak: weak.clone(),
@@ -184,6 +190,7 @@ impl FactoryConfig {
                 items: FnvHashMap::default(),
                 label_map: FnvHashMap::default(),
                 name_map: FnvHashMap::default(),
+                fluid_backups,
 
                 bus_task: None,
                 bus_allocations: FnvHashSet::default(),
@@ -373,6 +380,14 @@ impl Factory {
             }
         }
         sum
+    }
+
+    pub fn get_fluid_availability(&self, fluid: &str, allow_backup: bool, extra_backup: i64) -> i64 {
+        let mut n_available = self.search_n_fluid(fluid) - extra_backup;
+        if !allow_backup {
+            n_available -= self.fluid_backups.get(fluid).copied().unwrap_or_default()
+        }
+        n_available.clamp(0, self.config.fluid_bus_capacity)
     }
 
     pub fn fluid_bus_allocate(&mut self) -> LocalReceiver<usize> {
