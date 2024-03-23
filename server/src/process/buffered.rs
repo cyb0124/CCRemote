@@ -13,7 +13,6 @@ use flexstr::LocalStr;
 use fnv::FnvHashMap;
 use std::{
     cell::RefCell,
-    cmp::min,
     rc::{Rc, Weak},
 };
 
@@ -110,7 +109,7 @@ impl Process for BufferedProcess {
                         let info = info.borrow();
                         let existing = existing_size.entry(item.clone()).or_default();
                         let to_insert =
-                            min(stock.size - *existing, info.get_availability(stock.allow_backup, stock.extra_backup));
+                            (stock.size - *existing).min(info.get_availability(stock.allow_backup, stock.extra_backup));
                         if to_insert <= 0 {
                             continue;
                         }
@@ -130,7 +129,7 @@ impl Process for BufferedProcess {
                         let recipe = &this.config.recipes[i_recipe];
                         if let Some(mut inputs) = resolve_inputs(factory, recipe) {
                             let size_per_set: i32 = recipe.inputs.iter().map(|x| x.size).sum();
-                            inputs.n_sets = min(inputs.n_sets, remaining_size / size_per_set);
+                            inputs.n_sets = inputs.n_sets.min(remaining_size / size_per_set);
                             if inputs.n_sets <= 0 {
                                 continue 'recipe;
                             }
@@ -139,7 +138,7 @@ impl Process for BufferedProcess {
                                 .iter()
                                 .map(|(item, _)| *existing_size.entry(item.clone()).or_default())
                                 .sum();
-                            inputs.n_sets = min(inputs.n_sets, (recipe.max_inputs - existing_total) / size_per_set);
+                            inputs.n_sets = inputs.n_sets.min((recipe.max_inputs - existing_total) / size_per_set);
                             if inputs.n_sets <= 0 {
                                 continue 'recipe;
                             }

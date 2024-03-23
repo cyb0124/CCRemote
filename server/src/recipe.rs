@@ -3,7 +3,7 @@ use super::item::{Detail, Filter, Item};
 use flexstr::LocalStr;
 use fnv::FnvHashMap;
 use std::{
-    cmp::{max_by, min, min_by},
+    cmp::{max_by, min_by},
     collections::hash_map::Entry,
     rc::Rc,
 };
@@ -159,13 +159,13 @@ pub fn resolve_inputs(factory: &Factory, recipe: &impl Recipe) -> Option<Resolve
                     });
                 }
             }
-            n_sets = min(n_sets, item_info.detail.max_size / input.get_size());
+            n_sets = n_sets.min(item_info.detail.max_size / input.get_size());
         } else {
             return None;
         }
     }
     for (_, input_info) in infos.into_iter() {
-        n_sets = min(n_sets, input_info.n_available / input_info.n_needed)
+        n_sets = n_sets.min(input_info.n_available / input_info.n_needed)
     }
     if n_sets > 0 {
         Some(ResolvedInputs { n_sets, items })

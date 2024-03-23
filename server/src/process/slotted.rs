@@ -13,7 +13,6 @@ use flexstr::LocalStr;
 use fnv::{FnvHashMap, FnvHashSet};
 use std::{
     cell::RefCell,
-    cmp::min,
     rc::{Rc, Weak},
 };
 
@@ -111,9 +110,8 @@ impl Process for SlottedProcess {
                             } else {
                                 0
                             };
-                            demand.inputs.n_sets = min(
-                                demand.inputs.n_sets,
-                                (min(recipe.max_sets * mult, demand.inputs.items[i_input].1.max_size) - existing_size)
+                            demand.inputs.n_sets = demand.inputs.n_sets.min(
+                                ((recipe.max_sets * mult).min(demand.inputs.items[i_input].1.max_size) - existing_size)
                                     / mult,
                             );
                             if demand.inputs.n_sets <= 0 {

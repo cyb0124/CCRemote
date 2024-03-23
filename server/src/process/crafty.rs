@@ -9,7 +9,6 @@ use abort_on_drop::ChildTask;
 use flexstr::{local_str, LocalStr};
 use std::{
     cell::RefCell,
-    cmp::min,
     collections::VecDeque,
     future::Future,
     rc::{Rc, Weak},
@@ -66,7 +65,7 @@ impl CraftyProcess {
             }
             upgrade_mut!(self.factory, factory);
             if let Some(ResolvedInputs { mut n_sets, items }) = resolve_inputs(factory, recipe) {
-                n_sets = min(n_sets, recipe.max_sets);
+                n_sets = n_sets.min(recipe.max_sets);
                 let mut bus_slots = Vec::new();
                 let slots_to_free = Rc::new(RefCell::new(Vec::new()));
                 for (i_input, (item, _)) in items.into_iter().enumerate() {

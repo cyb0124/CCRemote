@@ -148,7 +148,7 @@ struct FluidStorage {
 pub struct Factory {
     weak: Weak<RefCell<Factory>>,
     _task: ChildTask<Result<(), LocalStr>>,
-    config: FactoryConfig,
+    pub config: FactoryConfig,
     storages: Vec<Rc<RefCell<dyn Storage>>>,
     processes: Vec<Rc<RefCell<dyn Process>>>,
     fluid_storages: Vec<Rc<RefCell<FluidStorage>>>,
@@ -387,7 +387,7 @@ impl Factory {
         if !allow_backup {
             n_available -= self.fluid_backups.get(fluid).copied().unwrap_or_default()
         }
-        n_available.clamp(0, self.config.fluid_bus_capacity)
+        n_available.max(0)
     }
 
     pub fn fluid_bus_allocate(&mut self) -> LocalReceiver<usize> {

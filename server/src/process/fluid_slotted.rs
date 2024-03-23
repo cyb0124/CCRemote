@@ -151,6 +151,7 @@ fn compute_fluid_demands(factory: &Factory, recipes: &[FluidSlottedRecipe]) -> V
     let mut result = compute_demands(factory, recipes);
     result.retain_mut(|demand| {
         let recipe = &recipes[demand.i_recipe];
+        let mut n_sets = demand.inputs.n_sets as i64;
         let mut infos = FnvHashMap::<LocalStr, InputInfo>::default();
         for input in &recipe.fluids {
             match infos.entry(input.fluid.clone()) {
@@ -167,12 +168,13 @@ fn compute_fluid_demands(factory: &Factory, recipes: &[FluidSlottedRecipe]) -> V
                     });
                 }
             }
+            n_sets = n_sets.min(factory.config.fluid_bus_capacity / input.size)
         }
         for (_, input_info) in infos {
-            let n_sets = (input_info.n_available / input_info.n_needed).min(i32::MAX as _) as i32;
-            demand.inputs.n_sets = demand.inputs.n_sets.min(n_sets)
+            n_sets = n_sets.min(input_info.n_available / input_info.n_needed)
         }
-        demand.inputs.n_sets > 0
+        demand.inputs.n_sets = n_sets as _;
+        n_sets > 0
     });
     result
 }

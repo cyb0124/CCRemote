@@ -12,7 +12,6 @@ use flexstr::{local_fmt, LocalStr};
 use fnv::FnvHashMap;
 use std::{
     cell::RefCell,
-    cmp::min,
     rc::{Rc, Weak},
 };
 
@@ -117,7 +116,7 @@ impl Process for ScatteringProcess {
                                 }
                             }
                             if let Some((slot, size)) = best {
-                                if size >= min(this.config.max_per_slot, inputs.items[0].1.max_size) {
+                                if size >= this.config.max_per_slot.min(inputs.items[0].1.max_size) {
                                     break;
                                 }
                                 inputs.n_sets -= 1;
