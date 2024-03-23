@@ -246,10 +246,10 @@ impl MultiInvSlottedProcess {
                     for (i_input, input) in recipe.inputs.iter().enumerate() {
                         for (inv, inv_slot, mult) in &input.slots {
                             let action = ActionFuture::from(Call {
-                                addr: access.inv_addrs[*inv].clone(),
+                                addr: access.bus_addr.clone(),
                                 args: vec![
-                                    "pullItems".into(),
-                                    access.bus_addr.clone().into(),
+                                    "pushItems".into(),
+                                    access.inv_addrs[*inv].clone().into(),
                                     (bus_slots[i_input] + 1).into(),
                                     (demand.inputs.n_sets * mult).into(),
                                     (inv_slot + 1).into(),

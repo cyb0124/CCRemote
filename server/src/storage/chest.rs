@@ -129,10 +129,10 @@ impl Storage for ChestStorage {
         let server = self.server.borrow();
         let access = server.load_balance(&self.config.accesses);
         let action = ActionFuture::from(Call {
-            addr: access.inv_addr.clone(),
+            addr: access.bus_addr.clone(),
             args: vec![
-                "pullItems".into(),
-                access.bus_addr.clone().into(),
+                "pushItems".into(),
+                access.inv_addr.clone().into(),
                 (bus_slot + 1).into(),
                 n_deposited.into(),
                 (inv_slot + 1).into(),
@@ -151,10 +151,10 @@ impl Extractor for ChestExtractor {
         let server = this.server.borrow();
         let access = server.load_balance(&this.config.accesses);
         let action = ActionFuture::from(Call {
-            addr: access.inv_addr.clone(),
+            addr: access.bus_addr.clone(),
             args: vec![
-                "pushItems".into(),
-                access.bus_addr.clone().into(),
+                "pullItems".into(),
+                access.inv_addr.clone().into(),
                 (inv_slot + 1).into(),
                 size.into(),
                 (bus_slot + 1).into(),

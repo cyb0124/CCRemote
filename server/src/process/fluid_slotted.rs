@@ -358,22 +358,6 @@ impl FluidSlottedProcess {
                     let access = server.load_balance(&this.accesses);
                     let mut group = Vec::new();
                     let recipe = &this.recipes[demand.i_recipe];
-                    for (input, bus_slot) in recipe.inputs.iter().zip(bus_slots) {
-                        for (inv, inv_slot, mult) in &input.slots {
-                            let action = ActionFuture::from(Call {
-                                addr: access.inv_addrs[*inv].clone(),
-                                args: vec![
-                                    "pullItems".into(),
-                                    access.bus_addr.clone().into(),
-                                    (bus_slot + 1).into(),
-                                    (demand.inputs.n_sets * mult).into(),
-                                    (inv_slot + 1).into(),
-                                ],
-                            });
-                            group.push(action.clone().into());
-                            tasks.push(spawn(async move { action.await.map(|_| ()) }));
-                        }
-                    }
                     for (input, fluid_bus) in recipe.fluids.iter().zip(fluid_buses) {
                         for &(i, mult) in &input.tanks {
                             let action = ActionFuture::from(Call {
@@ -383,6 +367,22 @@ impl FluidSlottedProcess {
                                     access.tank_addrs[i].clone().into(),
                                     (demand.inputs.n_sets as i64 * mult).into(),
                                     input.fluid.clone().into(),
+                                ],
+                            });
+                            group.push(action.clone().into());
+                            tasks.push(spawn(async move { action.await.map(|_| ()) }));
+                        }
+                    }
+                    for (input, bus_slot) in recipe.inputs.iter().zip(bus_slots) {
+                        for (inv, inv_slot, mult) in &input.slots {
+                            let action = ActionFuture::from(Call {
+                                addr: access.bus_addr.clone(),
+                                args: vec![
+                                    "pushItems".into(),
+                                    access.inv_addrs[*inv].clone().into(),
+                                    (bus_slot + 1).into(),
+                                    (demand.inputs.n_sets * mult).into(),
+                                    (inv_slot + 1).into(),
                                 ],
                             });
                             group.push(action.clone().into());

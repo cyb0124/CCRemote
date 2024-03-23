@@ -61,10 +61,10 @@ where
             let server = this.get_server().borrow();
             let access = server.load_balance(this.get_accesses());
             action = ActionFuture::from(Call {
-                addr: access.inv_addr.clone(),
+                addr: access.bus_addr.clone(),
                 args: vec![
-                    "pushItems".into(),
-                    access.bus_addr.clone().into(),
+                    "pullItems".into(),
+                    access.inv_addr.clone().into(),
                     (slot + 1).into(),
                     size.into(),
                     (bus_slot + 1).into(),
@@ -102,10 +102,10 @@ where
                 for (inv_slot, size) in insertions.into_iter() {
                     let access = server.load_balance(this.get_accesses());
                     let action = ActionFuture::from(Call {
-                        addr: access.inv_addr.clone(),
+                        addr: access.bus_addr.clone(),
                         args: vec![
-                            "pullItems".into(),
-                            access.bus_addr.clone().into(),
+                            "pushItems".into(),
+                            access.inv_addr.clone().into(),
                             (bus_slot + 1).into(),
                             size.into(),
                             (inv_slot + 1).into(),

@@ -324,10 +324,10 @@ impl Process for ItemCycleProcess {
                             let server = this.server.borrow();
                             let access = server.load_balance(&this.config.accesses);
                             let action = ActionFuture::from(Call {
-                                addr: access.inv_addr.clone(),
+                                addr: access.bus_addr.clone(),
                                 args: vec![
-                                    "pullItems".into(),
-                                    access.bus_addr.clone().into(),
+                                    "pushItems".into(),
+                                    access.inv_addr.clone().into(),
                                     (bus_slot + 1).into(),
                                     1.into(),
                                     (this.config.slot + 1).into(),

@@ -88,8 +88,8 @@ impl Storage for DrawerStorage {
         let server = self.server.borrow();
         let access = server.load_balance(&self.config.accesses);
         let action = ActionFuture::from(Call {
-            addr: access.inv_addr.clone(),
-            args: vec!["pullItems".into(), access.bus_addr.clone().into(), (bus_slot + 1).into(), n_deposited.into()],
+            addr: access.bus_addr.clone(),
+            args: vec!["pushItems".into(), access.inv_addr.clone().into(), (bus_slot + 1).into(), n_deposited.into()],
         });
         server.enqueue_request_group(&access.client, vec![action.clone().into()]);
         let task = spawn(async move { action.await.map(|_| ()) });
@@ -103,10 +103,10 @@ impl Extractor for DrawerExtractor {
         let server = this.server.borrow();
         let access = server.load_balance(&this.config.accesses);
         let action = ActionFuture::from(Call {
-            addr: access.inv_addr.clone(),
+            addr: access.bus_addr.clone(),
             args: vec![
-                "pushItems".into(),
-                access.bus_addr.clone().into(),
+                "pullItems".into(),
+                access.inv_addr.clone().into(),
                 (self.inv_slot + 1).into(),
                 size.into(),
                 (bus_slot + 1).into(),

@@ -123,10 +123,10 @@ impl Process for WorkbenchProcess {
 
 fn load_input(group: &mut Vec<Call>, access: &BusAccess, bus_slot: usize, inv_slot: usize, size: i32) {
     group.push(Call {
-        addr: access.inv_addr.clone(),
+        addr: access.bus_addr.clone(),
         args: vec![
-            "pullItems".into(),
-            access.bus_addr.clone().into(),
+            "pushItems".into(),
+            access.inv_addr.clone().into(),
             (bus_slot + 1).into(),
             size.into(),
             (inv_slot + 1).into(),
@@ -150,8 +150,8 @@ fn load_non_consumable(group: &mut Vec<Call>, access: &BusAccess, non_consumable
 fn store_output(group: &mut Vec<Call>, access: &BusAccess, bus_slot: usize, n_sets: i32) {
     for _ in 0..n_sets {
         group.push(Call {
-            addr: access.inv_addr.clone(),
-            args: vec!["pushItems".into(), access.bus_addr.clone().into(), 10.into(), 64.into(), (bus_slot + 1).into()],
+            addr: access.bus_addr.clone(),
+            args: vec!["pullItems".into(), access.inv_addr.clone().into(), 10.into(), 64.into(), (bus_slot + 1).into()],
         })
     }
 }
