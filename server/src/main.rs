@@ -4,10 +4,11 @@ pub mod util;
 pub mod inventory;
 #[macro_use]
 pub mod recipe;
+#[macro_use]
+pub mod config_util;
 pub mod access;
 pub mod action;
 pub mod config;
-pub mod config_util;
 pub mod detail_cache;
 pub mod factory;
 pub mod item;
