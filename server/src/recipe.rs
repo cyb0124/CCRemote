@@ -19,6 +19,7 @@ impl<T: Fn(&Factory) -> Option<f64>> Outputs for T {
 pub trait BoxedOutputs {
     fn and(self, other: Self) -> Self;
     fn or(self, other: Self) -> Self;
+    fn not(self) -> Self;
     fn map_priority(self, f: impl Fn(&Factory, f64) -> f64 + 'static) -> Self;
 }
 
@@ -32,6 +33,14 @@ impl BoxedOutputs for Rc<dyn Outputs> {
     fn or(self, other: Self) -> Self {
         Rc::new(move |factory: &_| {
             min_by(self.get_priority(factory), other.get_priority(factory), |x, y| x.partial_cmp(y).unwrap())
+        })
+    }
+
+    fn not(self) -> Self {
+        Rc::new(move |factory: &_| match self.get_priority(factory) {
+            Some(x) if x >= 1. => None,
+            Some(x) => Some(1. - x),
+            None => Some(1.),
         })
     }
 
@@ -189,7 +198,7 @@ pub fn compute_demands(factory: &Factory, recipes: &[impl Recipe]) -> Vec<Demand
             }
         }
     }
-    result.sort_unstable_by(|x: &Demand, y: &Demand| x.priority.partial_cmp(&y.priority).unwrap().reverse());
+    result.sort_by(|x: &Demand, y: &Demand| x.priority.partial_cmp(&y.priority).unwrap().reverse());
     result
 }
 
