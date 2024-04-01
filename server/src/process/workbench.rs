@@ -40,7 +40,7 @@ impl Process for WorkbenchProcess {
             if recipe.max_sets <= 0 {
                 continue;
             }
-            if let Some(ResolvedInputs { mut n_sets, items }) = resolve_inputs(factory, recipe) {
+            if let Some(ResolvedInputs { mut n_sets, items, .. }) = resolve_inputs(factory, recipe) {
                 n_sets = n_sets.min(recipe.max_sets);
                 let mut bus_slots = Vec::new();
                 let slots_to_free = Rc::new(RefCell::new(Vec::new()));

@@ -6,7 +6,7 @@ use crate::{
     inventory::{list_inventory, Inventory},
     item::DetailStack,
     process::extract_output,
-    recipe::{compute_demands, Demand, Outputs, Recipe},
+    recipe::{resolve_inputs, Demand, Outputs, Recipe},
     server::Server,
     util::{alive, join_outputs, join_tasks, spawn},
 };
@@ -148,11 +148,12 @@ struct InputInfo {
 }
 
 fn compute_fluid_demands(factory: &Factory, recipes: &[FluidSlottedRecipe]) -> Vec<Demand> {
-    let mut result = compute_demands(factory, recipes);
-    result.retain_mut(|demand| {
-        let recipe = &recipes[demand.i_recipe];
-        let mut n_sets = demand.inputs.n_sets as i64;
+    let mut result = Vec::new();
+    for (i_recipe, recipe) in recipes.iter().enumerate() {
+        let Some(mut priority) = recipe.get_outputs().get_priority(factory) else { continue };
+        let Some(mut inputs) = resolve_inputs(factory, recipe) else { continue };
         let mut infos = FnvHashMap::<LocalStr, InputInfo>::default();
+        let mut bus_bound = i64::MAX;
         for input in &recipe.fluids {
             match infos.entry(input.fluid.clone()) {
                 Entry::Occupied(input_info) => input_info.into_mut().n_needed += input.size,
@@ -168,14 +169,20 @@ fn compute_fluid_demands(factory: &Factory, recipes: &[FluidSlottedRecipe]) -> V
                     });
                 }
             }
-            n_sets = n_sets.min(factory.config.fluid_bus_capacity / input.size)
+            bus_bound = bus_bound.min(factory.config.fluid_bus_capacity / input.size)
         }
+        let mut availability_bound = i64::MAX;
         for (_, input_info) in infos {
-            n_sets = n_sets.min(input_info.n_available / input_info.n_needed)
+            availability_bound = availability_bound.min(input_info.n_available / input_info.n_needed)
         }
-        demand.inputs.n_sets = n_sets as _;
-        n_sets > 0
-    });
+        inputs.n_sets = (inputs.n_sets as i64).min(bus_bound).min(availability_bound) as _;
+        if inputs.n_sets > 0 {
+            inputs.priority = (inputs.priority as i64).min(availability_bound) as _;
+            priority *= inputs.priority as f64;
+            result.push(Demand { i_recipe, inputs, priority })
+        }
+    }
+    result.sort_by(|x: &Demand, y: &Demand| x.priority.partial_cmp(&y.priority).unwrap().reverse());
     result
 }
 

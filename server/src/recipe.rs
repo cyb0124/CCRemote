@@ -141,6 +141,7 @@ macro_rules! impl_recipe {
 
 pub struct ResolvedInputs {
     pub n_sets: i32,
+    pub priority: i32,
     pub items: Vec<(Rc<Item>, Rc<Detail>)>,
 }
 
@@ -150,10 +151,10 @@ struct InputInfo {
 }
 
 pub fn resolve_inputs(factory: &Factory, recipe: &impl Recipe) -> Option<ResolvedInputs> {
-    let mut n_sets = i32::MAX;
     let mut items = Vec::new();
     items.reserve(recipe.get_inputs().len());
     let mut infos = FnvHashMap::<&Rc<Item>, InputInfo>::default();
+    let mut max_size_bound = i32::MAX;
     for input in recipe.get_inputs() {
         if let Some((item, item_info)) = factory.search_item(input.get_item()) {
             let item_info = item_info.borrow();
@@ -168,16 +169,19 @@ pub fn resolve_inputs(factory: &Factory, recipe: &impl Recipe) -> Option<Resolve
                     });
                 }
             }
-            n_sets = n_sets.min(item_info.detail.max_size / input.get_size());
+            max_size_bound = max_size_bound.min(item_info.detail.max_size / input.get_size());
         } else {
             return None;
         }
     }
+    let mut availability_bound = i32::MAX;
     for (_, input_info) in infos.into_iter() {
-        n_sets = n_sets.min(input_info.n_available / input_info.n_needed)
+        let limit = input_info.n_available / input_info.n_needed;
+        availability_bound = availability_bound.min(limit)
     }
+    let n_sets = max_size_bound.min(availability_bound);
     if n_sets > 0 {
-        Some(ResolvedInputs { n_sets, items })
+        Some(ResolvedInputs { n_sets, priority: availability_bound, items })
     } else {
         None
     }
@@ -186,17 +190,16 @@ pub fn resolve_inputs(factory: &Factory, recipe: &impl Recipe) -> Option<Resolve
 pub struct Demand {
     pub i_recipe: usize,
     pub inputs: ResolvedInputs,
-    priority: f64,
+    pub priority: f64,
 }
 
 pub fn compute_demands(factory: &Factory, recipes: &[impl Recipe]) -> Vec<Demand> {
     let mut result = Vec::new();
     for (i_recipe, recipe) in recipes.iter().enumerate() {
-        if let Some(priority) = recipe.get_outputs().get_priority(factory) {
-            if let Some(inputs) = resolve_inputs(factory, recipe) {
-                result.push(Demand { i_recipe, inputs, priority })
-            }
-        }
+        let Some(mut priority) = recipe.get_outputs().get_priority(factory) else { continue };
+        let Some(inputs) = resolve_inputs(factory, recipe) else { continue };
+        priority *= inputs.priority as f64;
+        result.push(Demand { i_recipe, inputs, priority })
     }
     result.sort_by(|x: &Demand, y: &Demand| x.priority.partial_cmp(&y.priority).unwrap().reverse());
     result
