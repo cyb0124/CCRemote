@@ -38,8 +38,7 @@ impl BoxedOutputs for Rc<dyn Outputs> {
 
     fn not(self) -> Self {
         Rc::new(move |factory: &_| match self.get_priority(factory) {
-            Some(x) if x >= 1. => None,
-            Some(x) => Some(1. - x),
+            Some(_) => None,
             None => Some(1.),
         })
     }
