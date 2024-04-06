@@ -443,8 +443,9 @@ impl Factory {
                 }
             }
             if let Some((storage, _)) = best {
-                let sto = storage.borrow();
+                let mut sto = storage.borrow_mut();
                 let n_deposited = qty.min(sto.config.capacity - sto.n_stored_hi);
+                sto.n_stored_hi += n_deposited;
                 qty -= n_deposited;
                 let access = server.load_balance(&sto.config.accesses);
                 let task = ActionFuture::from(Call {
