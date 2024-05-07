@@ -24,7 +24,7 @@ use tokio::time::{sleep_until, Instant};
 
 pub struct ItemInfo {
     pub detail: Rc<Detail>,
-    n_stored: i32,
+    pub n_stored: i32,
     n_backup: i32,
     providers: BinaryHeap<Provider>,
 }
@@ -144,7 +144,7 @@ pub struct Factory {
     processes: Vec<Rc<RefCell<dyn Process>>>,
     fluid_storages: Vec<Rc<RefCell<FluidStorage>>>,
 
-    items: FnvHashMap<Rc<Item>, RefCell<ItemInfo>>,
+    pub items: FnvHashMap<Rc<Item>, RefCell<ItemInfo>>,
     label_map: FnvHashMap<LocalStr, Vec<Rc<Item>>>,
     name_map: FnvHashMap<LocalStr, Vec<Rc<Item>>>,
     fluid_backups: FnvHashMap<LocalStr, i64>,

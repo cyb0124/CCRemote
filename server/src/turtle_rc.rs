@@ -79,7 +79,7 @@ pub fn run(server: Rc<RefCell<Server>>) -> ChildTask<()> {
         let mut client = None;
         loop {
             tui.on_input.notified().await;
-            for line in tui.inputs.borrow_mut().drain(..) {
+            for line in tui.input_queue.borrow_mut().drain(..) {
                 let args: Vec<_> = line.split_whitespace().collect();
                 if args.is_empty() || args[0].is_empty() {
                     tui.log("expect args".to_owned(), 0)

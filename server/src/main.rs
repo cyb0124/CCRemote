@@ -41,8 +41,9 @@ pub struct Tui {
     on_redraw: Notify,
     on_input: Notify,
     logs: RefCell<VecDeque<ListItem<'static>>>,
-    inputs: RefCell<Vec<String>>,
+    input_queue: RefCell<Vec<String>>,
     text_area: RefCell<TextArea<'static>>,
+    main_list: RefCell<Vec<ListItem<'static>>>,
 }
 
 impl Tui {
@@ -66,12 +67,21 @@ impl Tui {
         let layout = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).split(frame.size());
         frame.render_widget(self.text_area.borrow().widget(), layout[1]);
 
-        let size = layout[0];
+        let main_list = self.main_list.borrow();
+        let log_size;
+        if main_list.is_empty() {
+            log_size = layout[0]
+        } else {
+            let layout = Layout::horizontal([Constraint::Percentage(50), Constraint::Fill(1)]).split(layout[0]);
+            log_size = layout[0];
+            frame.render_widget(List::new(main_list.iter().cloned()), layout[1])
+        }
+
         let mut log_buffer = self.logs.borrow_mut();
-        while log_buffer.len() > size.height as _ {
+        while log_buffer.len() > log_size.height as _ {
             log_buffer.pop_front();
         }
-        frame.render_widget(List::new(log_buffer.iter().cloned()), size)
+        frame.render_widget(List::new(log_buffer.iter().cloned()), log_size)
     }
 }
 
@@ -101,7 +111,7 @@ async fn main() {
                     tui.logs.borrow_mut().clear()
                 } else if evt.ctrl && evt.key == Key::Char('m') || evt.key == Key::Enter {
                     let mut text_area = tui.text_area.borrow_mut();
-                    tui.inputs.borrow_mut().extend(text_area.lines().get(text_area.cursor().0).cloned());
+                    tui.input_queue.borrow_mut().extend(text_area.lines().get(text_area.cursor().0).cloned());
                     text_area.move_cursor(CursorMove::End);
                     text_area.insert_newline()
                 } else {
