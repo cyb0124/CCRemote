@@ -3,7 +3,7 @@ use crate::{lua_value::Value, server::Server, util::spawn, Tui};
 use abort_on_drop::ChildTask;
 use flexstr::LocalStr;
 use ordered_float::NotNan;
-use std::{cell::RefCell, collections::VecDeque, future::Future, pin::Pin, rc::Rc};
+use std::{cell::RefCell, collections::VecDeque, future::Future, mem::take, pin::Pin, rc::Rc};
 
 const QUEUE_SIZE: usize = 8;
 struct Context {
@@ -79,7 +79,8 @@ pub fn run(server: Rc<RefCell<Server>>) -> ChildTask<()> {
         let mut client = None;
         loop {
             tui.on_input.notified().await;
-            for line in tui.input_queue.borrow_mut().drain(..) {
+            let lines = take(&mut *tui.input_queue.borrow_mut());
+            for line in lines {
                 let args: Vec<_> = line.split_whitespace().collect();
                 if args.is_empty() || args[0].is_empty() {
                     tui.log("expect args".to_owned(), 0)

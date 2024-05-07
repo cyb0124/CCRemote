@@ -5,7 +5,9 @@ use crate::util::{alive, join_tasks, spawn};
 use crate::{access::BusAccess, detail_cache::DetailCache, factory::Factory, item::DetailStack, server::Server, Tui};
 use abort_on_drop::ChildTask;
 use flexstr::LocalStr;
-use ratatui::text::Line;
+use ratatui::style::{Color, Modifier, Style};
+use ratatui::text::{Line, Span};
+use regex::Regex;
 use std::{
     cell::RefCell,
     rc::{Rc, Weak},
@@ -58,7 +60,17 @@ async fn input_handler(tui: Rc<Tui>, weak: Weak<RefCell<ManualUiProcess>>) {
     }
 }
 
-fn search_pred(needle: &str, stack: &DetailStack) -> bool { needle.is_empty() || stack.detail.label.contains(needle) }
+fn make_pred(needle: &str) -> Box<dyn Fn(&DetailStack) -> bool> {
+    if needle.is_empty() {
+        Box::new(|_| true)
+    } else if needle.starts_with("=") {
+        let Ok(regex) = Regex::new(&needle[1..]) else { return Box::new(|_| false) };
+        Box::new(move |x| regex.is_match(&x.item.name))
+    } else {
+        let Ok(regex) = Regex::new(needle) else { return Box::new(|_| false) };
+        Box::new(move |x| regex.is_match(&x.detail.label))
+    }
+}
 
 impl ManualUiProcess {
     fn update_view(&self, tui: &Tui) {
@@ -67,10 +79,16 @@ impl ManualUiProcess {
         if let Some(pos) = needle.rfind('*') {
             needle = &needle[..pos]
         }
+        let pred = make_pred(needle);
         tui.set_main_list(
-            (self.latest_view.iter())
-                .filter(|x| search_pred(needle, x))
-                .map(|x| Line::from(format!("{} * {}", x.size, x.detail.label)))
+            (self.latest_view.iter().filter(|x| pred(x)))
+                .map(|x| {
+                    Line::from(vec![
+                        Span::raw(format!("{} * ", x.size)),
+                        Span::styled(format!("{} ", x.detail.label), Color::LightGreen),
+                        Span::styled(x.item.name.to_std_string(), Style::from(Color::Gray).add_modifier(Modifier::DIM)),
+                    ])
+                })
                 .collect(),
         );
         tui.request_redraw()
@@ -96,8 +114,8 @@ impl Process for ManualUiProcess {
                 this.update_view(&tui);
                 for request in tui.input_queue.borrow_mut().drain(..) {
                     let Some(pos) = request.rfind('*') else { continue };
-                    let needle = &request[..pos];
-                    let Some(stack) = this.latest_view.iter().find(|x| search_pred(needle, x)) else { continue };
+                    let pred = make_pred(&request[..pos]);
+                    let Some(stack) = this.latest_view.iter().find(|x| pred(x)) else { continue };
                     let Ok(mut size) = request[pos + 1..].parse() else { continue };
                     size = stack.size.min(size);
                     loop {

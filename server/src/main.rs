@@ -67,7 +67,7 @@ impl Tui {
             14 => Color::Red,
             _ => unreachable!(),
         };
-        self.logs.borrow_mut().push_back(Line::from(msg).style(color));
+        self.logs.borrow_mut().push_back(Line::styled(msg, color));
         self.request_redraw()
     }
 
