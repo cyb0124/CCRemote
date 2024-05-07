@@ -96,12 +96,21 @@ impl Process for ManualUiProcess {
                     let Some(pos) = request.rfind('*') else { continue };
                     let needle = &request[..pos];
                     let Some(stack) = this.latest_view.iter().find(|x| search_pred(needle, x)) else { continue };
-                    let Ok(size) = request[pos + 1..].parse() else { continue };
-                    let InsertPlan { n_inserted, insertions } =
-                        insert_into_inventory(&mut stacks, &stack.item, &stack.detail, stack.size.min(size));
-                    if n_inserted > 0 {
+                    let Ok(mut size) = request[pos + 1..].parse() else { continue };
+                    size = stack.size.min(size);
+                    loop {
+                        let InsertPlan { n_inserted, insertions } = insert_into_inventory(
+                            &mut stacks,
+                            &stack.item,
+                            &stack.detail,
+                            size.min(stack.detail.max_size),
+                        );
+                        if n_inserted <= 0 {
+                            break;
+                        };
                         let reservation = factory.reserve_item(&this.config.name, &stack.item, n_inserted);
                         tasks.push(scattering_insert(this, factory, reservation, insertions));
+                        size -= n_inserted
                     }
                 }
             }
