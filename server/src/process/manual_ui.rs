@@ -5,7 +5,7 @@ use crate::util::{alive, join_tasks, spawn};
 use crate::{access::BusAccess, detail_cache::DetailCache, factory::Factory, item::DetailStack, server::Server, Tui};
 use abort_on_drop::ChildTask;
 use flexstr::LocalStr;
-use ratatui::widgets::ListItem;
+use ratatui::text::Line;
 use std::{
     cell::RefCell,
     rc::{Rc, Weak},
@@ -67,10 +67,12 @@ impl ManualUiProcess {
         if let Some(pos) = needle.rfind('*') {
             needle = &needle[..pos]
         }
-        *tui.main_list.borrow_mut() = (self.latest_view.iter())
-            .filter(|x| search_pred(needle, x))
-            .map(|x| ListItem::new(format!("{} * {}", x.size, x.detail.label)))
-            .collect();
+        tui.set_main_list(
+            (self.latest_view.iter())
+                .filter(|x| search_pred(needle, x))
+                .map(|x| Line::from(format!("{} * {}", x.size, x.detail.label)))
+                .collect(),
+        );
         tui.request_redraw()
     }
 }
