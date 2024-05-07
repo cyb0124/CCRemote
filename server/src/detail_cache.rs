@@ -1,6 +1,7 @@
-use super::item::{Detail, Item};
-use super::lua_value::{serialize, Parser, Table};
-use super::util::{make_local_one_shot, spawn, LocalReceiver, LocalSender};
+use crate::item::{Detail, Item};
+use crate::lua_value::{serialize, Parser, Table};
+use crate::util::{make_local_one_shot, spawn, LocalReceiver, LocalSender};
+use crate::Tui;
 use abort_on_drop::ChildTask;
 use flexstr::{local_fmt, local_str, LocalStr};
 use fnv::FnvHashMap;
@@ -22,7 +23,7 @@ pub enum DetailResult<'a> {
 }
 
 pub struct DetailCache {
-    path: Option<LocalStr>,
+    path: LocalStr,
     state: FnvHashMap<Rc<Item>, DetailState>,
     weak: Weak<RefCell<DetailCache>>,
 }
@@ -70,20 +71,16 @@ fn load(path: &str) -> Result<FnvHashMap<Rc<Item>, DetailState>, LocalStr> {
 }
 
 impl DetailCache {
-    pub fn new(path: Option<LocalStr>) -> Rc<RefCell<Self>> {
-        let state = if let Some(path) = &path {
-            match load(&**path) {
-                Ok(state) => {
-                    println!("detail_cache loaded with {} entries", state.len());
-                    state
-                }
-                Err(e) => {
-                    println!("detail_cache not loaded: {}", e);
-                    FnvHashMap::default()
-                }
+    pub fn new(tui: &Tui, path: LocalStr) -> Rc<RefCell<Self>> {
+        let state = match load(&*path) {
+            Ok(state) => {
+                tui.log(format!("detail_cache loaded with {} entries", state.len()), 0);
+                state
             }
-        } else {
-            FnvHashMap::default()
+            Err(e) => {
+                tui.log(format!("detail_cache not loaded: {e}"), 0);
+                FnvHashMap::default()
+            }
         };
         Rc::new_cyclic(|weak| RefCell::new(Self { path, state, weak: weak.clone() }))
     }
@@ -129,20 +126,18 @@ impl DetailCache {
 
 impl Drop for DetailCache {
     fn drop(&mut self) {
-        if let Some(path) = &self.path {
-            let mut data = Vec::new();
-            for (item, detail) in &self.state {
-                if let DetailState::Resolved(detail) = detail {
-                    let mut table = detail.encode();
-                    item.encode(&mut table);
-                    serialize(&table.into(), &mut data);
-                }
+        let mut data = Vec::new();
+        for (item, detail) in &self.state {
+            if let DetailState::Resolved(detail) = detail {
+                let mut table = detail.encode();
+                item.encode(&mut table);
+                serialize(&table.into(), &mut data);
             }
-            if let Err(e) = std::fs::write(&**path, data) {
-                println!("failed to save detail_cache: {}", e)
-            } else {
-                println!("saved detail_cache with {} entries", self.state.len());
-            }
+        }
+        if let Err(e) = std::fs::write(&*self.path, data) {
+            println!("failed to save detail_cache: {}", e)
+        } else {
+            println!("saved detail_cache with {} entries", self.state.len());
         }
     }
 }

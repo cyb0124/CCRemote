@@ -9,7 +9,7 @@ plethora = []
 dump_traffic = []
 
 [dependencies]
-tokio = { version = "1", features = ["rt", "net", "time", "signal", "macros", "io-util", "io-std"] }
+tokio = { version = "1", features = ["rt", "net", "time", "macros", "sync"] }
 tokio-tungstenite = "0"
 abort-on-drop = "0"
 ordered-float = "2"
@@ -21,6 +21,9 @@ flexstr = "0"
 serde = { version = "1", features = ["derive"] }
 fnv = "1"
 hex = "0"
+ratatui = "0.26.2"
+crossterm = { version = "0.27.0", features = ["event-stream"] }
+tui-textarea = "0.4.0"
 
 [profile.dev]
 panic = "abort"

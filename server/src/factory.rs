@@ -1,30 +1,20 @@
-use crate::access::BasicAccess;
-use crate::access::FluidAccess;
-use crate::access::GetClient;
-use crate::access::TankAccess;
-use crate::action::Call;
-use crate::action::{ActionFuture, Log};
+use crate::access::{BasicAccess, FluidAccess, GetClient, TankAccess};
+use crate::action::{ActionFuture, Call, Log};
 use crate::detail_cache::DetailCache;
 use crate::inventory::{list_inventory, Inventory};
 use crate::item::{Detail, DetailStack, Filter, Item};
-use crate::lua_value::call_result;
-use crate::lua_value::table_remove;
-use crate::lua_value::try_into_integer;
-use crate::lua_value::Key;
-use crate::lua_value::Table;
+use crate::lua_value::{call_result, table_remove, try_into_integer, Key, Table};
 use crate::process::{IntoProcess, Process};
-use crate::server::Server;
 use crate::storage::{DepositResult, Extractor, IntoStorage, Provider, Storage};
-use crate::util::join_outputs;
-use crate::util::{alive, join_tasks, make_local_one_shot, spawn, LocalReceiver, LocalSender};
+use crate::util::{alive, join_outputs, join_tasks, make_local_one_shot, spawn, LocalReceiver, LocalSender};
+use crate::{server::Server, Tui};
 use abort_on_drop::ChildTask;
 use flexstr::{local_fmt, local_str, LocalStr};
 use fnv::{FnvHashMap, FnvHashSet};
-use std::collections::BTreeMap;
 use std::{
     cell::RefCell,
     cmp::{max, min},
-    collections::{hash_map::Entry, BinaryHeap, VecDeque},
+    collections::{hash_map::Entry, BTreeMap, BinaryHeap, VecDeque},
     future::Future,
     mem::take,
     rc::{Rc, Weak},
@@ -120,6 +110,7 @@ impl FluidReservation {
 }
 
 pub struct FactoryConfig {
+    pub tui: Rc<Tui>,
     pub detail_cache: Rc<RefCell<DetailCache>>,
     pub server: Rc<RefCell<Server>>,
     pub min_cycle_time: Duration,
@@ -238,7 +229,7 @@ impl Factory {
     }
 
     pub fn log(&self, action: Log) {
-        println!("{}", action.text);
+        self.config.tui.log(action.text.to_std_string(), action.color);
         let server = self.config.server.borrow();
         for client in &self.config.log_clients {
             server.enqueue_request_group(client, vec![ActionFuture::from(action.clone()).into()]);

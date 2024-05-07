@@ -1,7 +1,5 @@
-use super::access::GetClient;
-use super::action::ActionRequest;
-use super::lua_value::{serialize, table_remove, vec_to_table, Parser, Table, Value};
-use super::util::spawn;
+use crate::lua_value::{serialize, table_remove, vec_to_table, Parser, Table, Value};
+use crate::{access::GetClient, action::ActionRequest, util::spawn, Tui};
 use abort_on_drop::ChildTask;
 use flexstr::{local_fmt, LocalStr};
 use fnv::FnvHashMap;
@@ -26,6 +24,7 @@ use tokio::{
 use tokio_tungstenite::{accept_async, tungstenite::Message, WebSocketStream};
 
 pub struct Server {
+    pub tui: Rc<Tui>,
     clients: Option<Rc<RefCell<Client>>>,
     logins: FnvHashMap<LocalStr, Weak<RefCell<Client>>>,
     _acceptor: ChildTask<()>,
@@ -47,6 +46,7 @@ enum WriterState {
 
 struct Client {
     weak: Weak<RefCell<Client>>,
+    tui: Rc<Tui>,
     log_prefix: String,
     next: Option<Rc<RefCell<Client>>>,
     prev: Option<Weak<RefCell<Client>>>,
@@ -72,7 +72,7 @@ impl Drop for Client {
 }
 
 impl Client {
-    fn log(&self, args: std::fmt::Arguments) { println!("{}: {}", self.log_prefix, args) }
+    fn log(&self, args: std::fmt::Arguments) { self.tui.log(format!("{}: {}", self.log_prefix, args), 0) }
     fn disconnect(&mut self) { self.disconnect_by_server(&mut self.server.upgrade().unwrap().borrow_mut()); }
     fn disconnect_by_server(&mut self, server: &mut Server) {
         if let Some(login) = &self.login {
@@ -244,6 +244,7 @@ async fn acceptor_main(server: Weak<RefCell<Server>>, listener: TcpListener) {
         this.clients = Some(Rc::new_cyclic(|weak| {
             let client = Client {
                 weak: weak.clone(),
+                tui: this.tui.clone(),
                 log_prefix: addr.to_string(),
                 next: this.clients.take(),
                 prev: None,
@@ -267,9 +268,10 @@ async fn acceptor_main(server: Weak<RefCell<Server>>, listener: TcpListener) {
 }
 
 impl Server {
-    pub fn new(port: u16) -> Rc<RefCell<Self>> {
+    pub fn new(tui: Rc<Tui>, port: u16) -> Rc<RefCell<Self>> {
         Rc::new_cyclic(|weak| {
             RefCell::new(Server {
+                tui,
                 clients: None,
                 logins: FnvHashMap::default(),
                 _acceptor: spawn(acceptor_main(weak.clone(), create_listener(port))),
