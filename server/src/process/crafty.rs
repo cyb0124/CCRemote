@@ -207,10 +207,7 @@ impl CraftyProcess {
         let factory = self.factory.clone();
         async move {
             let result = task.await;
-            let slots_to_free = Rc::try_unwrap(slots_to_free)
-                .map_err(|_| "slots_to_free should be exclusively owned here")
-                .unwrap()
-                .into_inner();
+            let slots_to_free = Rc::into_inner(slots_to_free).unwrap().into_inner();
             alive(&factory)?.borrow_mut().bus_deposit(slots_to_free);
             result
         }
@@ -224,10 +221,7 @@ async fn worker_main(weak: Weak<RefCell<CraftyProcess>>, i_turtle: usize) -> Res
         let Job { i_recipe, n_sets, slots_to_free, bus_slots } =
             if let Some(job) = alive(&weak)?.borrow_mut().next_job() { job } else { break Ok(()) };
         let bus_slots = join_outputs(bus_slots).await;
-        let mut slots_to_free = Rc::try_unwrap(slots_to_free)
-            .map_err(|_| "slots_to_free should be exclusively owned here")
-            .unwrap()
-            .into_inner();
+        let mut slots_to_free = Rc::into_inner(slots_to_free).unwrap().into_inner();
         let task = async {
             let bus_slots = bus_slots?;
             let job = JobRef { i_recipe, i_turtle, n_sets, bus_slots: &bus_slots };

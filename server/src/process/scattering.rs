@@ -115,22 +115,19 @@ impl Process for ScatteringProcess {
                                     break;
                                 }
                             }
-                            if let Some((slot, size)) = best {
-                                if size >= this.config.max_per_slot.min(inputs.items[0].1.max_size) {
-                                    break;
-                                }
-                                inputs.n_sets -= 1;
-                                n_inserted += 1;
-                                *insertions.entry(slot).or_default() += 1;
-                                let stack = &mut stacks[slot];
-                                if let Some(ref mut stack) = stack {
-                                    stack.size += 1
-                                } else {
-                                    let (item, detail) = inputs.items[0].clone();
-                                    *stack = Some(DetailStack { item, detail, size: 1 })
-                                }
-                            } else {
+                            let Some((slot, size)) = best else { break };
+                            if size >= this.config.max_per_slot.min(inputs.items[0].1.max_size) {
                                 break;
+                            }
+                            inputs.n_sets -= 1;
+                            n_inserted += 1;
+                            *insertions.entry(slot).or_default() += 1;
+                            let stack = &mut stacks[slot];
+                            if let Some(ref mut stack) = stack {
+                                stack.size += 1
+                            } else {
+                                let (item, detail) = inputs.items[0].clone();
+                                *stack = Some(DetailStack { item, detail, size: 1 })
                             }
                         }
                         if n_inserted > 0 {

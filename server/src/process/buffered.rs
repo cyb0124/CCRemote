@@ -204,10 +204,7 @@ impl BufferedProcess {
         let factory = factory.get_weak().clone();
         spawn(async move {
             let bus_slots = join_outputs(bus_slots).await;
-            let slots_to_free = Rc::try_unwrap(slots_to_free)
-                .map_err(|_| "slots_to_free should be exclusively owned here")
-                .unwrap()
-                .into_inner();
+            let slots_to_free = Rc::into_inner(slots_to_free).unwrap().into_inner();
             let task = async {
                 let bus_slots = bus_slots?;
                 let mut tasks = Vec::new();

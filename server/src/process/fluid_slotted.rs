@@ -370,14 +370,8 @@ impl FluidSlottedProcess {
         spawn(async move {
             let bus_slots = join_outputs(bus_slots).await;
             let fluid_buses = join_outputs(fluid_buses).await;
-            let slots_to_free = Rc::try_unwrap(slots_to_free)
-                .map_err(|_| "slots_to_free should be exclusively owned here")
-                .unwrap()
-                .into_inner();
-            let fluid_buses_to_free = Rc::try_unwrap(fluid_buses_to_free)
-                .map_err(|_| "fluid_buses_to_free should be exclusively owned here")
-                .unwrap()
-                .into_inner();
+            let slots_to_free = Rc::into_inner(slots_to_free).unwrap().into_inner();
+            let fluid_buses_to_free = Rc::into_inner(fluid_buses_to_free).unwrap().into_inner();
             let task = async {
                 let bus_slots = bus_slots?;
                 let fluid_buses = fluid_buses?;

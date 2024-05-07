@@ -46,15 +46,12 @@ async fn resolver_main(
             }
             Err(e) => e,
         };
-        if let Entry::Occupied(mut state) = this.state.entry(expected) {
-            if let DetailState::Resolving { wait_queue, .. } = state.get_mut() {
-                for sender in take(wait_queue) {
-                    sender.send(Err(e.clone()))
-                }
-                state.remove();
+        let Entry::Occupied(mut state) = this.state.entry(expected) else { unreachable!() };
+        if let DetailState::Resolving { wait_queue, .. } = state.get_mut() {
+            for sender in take(wait_queue) {
+                sender.send(Err(e.clone()))
             }
-        } else {
-            unreachable!()
+            state.remove();
         }
     }
 }
@@ -69,7 +66,7 @@ fn load(path: &str) -> Result<FnvHashMap<Rc<Item>, DetailState>, LocalStr> {
         result.insert(item, DetailState::Resolved(detail));
         Ok(())
     })?;
-    Result::<FnvHashMap<Rc<Item>, DetailState>, LocalStr>::Ok(result)
+    Ok(result)
 }
 
 impl DetailCache {

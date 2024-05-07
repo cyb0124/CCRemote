@@ -88,7 +88,7 @@ fn fetch_detail_list<T: Inventory>(this: &T) -> impl Future<Output = Result<Vec<
             }
         }
         join_tasks(tasks).await?;
-        Ok(Rc::try_unwrap(details).map_err(|_| "details should be exclusively owned here").unwrap().into_inner())
+        Ok(Rc::into_inner(details).unwrap().into_inner())
     }
 }
 
