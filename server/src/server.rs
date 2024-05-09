@@ -126,9 +126,10 @@ async fn timeout_main(client: Weak<RefCell<Client>>) {
 async fn writer_main(client: Weak<RefCell<Client>>, mut sink: SplitSink<WebSocketStream<TcpStream>, Message>) {
     loop {
         let mut data = Vec::new();
-        let Some(this) = client.upgrade() else { break };
-        let mut this = this.borrow_mut();
-        if let Some(group) = this.request_queue.pop_front() {
+        {
+            let Some(this) = client.upgrade() else { break };
+            let mut this = this.borrow_mut();
+            let Some(group) = this.request_queue.pop_front() else { break this.writer = WriterState::NotWriting(sink) };
             this.request_queue_size -= group.len();
             let mut value = Vec::new();
             for request in group {
@@ -143,9 +144,6 @@ async fn writer_main(client: Weak<RefCell<Client>>, mut sink: SplitSink<WebSocke
             serialize(&vec_to_table(value).into(), &mut data);
             #[cfg(feature = "dump_traffic")]
             this.log(format_args!("out: {}", data.iter().map(|x| char::from(*x)).collect::<String>()));
-        } else {
-            this.writer = WriterState::NotWriting(sink);
-            break;
         }
         if let Err(e) = sink.send(Message::Binary(data)).await {
             if let Some(this) = client.upgrade() {
