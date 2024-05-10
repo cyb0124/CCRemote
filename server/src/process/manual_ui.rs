@@ -117,7 +117,7 @@ impl Process for ManualUiProcess {
                     let pred = make_pred(&request[..pos]);
                     let Some(stack) = this.latest_view.iter().find(|x| pred(x)) else { continue };
                     let Ok(mut size) = request[pos + 1..].parse() else { continue };
-                    size = stack.size.min(size);
+                    size = factory.items.get(&stack.item).map_or(0, |info| info.borrow().n_stored).min(size);
                     loop {
                         let InsertPlan { n_inserted, insertions } = insert_into_inventory(
                             &mut stacks,
