@@ -5,6 +5,7 @@ use crate::util::{alive, join_tasks, spawn};
 use crate::{access::BusAccess, detail_cache::DetailCache, factory::Factory, item::DetailStack, server::Server, Tui};
 use abort_on_drop::ChildTask;
 use flexstr::LocalStr;
+use futures_util::future::OptionFuture;
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 use regex::Regex;
@@ -14,7 +15,6 @@ use std::{
 };
 
 pub struct ManualUiConfig {
-    pub name: LocalStr,
     pub accesses: Vec<BusAccess>,
 }
 
@@ -97,10 +97,10 @@ impl ManualUiProcess {
 
 impl Process for ManualUiProcess {
     fn run(&self, _: &Factory) -> ChildTask<Result<(), LocalStr>> {
-        let stacks = list_inventory(self);
+        let stacks = (!self.config.accesses.is_empty()).then(|| list_inventory(self));
         let weak = self.weak.clone();
         spawn(async move {
-            let mut stacks = stacks.await?;
+            let mut stacks = OptionFuture::from(stacks).await.transpose()?.unwrap_or_default();
             let mut tasks = Vec::new();
             {
                 alive_mut!(weak, this);
@@ -128,7 +128,7 @@ impl Process for ManualUiProcess {
                         if n_inserted <= 0 {
                             break;
                         };
-                        let reservation = factory.reserve_item(&this.config.name, &stack.item, n_inserted);
+                        let reservation = factory.reserve_item("manual", &stack.item, n_inserted);
                         tasks.push(scattering_insert(this, factory, reservation, insertions));
                         size -= n_inserted
                     }

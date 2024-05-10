@@ -24,6 +24,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                 bus_addr: s("enderstorage:ender_chest_1"),
             }],
             override_max_stack_size: None,
-        })
+        });
+        factory.add_process(ManualUiConfig { accesses: vec![] });
     })
 }
