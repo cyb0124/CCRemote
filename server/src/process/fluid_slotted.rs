@@ -311,27 +311,37 @@ impl FluidSlottedProcess {
         fluids: FnvHashMap<LocalStr, i64>,
         tasks: &mut Vec<ChildTask<Result<(), LocalStr>>>,
     ) {
-        for (fluid, qty) in fluids {
-            let bus = factory.fluid_bus_allocate();
-            let weak = self.weak.clone();
-            tasks.push(spawn(async move {
-                let bus = bus.await?;
-                let task;
-                {
-                    alive!(weak, this);
-                    upgrade!(this.factory, factory);
-                    let server = factory.get_server().borrow();
-                    let access = server.load_balance(&this.accesses);
-                    task = ActionFuture::from(Call {
-                        addr: access.fluid_bus_addrs[bus].clone(),
-                        args: vec!["pullFluid".into(), access.tank_addrs[i].clone().into(), qty.into(), fluid.into()],
-                    });
-                    server.enqueue_request_group(&access.client, vec![task.clone().into()])
-                }
-                let result = task.await.map(|_| ());
-                alive(&weak)?.borrow().factory.upgrade().unwrap().borrow_mut().fluid_bus_deposit([bus]);
-                result
-            }))
+        for (fluid, mut remain) in fluids {
+            while remain > 0 {
+                let bus = factory.fluid_bus_allocate();
+                let weak = self.weak.clone();
+                let fluid = fluid.clone();
+                let qty = remain.min(factory.config.fluid_bus_capacity);
+                remain -= qty;
+                tasks.push(spawn(async move {
+                    let bus = bus.await?;
+                    let task;
+                    {
+                        alive!(weak, this);
+                        upgrade!(this.factory, factory);
+                        let server = factory.get_server().borrow();
+                        let access = server.load_balance(&this.accesses);
+                        task = ActionFuture::from(Call {
+                            addr: access.fluid_bus_addrs[bus].clone(),
+                            args: vec![
+                                "pullFluid".into(),
+                                access.tank_addrs[i].clone().into(),
+                                qty.into(),
+                                fluid.into(),
+                            ],
+                        });
+                        server.enqueue_request_group(&access.client, vec![task.clone().into()])
+                    }
+                    let result = task.await.map(|_| ());
+                    alive(&weak)?.borrow().factory.upgrade().unwrap().borrow_mut().fluid_bus_deposit([bus]);
+                    result
+                }))
+            }
         }
     }
 
