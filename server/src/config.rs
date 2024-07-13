@@ -23,9 +23,13 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             factory.add_storage(ChestConfig { accesses: acc(s(inv_addr)), override_max_stack_size: None })
         }
         factory.add_process(ManualUiConfig { accesses: vec![] });
-        for (inv_addr, item, qty) in
-            [("thermal:dynamo_stirling_0", "Oak Planks", 64), ("thermal:dynamo_stirling_1", "Oak Planks", 64)]
-        {
+        for (inv_addr, item, qty) in [
+            ("projectexpansion:emc_link_4", "item.kubejs.cube1_packaged", 64),
+            ("thermal:dynamo_stirling_0", "Oak Planks", 64),
+            ("thermal:dynamo_stirling_1", "Oak Planks", 64),
+            ("thermal:dynamo_stirling_2", "Oak Planks", 64),
+            ("thermal:dynamo_stirling_3", "Oak Planks", 64),
+        ] {
             factory.add_process(BufferedConfig {
                 name: s("stock"),
                 accesses: acc(s(inv_addr)),
@@ -67,11 +71,16 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             ],
         });
         let recipes = &[
-            (64, "Copper Ingot", "Raw Copper"),
-            (64, "Iron Ingot", "Raw Iron"),
             (64, "Aluminium Ingot", "Raw Bauxite"),
+            (64, "Copper Ingot", "Raw Copper"),
+            (64, "Nickel Ingot", "Raw Nickel"),
+            (64, "Iron Ingot", "Raw Iron"),
+            (64, "Gold Ingot", "Raw Gold"),
+            (64, "Tin Ingot", "Raw Tin"),
+            (64, "Stone", "Cobblestone"),
+            (64, "Glass", "Sand"),
         ];
-        for inv_addr in ["create:depot_0"] {
+        for inv_addr in ["create:depot_0", "create:depot_1"] {
             factory.add_process(BufferedConfig {
                 name: s("lavaFan"),
                 accesses: acc(s(inv_addr)),
@@ -101,42 +110,115 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             }],
         });
         factory.add_process(SlottedConfig {
-            name: s("rodPress"),
+            name: s("gearPress"),
             accesses: acc(s("thermal:machine_press_1")),
             input_slots: vec![0],
             to_extract: Some(Box::new(|_, slot, _| slot >= 2)),
             strict_priority: false,
             recipes: vec![
                 SlottedRecipe {
-                    outputs: Output::new(label("Iron Gear"), 16),
+                    outputs: Output::new(label("Tin Gear"), 64),
+                    inputs: vec![SlottedInput::new(label("Tin Ingot"), vec![(0, 4)])],
+                    max_sets: 8,
+                },
+                SlottedRecipe {
+                    outputs: Output::new(label("Iron Gear"), 64),
                     inputs: vec![SlottedInput::new(label("Iron Ingot"), vec![(0, 4)])],
                     max_sets: 8,
                 },
                 SlottedRecipe {
-                    outputs: Output::new(label("item.kubejs.aluminum_gear"), 16),
+                    outputs: Output::new(label("Invar Gear"), 64),
+                    inputs: vec![SlottedInput::new(label("Invar Ingot"), vec![(0, 4)])],
+                    max_sets: 8,
+                },
+                SlottedRecipe {
+                    outputs: Output::new(label("item.kubejs.aluminum_gear"), 64),
                     inputs: vec![SlottedInput::new(label("Aluminium Ingot"), vec![(0, 4)])],
                     max_sets: 8,
                 },
             ],
         });
+        for inv_addr in ["thermal:machine_press_2", "thermal:machine_press_3"] {
+            factory.add_process(SlottedConfig {
+                name: s("press"),
+                accesses: acc(s(inv_addr)),
+                input_slots: vec![0],
+                to_extract: Some(Box::new(|_, slot, _| slot >= 2)),
+                strict_priority: false,
+                recipes: vec![SlottedRecipe {
+                    outputs: Output::new(label("item.kubejs.cube1_packaged"), 64),
+                    inputs: vec![SlottedInput::new(label("item.kubejs.cube1"), vec![(0, 1)])],
+                    max_sets: 8,
+                }],
+            })
+        }
         factory.add_process(SlottedConfig {
-            name: s("press"),
-            accesses: acc(s("thermal:machine_press_2")),
-            input_slots: vec![0],
-            to_extract: Some(Box::new(|_, slot, _| slot >= 2)),
+            name: s("inductionSmelter"),
+            accesses: acc(s("thermal:machine_smelter_0")),
+            input_slots: vec![0, 1, 2],
+            to_extract: Some(Box::new(|_, slot, _| slot >= 4)),
             strict_priority: false,
-            recipes: vec![SlottedRecipe {
-                outputs: Output::new(label("item.kubejs.cube1_packaged"), 64),
-                inputs: vec![SlottedInput::new(label("item.kubejs.cube1"), vec![(0, 1)])],
-                max_sets: 8,
-            }],
+            recipes: vec![
+                SlottedRecipe {
+                    outputs: Output::new(label("Invar Ingot"), 64),
+                    inputs: vec![
+                        SlottedInput::new(label("Iron Ingot"), vec![(0, 2)]),
+                        SlottedInput::new(label("Nickel Ingot"), vec![(1, 1)]),
+                    ],
+                    max_sets: 8,
+                },
+                SlottedRecipe {
+                    outputs: Output::new(label("Constantan Ingot"), 64),
+                    inputs: vec![
+                        SlottedInput::new(label("Copper Ingot"), vec![(0, 1)]),
+                        SlottedInput::new(label("Nickel Ingot"), vec![(1, 1)]),
+                    ],
+                    max_sets: 8,
+                },
+                SlottedRecipe {
+                    outputs: Output::new(label("Bronze Ingot"), 64),
+                    inputs: vec![
+                        SlottedInput::new(label("Copper Ingot"), vec![(0, 3)]),
+                        SlottedInput::new(label("Tin Ingot"), vec![(1, 1)]),
+                    ],
+                    max_sets: 8,
+                },
+            ],
+        });
+        factory.add_process(SlottedConfig {
+            name: s("pulverizer"),
+            accesses: acc(s("thermal:machine_pulverizer_0")),
+            input_slots: vec![0],
+            to_extract: extract_all(),
+            strict_priority: false,
+            recipes: vec![
+                SlottedRecipe {
+                    outputs: Output::new(label("Coal"), 64),
+                    inputs: vec![SlottedInput::new(label("Coal Ore"), vec![(0, 1)])],
+                    max_sets: 8,
+                },
+                SlottedRecipe {
+                    outputs: Output::new(label("Gravel"), 64),
+                    inputs: vec![SlottedInput::new(label("Cobblestone"), vec![(0, 1)])],
+                    max_sets: 8,
+                },
+                SlottedRecipe {
+                    outputs: Output::new(label("Sand"), 64),
+                    inputs: vec![SlottedInput::new(label("Gravel"), vec![(0, 1)])],
+                    max_sets: 8,
+                },
+            ],
         });
         for (inv_addr, item) in [
             ("projectexpansion:emc_link_1", "Raw Copper"),
             ("projectexpansion:emc_link_2", "Raw Iron"),
             ("projectexpansion:emc_link_3", "Raw Bauxite"),
             ("projectexpansion:emc_link_4", "Cobblestone"),
-            ("projectexpansion:emc_link_5", "Oak Log"),
+            ("projectexpansion:emc_link_9", "Oak Log"),
+            ("projectexpansion:emc_link_7", "Raw Gold"),
+            ("projectexpansion:emc_link_8", "Raw Nickel"),
+            ("projectexpansion:emc_link_10", "Coal Ore"),
+            ("projectexpansion:emc_link_11", "Raw Tin"),
         ] {
             factory.add_process(BlockingOutputConfig {
                 accesses: acc(s(inv_addr)),
