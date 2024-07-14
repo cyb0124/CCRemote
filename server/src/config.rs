@@ -670,55 +670,57 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                 },
             ],
         });
-        factory.add_process(SlottedConfig {
-            name: s("gearPress"),
-            accesses: acc(s("thermal:machine_press_1")),
-            input_slots: vec![0],
-            to_extract: Some(Box::new(|_, slot, _| slot >= 2)),
-            strict_priority: false,
-            recipes: vec![
-                SlottedRecipe {
-                    outputs: Output::new(label("Tin Gear"), 16),
-                    inputs: vec![SlottedInput::new(label("Tin Ingot"), vec![(0, 4)])],
-                    max_sets: 8,
-                },
-                SlottedRecipe {
-                    outputs: Output::new(label("Iron Gear"), 16),
-                    inputs: vec![SlottedInput::new(label("Iron Ingot"), vec![(0, 4)])],
-                    max_sets: 8,
-                },
-                SlottedRecipe {
-                    outputs: Output::new(label("Lead Gear"), 16),
-                    inputs: vec![SlottedInput::new(label("Lead Ingot"), vec![(0, 4)])],
-                    max_sets: 8,
-                },
-                SlottedRecipe {
-                    outputs: Output::new(label("Invar Gear"), 16),
-                    inputs: vec![SlottedInput::new(label("Invar Ingot"), vec![(0, 4)])],
-                    max_sets: 8,
-                },
-                SlottedRecipe {
-                    outputs: Output::new(label("Lumium Gear"), 16),
-                    inputs: vec![SlottedInput::new(label("Lumium Ingot"), vec![(0, 4)])],
-                    max_sets: 8,
-                },
-                SlottedRecipe {
-                    outputs: Output::new(label("Signalum Gear"), 16),
-                    inputs: vec![SlottedInput::new(label("Signalum Ingot"), vec![(0, 4)])],
-                    max_sets: 8,
-                },
-                SlottedRecipe {
-                    outputs: Output::new(label("item.kubejs.steel_gear"), 16),
-                    inputs: vec![SlottedInput::new(label("Steel Ingot"), vec![(0, 4)])],
-                    max_sets: 8,
-                },
-                SlottedRecipe {
-                    outputs: Output::new(label("item.kubejs.aluminum_gear"), 16),
-                    inputs: vec![SlottedInput::new(label("Aluminium Ingot"), vec![(0, 4)])],
-                    max_sets: 8,
-                },
-            ],
-        });
+        for inv_addr in ["thermal:machine_press_1", "thermal:machine_press_4"] {
+            factory.add_process(SlottedConfig {
+                name: s("gearPress"),
+                accesses: acc(s(inv_addr)),
+                input_slots: vec![0],
+                to_extract: Some(Box::new(|_, slot, _| slot >= 2)),
+                strict_priority: false,
+                recipes: vec![
+                    SlottedRecipe {
+                        outputs: Output::new(label("Tin Gear"), 16),
+                        inputs: vec![SlottedInput::new(label("Tin Ingot"), vec![(0, 4)])],
+                        max_sets: 8,
+                    },
+                    SlottedRecipe {
+                        outputs: Output::new(label("Iron Gear"), 16),
+                        inputs: vec![SlottedInput::new(label("Iron Ingot"), vec![(0, 4)])],
+                        max_sets: 8,
+                    },
+                    SlottedRecipe {
+                        outputs: Output::new(label("Lead Gear"), 16),
+                        inputs: vec![SlottedInput::new(label("Lead Ingot"), vec![(0, 4)])],
+                        max_sets: 8,
+                    },
+                    SlottedRecipe {
+                        outputs: Output::new(label("Invar Gear"), 16),
+                        inputs: vec![SlottedInput::new(label("Invar Ingot"), vec![(0, 4)])],
+                        max_sets: 8,
+                    },
+                    SlottedRecipe {
+                        outputs: Output::new(label("Lumium Gear"), 16),
+                        inputs: vec![SlottedInput::new(label("Lumium Ingot"), vec![(0, 4)])],
+                        max_sets: 8,
+                    },
+                    SlottedRecipe {
+                        outputs: Output::new(label("Signalum Gear"), 16),
+                        inputs: vec![SlottedInput::new(label("Signalum Ingot"), vec![(0, 4)])],
+                        max_sets: 8,
+                    },
+                    SlottedRecipe {
+                        outputs: Output::new(label("item.kubejs.steel_gear"), 16),
+                        inputs: vec![SlottedInput::new(label("Steel Ingot"), vec![(0, 4)])],
+                        max_sets: 8,
+                    },
+                    SlottedRecipe {
+                        outputs: Output::new(label("item.kubejs.aluminum_gear"), 16),
+                        inputs: vec![SlottedInput::new(label("Aluminium Ingot"), vec![(0, 4)])],
+                        max_sets: 8,
+                    },
+                ],
+            })
+        }
         for inv_addr in ["thermal:machine_press_2", "thermal:machine_press_3"] {
             factory.add_process(SlottedConfig {
                 name: s("press"),
@@ -740,99 +742,101 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                 ],
             })
         }
-        factory.add_process(SlottedConfig {
-            name: s("inductionSmelter"),
-            accesses: acc(s("thermal:machine_smelter_0")),
-            input_slots: vec![0, 1, 2],
-            to_extract: Some(Box::new(|_, slot, _| slot >= 4)),
-            strict_priority: false,
-            recipes: vec![
-                SlottedRecipe {
-                    outputs: Output::new(label("Invar Ingot"), 1000),
-                    inputs: vec![
-                        SlottedInput::new(label("Iron Dust"), vec![(0, 2)]),
-                        SlottedInput::new(label("Nickel Dust"), vec![(1, 1)]),
-                    ],
-                    max_sets: 8,
-                },
-                SlottedRecipe {
-                    outputs: Output::new(label("Constantan Ingot"), 64),
-                    inputs: vec![
-                        SlottedInput::new(label("Copper Dust"), vec![(0, 1)]),
-                        SlottedInput::new(label("Nickel Dust"), vec![(1, 1)]),
-                    ],
-                    max_sets: 8,
-                },
-                SlottedRecipe {
-                    outputs: Output::new(label("Brass Ingot"), 64),
-                    inputs: vec![
-                        SlottedInput::new(label("Zinc Ingot"), vec![(0, 1)]),
-                        SlottedInput::new(label("Copper Ingot"), vec![(1, 1)]),
-                    ],
-                    max_sets: 8,
-                },
-                SlottedRecipe {
-                    outputs: Output::new(label("Electrum Ingot"), 1000),
-                    inputs: vec![
-                        SlottedInput::new(label("Gold Dust"), vec![(0, 1)]),
-                        SlottedInput::new(label("Silver Dust"), vec![(1, 1)]),
-                    ],
-                    max_sets: 8,
-                },
-                SlottedRecipe {
-                    outputs: Output::new(label("Bronze Ingot"), 1000),
-                    inputs: vec![
-                        SlottedInput::new(label("Copper Dust"), vec![(0, 3)]),
-                        SlottedInput::new(label("Tin Dust"), vec![(1, 1)]),
-                    ],
-                    max_sets: 8,
-                },
-                SlottedRecipe {
-                    outputs: Output::new(label("Signalum Ingot"), 64),
-                    inputs: vec![
-                        SlottedInput::new(label("Silver Dust"), vec![(0, 1)]),
-                        SlottedInput::new(label("Copper Dust"), vec![(1, 3)]),
-                        SlottedInput::new(label("Redstone Dust"), vec![(2, 4)]),
-                    ],
-                    max_sets: 8,
-                },
-                SlottedRecipe {
-                    outputs: Output::new(label("Enderium Ingot"), 64),
-                    inputs: vec![
-                        SlottedInput::new(label("Diamond Dust"), vec![(0, 1)]),
-                        SlottedInput::new(label("Lead Dust"), vec![(1, 3)]),
-                        SlottedInput::new(label("Ender Pearl"), vec![(2, 2)]),
-                    ],
-                    max_sets: 8,
-                },
-                SlottedRecipe {
-                    outputs: Output::new(label("Lumium Ingot"), 64),
-                    inputs: vec![
-                        SlottedInput::new(label("Silver Dust"), vec![(0, 1)]),
-                        SlottedInput::new(label("Tin Dust"), vec![(1, 3)]),
-                        SlottedInput::new(label("Glowstone Dust"), vec![(2, 2)]),
-                    ],
-                    max_sets: 8,
-                },
-                SlottedRecipe {
-                    outputs: Output::new(label("Hardened Glass"), 64),
-                    inputs: vec![
-                        SlottedInput::new(label("Nether Quartz"), vec![(0, 1)]),
-                        SlottedInput::new(label("Obsidian"), vec![(1, 1)]),
-                        SlottedInput::new(label("Sand"), vec![(2, 1)]),
-                    ],
-                    max_sets: 8,
-                },
-                SlottedRecipe {
-                    outputs: Output::new(label("Calcite"), 64),
-                    inputs: vec![
-                        SlottedInput::new(label("Bone Meal"), vec![(0, 1)]),
-                        SlottedInput::new(label("Stone"), vec![(1, 1)]),
-                    ],
-                    max_sets: 8,
-                },
-            ],
-        });
+        for inv_addr in ["thermal:machine_smelter_0", "thermal:machine_smelter_1"] {
+            factory.add_process(SlottedConfig {
+                name: s("inductionSmelter"),
+                accesses: acc(s(inv_addr)),
+                input_slots: vec![0, 1, 2],
+                to_extract: Some(Box::new(|_, slot, _| slot >= 4)),
+                strict_priority: false,
+                recipes: vec![
+                    SlottedRecipe {
+                        outputs: Output::new(label("Invar Ingot"), 1000),
+                        inputs: vec![
+                            SlottedInput::new(label("Iron Dust"), vec![(0, 2)]),
+                            SlottedInput::new(label("Nickel Dust"), vec![(1, 1)]),
+                        ],
+                        max_sets: 32,
+                    },
+                    SlottedRecipe {
+                        outputs: Output::new(label("Constantan Ingot"), 64),
+                        inputs: vec![
+                            SlottedInput::new(label("Copper Dust"), vec![(0, 1)]),
+                            SlottedInput::new(label("Nickel Dust"), vec![(1, 1)]),
+                        ],
+                        max_sets: 32,
+                    },
+                    SlottedRecipe {
+                        outputs: Output::new(label("Brass Ingot"), 64),
+                        inputs: vec![
+                            SlottedInput::new(label("Zinc Ingot"), vec![(0, 1)]),
+                            SlottedInput::new(label("Copper Ingot"), vec![(1, 1)]),
+                        ],
+                        max_sets: 32,
+                    },
+                    SlottedRecipe {
+                        outputs: Output::new(label("Electrum Ingot"), 1000),
+                        inputs: vec![
+                            SlottedInput::new(label("Gold Dust"), vec![(0, 1)]),
+                            SlottedInput::new(label("Silver Dust"), vec![(1, 1)]),
+                        ],
+                        max_sets: 32,
+                    },
+                    SlottedRecipe {
+                        outputs: Output::new(label("Bronze Ingot"), 1000),
+                        inputs: vec![
+                            SlottedInput::new(label("Copper Dust"), vec![(0, 3)]),
+                            SlottedInput::new(label("Tin Dust"), vec![(1, 1)]),
+                        ],
+                        max_sets: 32,
+                    },
+                    SlottedRecipe {
+                        outputs: Output::new(label("Signalum Ingot"), 64),
+                        inputs: vec![
+                            SlottedInput::new(label("Silver Dust"), vec![(0, 1)]),
+                            SlottedInput::new(label("Copper Dust"), vec![(1, 3)]),
+                            SlottedInput::new(label("Redstone Dust"), vec![(2, 4)]),
+                        ],
+                        max_sets: 32,
+                    },
+                    SlottedRecipe {
+                        outputs: Output::new(label("Enderium Ingot"), 64),
+                        inputs: vec![
+                            SlottedInput::new(label("Diamond Dust"), vec![(0, 1)]),
+                            SlottedInput::new(label("Lead Dust"), vec![(1, 3)]),
+                            SlottedInput::new(label("Ender Pearl"), vec![(2, 2)]),
+                        ],
+                        max_sets: 32,
+                    },
+                    SlottedRecipe {
+                        outputs: Output::new(label("Lumium Ingot"), 64),
+                        inputs: vec![
+                            SlottedInput::new(label("Silver Dust"), vec![(0, 1)]),
+                            SlottedInput::new(label("Tin Dust"), vec![(1, 3)]),
+                            SlottedInput::new(label("Glowstone Dust"), vec![(2, 2)]),
+                        ],
+                        max_sets: 32,
+                    },
+                    SlottedRecipe {
+                        outputs: Output::new(label("Hardened Glass"), 64),
+                        inputs: vec![
+                            SlottedInput::new(label("Nether Quartz"), vec![(0, 1)]),
+                            SlottedInput::new(label("Obsidian"), vec![(1, 1)]),
+                            SlottedInput::new(label("Sand"), vec![(2, 1)]),
+                        ],
+                        max_sets: 32,
+                    },
+                    SlottedRecipe {
+                        outputs: Output::new(label("Calcite"), 64),
+                        inputs: vec![
+                            SlottedInput::new(label("Bone Meal"), vec![(0, 1)]),
+                            SlottedInput::new(label("Stone"), vec![(1, 1)]),
+                        ],
+                        max_sets: 32,
+                    },
+                ],
+            })
+        }
         factory.add_process(FluidSlottedConfig {
             name: s("mixer"),
             accesses: vec![InvTankAccess {
@@ -936,6 +940,14 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             "thermal:machine_pulverizer_1",
             "thermal:machine_pulverizer_2",
             "thermal:machine_pulverizer_3",
+            "thermal:machine_pulverizer_4",
+            "thermal:machine_pulverizer_5",
+            "thermal:machine_pulverizer_6",
+            "thermal:machine_pulverizer_7",
+            "thermal:machine_pulverizer_8",
+            "thermal:machine_pulverizer_9",
+            "thermal:machine_pulverizer_10",
+            "thermal:machine_pulverizer_11",
         ] {
             factory.add_process(SlottedConfig {
                 name: s("pulverizer"),
@@ -1571,7 +1583,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                 accesses: facc(s(inv_addr)),
                 to_extract: multi_inv_extract_all(),
                 fluid_extract: fluid_extract_slots(|_, slot| slot >= 1),
-                strict_priority: false,
+                strict_priority: true,
                 recipes: vec![
                     FluidSlottedRecipe {
                         outputs: FluidOutput::new(s("thermal:light_oil"), 4_000)
