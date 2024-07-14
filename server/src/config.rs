@@ -393,25 +393,6 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     non_consumables: vec![],
                 },
                 CraftingGridRecipe {
-                    outputs: Output::new(label("Body Stone"), 1),
-                    inputs: vec![
-                        CraftingGridInput::new(label("Lapis Lazuli"), vec![4]),
-                        CraftingGridInput::new(label("Sugar"), vec![0, 1, 2, 6, 7, 8]),
-                        CraftingGridInput::new(label("Mobius Fuel"), vec![3, 5]),
-                    ],
-                    max_sets: 1,
-                    non_consumables: vec![],
-                },
-                CraftingGridRecipe {
-                    outputs: Output::new(label("Skeleton Skull"), 16),
-                    inputs: vec![
-                        CraftingGridInput::new(label("Body Stone"), vec![4]),
-                        CraftingGridInput::new(label("Bone Block"), vec![0, 1, 2, 3, 5, 6, 7, 8]),
-                    ],
-                    max_sets: 64,
-                    non_consumables: vec![],
-                },
-                CraftingGridRecipe {
                     outputs: Output::new(label("Sandstone"), 64),
                     inputs: vec![CraftingGridInput::new(label("Sand"), vec![0, 1, 3, 4])],
                     max_sets: 64,
@@ -861,7 +842,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                         MultiInvSlottedInput::new(label("Glowstone Dust"), vec![(0, 2, 8)]),
                         MultiInvSlottedInput::new(label("HDPE Sheet"), vec![(0, 3, 4)]),
                     ],
-                    max_sets: 1,
+                    max_sets: 16,
                 },
                 FluidSlottedRecipe {
                     outputs: Output::new(label("Luminessence"), 64),
@@ -870,13 +851,13 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                         MultiInvSlottedInput::new(label("Redstone Dust"), vec![(0, 0, 1)]),
                         MultiInvSlottedInput::new(label("Gunpowder"), vec![(0, 1, 1)]),
                     ],
-                    max_sets: 8,
+                    max_sets: 32,
                 },
                 FluidSlottedRecipe {
                     outputs: Output::new(label("Refined Radiance"), 64),
                     fluids: vec![FluidSlottedInput::new(s("createchromaticreturn:refined_mixture"), vec![(0, 100)])],
                     inputs: vec![MultiInvSlottedInput::new(label("Chromatic Compound"), vec![(0, 0, 1)])],
-                    max_sets: 8,
+                    max_sets: 64,
                 },
                 FluidSlottedRecipe {
                     outputs: Output::new(label("Andesite Alloy"), 64),
@@ -885,7 +866,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                         MultiInvSlottedInput::new(label("Andesite"), vec![(0, 0, 1)]),
                         MultiInvSlottedInput::new(label("Iron Nugget"), vec![(0, 1, 1)]),
                     ],
-                    max_sets: 8,
+                    max_sets: 64,
                 },
                 FluidSlottedRecipe {
                     outputs: Output::new(label("Chromatic Compound"), 16),
@@ -896,7 +877,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                         MultiInvSlottedInput::new(label("Glowing Ingot"), vec![(0, 2, 3)]),
                         MultiInvSlottedInput::new(label("Polished Rose Quartz"), vec![(0, 3, 3)]),
                     ],
-                    max_sets: 2,
+                    max_sets: 64,
                 },
                 FluidSlottedRecipe {
                     outputs: Output::new(label("item.kubejs.cube2"), 64),
@@ -907,7 +888,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                         MultiInvSlottedInput::new(label("item.kubejs.steel_gear"), vec![(0, 2, 1)]),
                         MultiInvSlottedInput::new(label("item.kubejs.bronze_rod"), vec![(0, 3, 2)]),
                     ],
-                    max_sets: 8,
+                    max_sets: 64,
                 },
                 FluidSlottedRecipe {
                     outputs: Output::new(label("item.kubejs.cube3"), 64),
@@ -920,7 +901,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                         MultiInvSlottedInput::new(label("Lightning Charge"), vec![(0, 4, 1)]),
                         MultiInvSlottedInput::new(label("Earth Charge"), vec![(0, 5, 1)]),
                     ],
-                    max_sets: 8,
+                    max_sets: 64,
                 },
                 FluidSlottedRecipe {
                     outputs: Output::new(label("item.kubejs.cube4_inert"), 64),
@@ -931,7 +912,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                         MultiInvSlottedInput::new(label("Elite Control Circuit"), vec![(0, 2, 1)]),
                         MultiInvSlottedInput::new(label("Mobius Fuel"), vec![(0, 3, 1)]),
                     ],
-                    max_sets: 8,
+                    max_sets: 64,
                 },
             ],
         });
@@ -1729,22 +1710,48 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             slot_filter: Some(Box::new(|slot| slot >= 10 && slot < 36)),
             to_extract: None,
             recipes: (0..16)
-                .map(|_| BufferedRecipe {
-                    outputs: Output::new(label("item.kubejs.dormant_effigy"), 16),
-                    inputs: vec![BufferedInput::new(label("Soul Stone"), 1), BufferedInput::new(label("Calcite"), 4)],
-                    max_inputs: i32::MAX,
+                .flat_map(|_| {
+                    [
+                        BufferedRecipe {
+                            outputs: Output::new(label("item.kubejs.dormant_effigy"), 16),
+                            inputs: vec![
+                                BufferedInput::new(label("Soul Stone"), 1),
+                                BufferedInput::new(label("Calcite"), 4),
+                            ],
+                            max_inputs: i32::MAX,
+                        },
+                        BufferedRecipe {
+                            outputs: Output::new(label("Skeleton Skull"), 16),
+                            inputs: vec![
+                                BufferedInput::new(label("Body Stone"), 1),
+                                BufferedInput::new(label("Bone Block"), 8),
+                            ],
+                            max_inputs: i32::MAX,
+                        },
+                    ]
                 })
-                .chain([BufferedRecipe {
-                    outputs: Output::new(label("Soul Stone"), 16),
-                    inputs: vec![
-                        BufferedInput::new(label("Redstone Dust"), 1),
-                        BufferedInput::new(label("Lapis Lazuli"), 2),
-                        BufferedInput::new(label("Glowstone Dust"), 6),
-                    ],
-                    max_inputs: i32::MAX,
-                }])
+                .chain([
+                    BufferedRecipe {
+                        outputs: Output::new(label("Soul Stone"), 16),
+                        inputs: vec![
+                            BufferedInput::new(label("Redstone Dust"), 1),
+                            BufferedInput::new(label("Lapis Lazuli"), 2),
+                            BufferedInput::new(label("Glowstone Dust"), 6),
+                        ],
+                        max_inputs: i32::MAX,
+                    },
+                    BufferedRecipe {
+                        outputs: Output::new(label("Body Stone"), 16),
+                        inputs: vec![
+                            BufferedInput::new(label("Lapis Lazuli"), 1),
+                            BufferedInput::new(label("Sugar"), 6),
+                            BufferedInput::new(label("Mobius Fuel"), 2),
+                        ],
+                        max_inputs: i32::MAX,
+                    },
+                ])
                 .collect(),
-            max_recipe_inputs: 64 * 8,
+            max_recipe_inputs: 64,
             stocks: vec![],
         });
         for (n_wanted, inv_addr, item) in [
