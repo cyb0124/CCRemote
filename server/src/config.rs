@@ -1754,7 +1754,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             max_recipe_inputs: 64,
             stocks: vec![],
         });
-        for (n_wanted, inv_addr, item) in [
+        for (qty, inv_addr, item) in [
             (64, "projectexpansion:emc_link_1", "Raw Copper"),
             (64, "projectexpansion:emc_link_38", "Raw Iron"),
             (64, "projectexpansion:emc_link_3", "Raw Bauxite"),
@@ -1787,8 +1787,9 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             factory.add_process(BlockingOutputConfig {
                 accesses: acc(s(inv_addr)),
                 slot_filter: None,
-                outputs: vec![Output { item: label(item), n_wanted }],
-            })
+                outputs: vec![Output { item: label(item), n_wanted: qty + 64 }],
+            });
+            factory.add_process(LowAlert::new(label(item), qty));
         }
         factory.add_process(BlockingFluidOutputConfig {
             accesses: vec![TankAccess {
