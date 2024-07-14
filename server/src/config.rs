@@ -393,16 +393,6 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     non_consumables: vec![],
                 },
                 CraftingGridRecipe {
-                    outputs: Output::new(label("Soul Stone"), 1),
-                    inputs: vec![
-                        CraftingGridInput::new(label("Redstone Dust"), vec![4]),
-                        CraftingGridInput::new(label("Glowstone Dust"), vec![0, 1, 2, 6, 7, 8]),
-                        CraftingGridInput::new(label("Lapis Lazuli"), vec![3, 5]),
-                    ],
-                    max_sets: 1,
-                    non_consumables: vec![],
-                },
-                CraftingGridRecipe {
                     outputs: Output::new(label("Body Stone"), 1),
                     inputs: vec![
                         CraftingGridInput::new(label("Lapis Lazuli"), vec![4]),
@@ -417,15 +407,6 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     inputs: vec![
                         CraftingGridInput::new(label("Body Stone"), vec![4]),
                         CraftingGridInput::new(label("Bone Block"), vec![0, 1, 2, 3, 5, 6, 7, 8]),
-                    ],
-                    max_sets: 64,
-                    non_consumables: vec![],
-                },
-                CraftingGridRecipe {
-                    outputs: Output::new(label("item.kubejs.dormant_effigy"), 16),
-                    inputs: vec![
-                        CraftingGridInput::new(label("Soul Stone"), vec![1]),
-                        CraftingGridInput::new(label("Calcite"), vec![3, 4, 5, 7]),
                     ],
                     max_sets: 64,
                     non_consumables: vec![],
@@ -1729,6 +1710,30 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     max_inputs: i32::MAX,
                 },
             ],
+        });
+        factory.add_process(BufferedConfig {
+            name: s("crafterA"),
+            accesses: vec![BusAccess { client: s("1a"), inv_addr: s("rftoolsutility:crafter2_0"), bus_addr: s(BUS) }],
+            slot_filter: Some(Box::new(|slot| slot >= 10 && slot < 36)),
+            to_extract: None,
+            recipes: (0..16)
+                .map(|_| BufferedRecipe {
+                    outputs: Output::new(label("item.kubejs.dormant_effigy"), 16),
+                    inputs: vec![BufferedInput::new(label("Soul Stone"), 1), BufferedInput::new(label("Calcite"), 4)],
+                    max_inputs: i32::MAX,
+                })
+                .chain([BufferedRecipe {
+                    outputs: Output::new(label("Soul Stone"), 16),
+                    inputs: vec![
+                        BufferedInput::new(label("Redstone Dust"), 1),
+                        BufferedInput::new(label("Lapis Lazuli"), 2),
+                        BufferedInput::new(label("Glowstone Dust"), 6),
+                    ],
+                    max_inputs: i32::MAX,
+                }])
+                .collect(),
+            max_recipe_inputs: 64 * 8,
+            stocks: vec![],
         });
         for (n_wanted, inv_addr, item) in [
             (64, "projectexpansion:emc_link_1", "Raw Copper"),
