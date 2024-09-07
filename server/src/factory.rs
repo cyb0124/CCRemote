@@ -673,6 +673,7 @@ async fn fluid_bus_update(factory: &Weak<RefCell<Factory>>) -> Result<bool, Loca
     };
     let buses = buses.await?;
     let mut tasks = Vec::new();
+    let mut empty_buses_after_deposit = Vec::new();
     {
         alive_mut!(factory, this);
         let mut empty_buses = Vec::new();
@@ -684,6 +685,7 @@ async fn fluid_bus_update(factory: &Weak<RefCell<Factory>>) -> Result<bool, Loca
                     for (fluid, qty) in tanks_to_fluid_map(&tanks) {
                         this.fluid_deposit(i, fluid, qty, &mut tasks)
                     }
+                    empty_buses_after_deposit.push(i)
                 }
             }
         }
@@ -693,15 +695,19 @@ async fn fluid_bus_update(factory: &Weak<RefCell<Factory>>) -> Result<bool, Loca
             this.fluid_bus_wait_queue.pop_front().unwrap().send(Ok(bus))
         }
     }
-    let ever_deposited = !tasks.is_empty();
     join_tasks(tasks).await?;
     alive_mut!(factory, this);
+    while !empty_buses_after_deposit.is_empty() && !this.fluid_bus_wait_queue.is_empty() {
+        let bus = empty_buses_after_deposit.pop().unwrap();
+        this.fluid_bus_allocations.insert(bus);
+        this.fluid_bus_wait_queue.pop_front().unwrap().send(Ok(bus))
+    }
     let mut ever_freed = false;
     for slot in take(&mut this.fluid_bus_free_queue) {
         this.fluid_bus_allocations.remove(&slot);
         ever_freed = true
     }
-    Ok(ever_freed || ever_deposited && !this.fluid_bus_wait_queue.is_empty())
+    Ok(ever_freed)
 }
 
 pub fn read_tanks<'a, T: GetClient + 'a>(
