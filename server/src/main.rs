@@ -85,8 +85,8 @@ impl Tui {
     }
 
     fn frame(&self, frame: &mut Frame) {
-        let layout = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).split(frame.size());
-        frame.render_widget(self.text_area.borrow().widget(), layout[1]);
+        let layout = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).split(frame.area());
+        frame.render_widget(&*self.text_area.borrow(), layout[1]);
 
         let log_size;
         let main_list = self.main_list.borrow();
@@ -100,7 +100,7 @@ impl Tui {
             let scroll = Scrollbar::new(ScrollbarOrientation::VerticalRight);
             frame.render_stateful_widget(
                 scroll,
-                main_list_size.inner(&Margin { horizontal: 1, vertical: 0 }),
+                main_list_size.inner(Margin { horizontal: 1, vertical: 0 }),
                 &mut *self.main_scroll_state.borrow_mut(),
             )
         }
