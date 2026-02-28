@@ -104,13 +104,7 @@ impl Extractor for DrawerExtractor {
         let access = server.load_balance(&this.config.accesses);
         let action = ActionFuture::from(Call {
             addr: access.bus_addr.clone(),
-            args: vec![
-                "pullItems".into(),
-                access.inv_addr.clone().into(),
-                (self.inv_slot + 1).into(),
-                size.into(),
-                (bus_slot + 1).into(),
-            ],
+            args: vec!["pullItems".into(), access.inv_addr.clone().into(), (self.inv_slot + 1).into(), size.into(), (bus_slot + 1).into()],
         });
         server.enqueue_request_group(&access.client, vec![action.clone().into()]);
         spawn(async move { action.await.map(|_| ()) })

@@ -54,19 +54,11 @@ impl<State: Serialize> DroneContext<State> {
         }
     }
 
-    pub fn call_retry<T: 'static>(
-        &self,
-        args: Vec<Value>,
-        parse: impl Fn(Result<Value, LocalStr>) -> Result<T, LocalStr> + 'static,
-    ) -> ChildTask<T> {
+    pub fn call_retry<T: 'static>(&self, args: Vec<Value>, parse: impl Fn(Result<Value, LocalStr>) -> Result<T, LocalStr> + 'static) -> ChildTask<T> {
         let weak = self.weak.clone();
         spawn(async move {
             loop {
-                let task = if let Some(this) = weak.upgrade() {
-                    this.borrow().call_raw(args.clone())
-                } else {
-                    pending().await
-                };
+                let task = if let Some(this) = weak.upgrade() { this.borrow().call_raw(args.clone()) } else { pending().await };
                 match parse(task.await) {
                     Ok(x) => return x,
                     Err(e) => {
@@ -111,40 +103,21 @@ impl<State: Serialize> DroneContext<State> {
         }
     }
 
-    pub async fn set_action(&self, action: LocalStr) {
-        self.call_void(vec!["setAction".into(), action.into()]).await.unwrap()
-    }
+    pub async fn set_action(&self, action: LocalStr) { self.call_void(vec!["setAction".into(), action.into()]).await.unwrap() }
 
-    pub async fn set_side(&self, side: LocalStr, enabled: bool) {
-        self.call_void(vec!["setSide".into(), side.into(), enabled.into()]).await.unwrap()
-    }
+    pub async fn set_side(&self, side: LocalStr, enabled: bool) { self.call_void(vec!["setSide".into(), side.into(), enabled.into()]).await.unwrap() }
 
     pub async fn set_sides(&self, sides: [bool; 6]) {
         self.call_void(once(Value::from("setSides")).chain(sides.into_iter().map(Value::from)).collect()).await.unwrap()
     }
 
-    pub async fn add_point(&self, x: i32, y: i32, z: i32) {
-        self.call_void(vec!["addArea".into(), x.into(), y.into(), z.into()]).await.unwrap()
-    }
+    pub async fn add_point(&self, x: i32, y: i32, z: i32) { self.call_void(vec!["addArea".into(), x.into(), y.into(), z.into()]).await.unwrap() }
 
     pub async fn add_area(&self, x1: i32, y1: i32, z1: i32, x2: i32, y2: i32, z2: i32) {
-        self.call_void(vec![
-            "addArea".into(),
-            x1.into(),
-            y1.into(),
-            z1.into(),
-            x2.into(),
-            y2.into(),
-            z2.into(),
-            "filled".into(),
-        ])
-        .await
-        .unwrap()
+        self.call_void(vec!["addArea".into(), x1.into(), y1.into(), z1.into(), x2.into(), y2.into(), z2.into(), "filled".into()]).await.unwrap()
     }
 
-    pub async fn add_whitelist_text(&self, text: LocalStr) {
-        self.call_void(vec!["addWhitelistText".into(), text.into()]).await.unwrap()
-    }
+    pub async fn add_whitelist_text(&self, text: LocalStr) { self.call_void(vec!["addWhitelistText".into(), text.into()]).await.unwrap() }
 }
 
 pub struct DroneConfig<State: Serialize + for<'a> Deserialize<'a>, Task: Future<Output = ()> + 'static> {
@@ -163,15 +136,12 @@ pub struct DroneProcess {
     _task: ChildTask<()>,
 }
 
-impl<State: Serialize + for<'a> Deserialize<'a>, Task: Future<Output = ()> + 'static> IntoProcess
-    for DroneConfig<State, Task>
-{
+impl<State: Serialize + for<'a> Deserialize<'a>, Task: Future<Output = ()> + 'static> IntoProcess for DroneConfig<State, Task> {
     type Output = DroneProcess;
     fn into_process(self, factory: &Factory) -> Rc<RefCell<Self::Output>> {
         Rc::new_cyclic(|weak| {
             let state = File::open(&*self.file_name).ok().and_then(|x| serde_json::from_reader(BufReader::new(x)).ok());
-            let context =
-                DroneContext { _phantom: PhantomData::default(), weak: weak.clone(), file_name: self.file_name };
+            let context = DroneContext { _phantom: PhantomData::default(), weak: weak.clone(), file_name: self.file_name };
             RefCell::new(DroneProcess {
                 weak: weak.clone(),
                 factory: factory.get_weak().clone(),

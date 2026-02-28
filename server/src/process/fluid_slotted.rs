@@ -54,8 +54,7 @@ pub struct FluidSlottedRecipe {
 }
 impl_recipe!(FluidSlottedRecipe, MultiInvSlottedInput);
 
-pub type FluidExtractFilter =
-    Box<dyn Fn(&Factory, usize, BTreeMap<usize, (LocalStr, i64)>) -> FnvHashMap<LocalStr, i64>>;
+pub type FluidExtractFilter = Box<dyn Fn(&Factory, usize, BTreeMap<usize, (LocalStr, i64)>) -> FnvHashMap<LocalStr, i64>>;
 pub fn fluid_extract_all() -> Option<FluidExtractFilter> { Some(Box::new(|_, _, tanks| tanks_to_fluid_map(&tanks))) }
 pub fn fluid_extract_slots(slots: impl Fn(usize, usize) -> bool + 'static) -> Option<FluidExtractFilter> {
     Some(Box::new(move |_, i, tanks| {
@@ -160,11 +159,7 @@ fn compute_fluid_demands(factory: &Factory, recipes: &[FluidSlottedRecipe]) -> V
                 Entry::Vacant(input_info) => {
                     input_info.insert(InputInfo {
                         // Note: backup params are considered for only the first input of the same fluid.
-                        n_available: factory.get_fluid_availability(
-                            &*input.fluid,
-                            input.allow_backup,
-                            input.extra_backup,
-                        ),
+                        n_available: factory.get_fluid_availability(&*input.fluid, input.allow_backup, input.extra_backup),
                         n_needed: input.size,
                     });
                 }
@@ -188,16 +183,14 @@ fn compute_fluid_demands(factory: &Factory, recipes: &[FluidSlottedRecipe]) -> V
 
 impl Process for FluidSlottedProcess {
     fn run(&self, factory: &Factory) -> ChildTask<Result<(), LocalStr>> {
-        if self.to_extract.is_none()
-            && self.fluid_extract.is_none()
-            && compute_fluid_demands(factory, &self.recipes).is_empty()
-        {
+        if self.to_extract.is_none() && self.fluid_extract.is_none() && compute_fluid_demands(factory, &self.recipes).is_empty() {
             return spawn(async { Ok(()) });
         }
         let stacks = Vec::from_iter(self.invs.iter().map(|inv| spawn(list_inventory(&*inv.borrow()))));
-        let tanks = Vec::from_iter((0..self.input_tanks.len()).map(|i| {
-            spawn(read_tanks(&*factory.get_server().borrow(), &self.accesses, |access| access.tank_addrs[i].clone()))
-        }));
+        let tanks = Vec::from_iter(
+            (0..self.input_tanks.len())
+                .map(|i| spawn(read_tanks(&*factory.get_server().borrow(), &self.accesses, |access| access.tank_addrs[i].clone()))),
+        );
         let weak = self.weak.clone();
         spawn(async move {
             let stacks = join_outputs(stacks).await?;
@@ -219,12 +212,7 @@ impl Process for FluidSlottedProcess {
                                 *existing_input = Some(stack)
                             } else if let Some(to_extract) = &this.to_extract {
                                 if to_extract(factory, i, slot, &stack) {
-                                    tasks.push(extract_output(
-                                        &*this.invs[i].borrow(),
-                                        factory,
-                                        slot,
-                                        stack.detail.max_size,
-                                    ))
+                                    tasks.push(extract_output(&*this.invs[i].borrow(), factory, slot, stack.detail.max_size))
                                 }
                             }
                         }
@@ -260,10 +248,10 @@ impl Process for FluidSlottedProcess {
                             } else {
                                 0
                             };
-                            demand.inputs.n_sets = demand.inputs.n_sets.min(
-                                ((recipe.max_sets * mult).min(demand.inputs.items[i_input].1.max_size) - existing_size)
-                                    / mult,
-                            );
+                            demand.inputs.n_sets = demand
+                                .inputs
+                                .n_sets
+                                .min(((recipe.max_sets * mult).min(demand.inputs.items[i_input].1.max_size) - existing_size) / mult);
                             if demand.inputs.n_sets <= 0 {
                                 continue 'recipe;
                             }
@@ -283,9 +271,8 @@ impl Process for FluidSlottedProcess {
                             mismatched_fluids.remove(&(i, input.fluid.clone()));
                             let fluid_map = &existing_fluids[i];
                             let existing_size = fluid_map.get(&input.fluid).copied().unwrap_or_default();
-                            demand.inputs.n_sets = (demand.inputs.n_sets)
-                                .min(((recipe.max_sets as i64 * mult - existing_size) / mult).clamp(0, i32::MAX as _)
-                                    as _);
+                            demand.inputs.n_sets =
+                                (demand.inputs.n_sets).min(((recipe.max_sets as i64 * mult - existing_size) / mult).clamp(0, i32::MAX as _) as _);
                             if demand.inputs.n_sets <= 0 {
                                 continue 'recipe;
                             }
@@ -304,13 +291,7 @@ impl Process for FluidSlottedProcess {
 }
 
 impl FluidSlottedProcess {
-    fn extract_fluids(
-        &self,
-        factory: &mut Factory,
-        i: usize,
-        fluids: FnvHashMap<LocalStr, i64>,
-        tasks: &mut Vec<ChildTask<Result<(), LocalStr>>>,
-    ) {
+    fn extract_fluids(&self, factory: &mut Factory, i: usize, fluids: FnvHashMap<LocalStr, i64>, tasks: &mut Vec<ChildTask<Result<(), LocalStr>>>) {
         for (fluid, mut remain) in fluids {
             while remain > 0 {
                 let bus = factory.fluid_bus_allocate();
@@ -328,12 +309,7 @@ impl FluidSlottedProcess {
                         let access = server.load_balance(&this.accesses);
                         task = ActionFuture::from(Call {
                             addr: access.fluid_bus_addrs[bus].clone(),
-                            args: vec![
-                                "pullFluid".into(),
-                                access.tank_addrs[i].clone().into(),
-                                qty.into(),
-                                fluid.into(),
-                            ],
+                            args: vec!["pullFluid".into(), access.tank_addrs[i].clone().into(), qty.into(), fluid.into()],
                         });
                         server.enqueue_request_group(&access.client, vec![task.clone().into()])
                     }
@@ -352,8 +328,7 @@ impl FluidSlottedProcess {
         let fluid_buses_to_free = Rc::new(RefCell::new(Vec::new()));
         let recipe = &self.recipes[demand.i_recipe];
         for (i_input, input) in recipe.inputs.iter().enumerate() {
-            let reservation =
-                factory.reserve_item(&self.name, &demand.inputs.items[i_input].0, demand.inputs.n_sets * input.size);
+            let reservation = factory.reserve_item(&self.name, &demand.inputs.items[i_input].0, demand.inputs.n_sets * input.size);
             let bus_slot = factory.bus_allocate();
             let slots_to_free = slots_to_free.clone();
             bus_slots.push(spawn(async move {
@@ -364,8 +339,7 @@ impl FluidSlottedProcess {
             }))
         }
         for input in &recipe.fluids {
-            let reservation =
-                factory.reserve_fluid(&self.name, &*input.fluid, input.size * demand.inputs.n_sets as i64);
+            let reservation = factory.reserve_fluid(&self.name, &*input.fluid, input.size * demand.inputs.n_sets as i64);
             let fluid_bus = factory.fluid_bus_allocate();
             let fluid_buses_to_free = fluid_buses_to_free.clone();
             fluid_buses.push(spawn(async move {

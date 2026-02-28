@@ -69,8 +69,7 @@ impl CraftyProcess {
                 let mut bus_slots = Vec::new();
                 let slots_to_free = Rc::new(RefCell::new(Vec::new()));
                 for (i_input, (item, _)) in items.into_iter().enumerate() {
-                    let reservation =
-                        factory.reserve_item(&self.config.name, &item, n_sets * recipe.inputs[i_input].size);
+                    let reservation = factory.reserve_item(&self.config.name, &item, n_sets * recipe.inputs[i_input].size);
                     let slots_to_free = slots_to_free.clone();
                     let bus_slot = factory.bus_allocate();
                     bus_slots.push(spawn(async move {
@@ -147,13 +146,7 @@ impl CraftyProcess {
         let mut group = Vec::new();
         group.push(Call {
             addr: access.bus_addr.clone(),
-            args: vec![
-                "pullItems".into(),
-                access.turtle_addr.clone().into(),
-                1.into(),
-                64.into(),
-                (output_bus_slot + 1).into(),
-            ],
+            args: vec!["pullItems".into(), access.turtle_addr.clone().into(), 1.into(), 64.into(), (output_bus_slot + 1).into()],
         });
         for non_consumable in &self.config.recipes[job.i_recipe].non_consumables {
             group.push(Call {
@@ -191,13 +184,7 @@ impl CraftyProcess {
                     let access = server.load_balance(&this.config.turtles[i_turtle].accesses);
                     task = ActionFuture::from(Call {
                         addr: access.bus_addr.clone(),
-                        args: vec![
-                            "pullItems".into(),
-                            access.turtle_addr.clone().into(),
-                            (turtle_slot + 1).into(),
-                            64.into(),
-                            (bus_slot + 1).into(),
-                        ],
+                        args: vec!["pullItems".into(), access.turtle_addr.clone().into(), (turtle_slot + 1).into(), 64.into(), (bus_slot + 1).into()],
                     });
                     server.enqueue_request_group(&access.client, vec![task.clone().into()])
                 }
@@ -252,12 +239,7 @@ impl IntoProcess for CraftyConfig {
     type Output = CraftyProcess;
     fn into_process(self, factory: &Factory) -> Rc<RefCell<Self::Output>> {
         Rc::new_cyclic(|weak| {
-            RefCell::new(Self::Output {
-                weak: weak.clone(),
-                config: self,
-                factory: factory.get_weak().clone(),
-                job_queue: VecDeque::new(),
-            })
+            RefCell::new(Self::Output { weak: weak.clone(), config: self, factory: factory.get_weak().clone(), job_queue: VecDeque::new() })
         })
     }
 }

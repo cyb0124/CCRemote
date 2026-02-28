@@ -153,12 +153,7 @@ impl Process for MultiInvSlottedProcess {
                                 *existing_input = Some(stack)
                             } else if let Some(ref to_extract) = this.to_extract {
                                 if to_extract(factory, i, slot, &stack) {
-                                    tasks.push(extract_output(
-                                        &*this.invs[i].borrow(),
-                                        factory,
-                                        slot,
-                                        stack.detail.max_size,
-                                    ))
+                                    tasks.push(extract_output(&*this.invs[i].borrow(), factory, slot, stack.detail.max_size))
                                 }
                             }
                         }
@@ -183,10 +178,10 @@ impl Process for MultiInvSlottedProcess {
                             } else {
                                 0
                             };
-                            demand.inputs.n_sets = demand.inputs.n_sets.min(
-                                ((recipe.max_sets * mult).min(demand.inputs.items[i_input].1.max_size) - existing_size)
-                                    / mult,
-                            );
+                            demand.inputs.n_sets = demand
+                                .inputs
+                                .n_sets
+                                .min(((recipe.max_sets * mult).min(demand.inputs.items[i_input].1.max_size) - existing_size) / mult);
                             if demand.inputs.n_sets <= 0 {
                                 continue 'recipe;
                             }
@@ -213,8 +208,7 @@ impl MultiInvSlottedProcess {
         let slots_to_free = Rc::new(RefCell::new(Vec::new()));
         let recipe = &self.recipes[demand.i_recipe];
         for (i_input, input) in recipe.inputs.iter().enumerate() {
-            let reservation =
-                factory.reserve_item(&self.name, &demand.inputs.items[i_input].0, demand.inputs.n_sets * input.size);
+            let reservation = factory.reserve_item(&self.name, &demand.inputs.items[i_input].0, demand.inputs.n_sets * input.size);
             let bus_slot = factory.bus_allocate();
             let slots_to_free = slots_to_free.clone();
             bus_slots.push(spawn(async move {

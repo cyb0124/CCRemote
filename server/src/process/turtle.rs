@@ -54,19 +54,12 @@ impl<State: Serialize> TurtleContext<State> {
     }
 
     pub fn call_retry<T: 'static>(
-        &self,
-        func: LocalStr,
-        args: Vec<Value>,
-        parse: impl Fn(Result<Value, LocalStr>) -> Result<T, LocalStr> + 'static,
+        &self, func: LocalStr, args: Vec<Value>, parse: impl Fn(Result<Value, LocalStr>) -> Result<T, LocalStr> + 'static,
     ) -> ChildTask<T> {
         let weak = self.weak.clone();
         spawn(async move {
             loop {
-                let task = if let Some(this) = weak.upgrade() {
-                    this.borrow().call_raw(func.clone(), args.clone())
-                } else {
-                    pending().await
-                };
+                let task = if let Some(this) = weak.upgrade() { this.borrow().call_raw(func.clone(), args.clone()) } else { pending().await };
                 match parse(task.await) {
                     Ok(x) => return x,
                     Err(e) => {
@@ -84,15 +77,9 @@ impl<State: Serialize> TurtleContext<State> {
         })
     }
 
-    pub fn call_void(&self, func: LocalStr, args: Vec<Value>) -> ChildTask<()> {
-        self.call_retry(func, args, |x| x.map(|_| ()))
-    }
+    pub fn call_void(&self, func: LocalStr, args: Vec<Value>) -> ChildTask<()> { self.call_retry(func, args, |x| x.map(|_| ())) }
 
-    pub fn call_result<T: TryFrom<Value, Error = LocalStr> + 'static>(
-        &self,
-        func: LocalStr,
-        args: Vec<Value>,
-    ) -> ChildTask<T> {
+    pub fn call_result<T: TryFrom<Value, Error = LocalStr> + 'static>(&self, func: LocalStr, args: Vec<Value>) -> ChildTask<T> {
         self.call_retry(func, args, |x| x.and_then(call_result))
     }
 }
@@ -113,15 +100,12 @@ pub struct TurtleProcess {
     _task: ChildTask<()>,
 }
 
-impl<State: Serialize + for<'a> Deserialize<'a>, Task: Future<Output = ()> + 'static> IntoProcess
-    for TurtleConfig<State, Task>
-{
+impl<State: Serialize + for<'a> Deserialize<'a>, Task: Future<Output = ()> + 'static> IntoProcess for TurtleConfig<State, Task> {
     type Output = TurtleProcess;
     fn into_process(self, factory: &Factory) -> Rc<RefCell<Self::Output>> {
         Rc::new_cyclic(|weak| {
             let state = File::open(&*self.file_name).ok().and_then(|x| serde_json::from_reader(BufReader::new(x)).ok());
-            let context =
-                TurtleContext { _phantom: PhantomData::default(), weak: weak.clone(), file_name: self.file_name };
+            let context = TurtleContext { _phantom: PhantomData::default(), weak: weak.clone(), file_name: self.file_name };
             RefCell::new(TurtleProcess {
                 weak: weak.clone(),
                 factory: factory.get_weak().clone(),

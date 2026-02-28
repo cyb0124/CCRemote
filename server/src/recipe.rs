@@ -25,15 +25,11 @@ pub trait BoxedOutputs {
 
 impl BoxedOutputs for Rc<dyn Outputs> {
     fn and(self, other: Self) -> Self {
-        Rc::new(move |factory: &_| {
-            max_by(self.get_priority(factory), other.get_priority(factory), |x, y| x.partial_cmp(y).unwrap())
-        })
+        Rc::new(move |factory: &_| max_by(self.get_priority(factory), other.get_priority(factory), |x, y| x.partial_cmp(y).unwrap()))
     }
 
     fn or(self, other: Self) -> Self {
-        Rc::new(move |factory: &_| {
-            min_by(self.get_priority(factory), other.get_priority(factory), |x, y| x.partial_cmp(y).unwrap())
-        })
+        Rc::new(move |factory: &_| min_by(self.get_priority(factory), other.get_priority(factory), |x, y| x.partial_cmp(y).unwrap()))
     }
 
     fn not(self) -> Self {

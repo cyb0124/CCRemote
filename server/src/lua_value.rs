@@ -6,8 +6,7 @@ use std::{collections::BTreeMap, io::Write};
 pub fn try_into_integer<I>(f: f64) -> Result<I, LocalStr>
 where
     f64: AsPrimitive<I>,
-    I: AsPrimitive<f64>,
-{
+    I: AsPrimitive<f64>, {
     let i = f.as_();
     if i.as_() == f {
         Ok(i)
@@ -244,9 +243,7 @@ impl Parser {
     pub fn new() -> Self { Parser { stack: vec![State::V] } }
 
     fn reduce<T>(&mut self, mut value: Value, handler: &mut T) -> Result<(), LocalStr>
-    where
-        T: FnMut(Value) -> Result<(), LocalStr>,
-    {
+    where T: FnMut(Value) -> Result<(), LocalStr> {
         loop {
             match self.stack.pop() {
                 None => {
@@ -278,9 +275,7 @@ impl Parser {
     }
 
     pub fn shift<T>(&mut self, mut data: &[u8], handler: &mut T) -> Result<(), LocalStr>
-    where
-        T: FnMut(Value) -> Result<(), LocalStr>,
-    {
+    where T: FnMut(Value) -> Result<(), LocalStr> {
         'outer: while data.len() > 0 {
             match self.stack.pop().unwrap() {
                 State::V => {
@@ -303,10 +298,7 @@ impl Parser {
                     while let Some((x, rem)) = data.split_first() {
                         data = rem;
                         if *x == b'@' {
-                            self.reduce(
-                                Value::F(result.parse().map_err(|e| local_fmt!("invalid number: {}", e))?),
-                                handler,
-                            )?;
+                            self.reduce(Value::F(result.parse().map_err(|e| local_fmt!("invalid number: {}", e))?), handler)?;
                             continue 'outer;
                         } else {
                             // Code-point can approximate CC's custom charset.

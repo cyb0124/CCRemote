@@ -108,13 +108,11 @@ impl Process for BufferedProcess {
                     if let Some((item, info)) = factory.search_item(&stock.item) {
                         let info = info.borrow();
                         let existing = existing_size.entry(item.clone()).or_default();
-                        let to_insert =
-                            (stock.size - *existing).min(info.get_availability(stock.allow_backup, stock.extra_backup));
+                        let to_insert = (stock.size - *existing).min(info.get_availability(stock.allow_backup, stock.extra_backup));
                         if to_insert <= 0 {
                             continue;
                         }
-                        let InsertPlan { n_inserted, insertions } =
-                            insert_into_inventory(&mut stacks, item, &info.detail, to_insert);
+                        let InsertPlan { n_inserted, insertions } = insert_into_inventory(&mut stacks, item, &info.detail, to_insert);
                         drop(info);
                         if n_inserted <= 0 {
                             continue;
@@ -133,11 +131,7 @@ impl Process for BufferedProcess {
                             if inputs.n_sets <= 0 {
                                 continue 'recipe;
                             }
-                            let existing_total: i32 = inputs
-                                .items
-                                .iter()
-                                .map(|(item, _)| *existing_size.entry(item.clone()).or_default())
-                                .sum();
+                            let existing_total: i32 = inputs.items.iter().map(|(item, _)| *existing_size.entry(item.clone()).or_default()).sum();
                             inputs.n_sets = inputs.n_sets.min((recipe.max_inputs - existing_total) / size_per_set);
                             if inputs.n_sets <= 0 {
                                 continue 'recipe;
@@ -181,12 +175,7 @@ impl Process for BufferedProcess {
 }
 
 impl BufferedProcess {
-    fn execute_recipe(
-        &self,
-        factory: &mut Factory,
-        items: Vec<(Rc<Item>, Rc<Detail>)>,
-        plans: Vec<InsertPlan>,
-    ) -> ChildTask<Result<(), LocalStr>> {
+    fn execute_recipe(&self, factory: &mut Factory, items: Vec<(Rc<Item>, Rc<Detail>)>, plans: Vec<InsertPlan>) -> ChildTask<Result<(), LocalStr>> {
         let mut bus_slots = Vec::new();
         let slots_to_free = Rc::new(RefCell::new(Vec::new()));
         for (i_input, (item, _)) in items.into_iter().enumerate() {

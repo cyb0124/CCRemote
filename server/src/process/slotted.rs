@@ -110,10 +110,10 @@ impl Process for SlottedProcess {
                             } else {
                                 0
                             };
-                            demand.inputs.n_sets = demand.inputs.n_sets.min(
-                                ((recipe.max_sets * mult).min(demand.inputs.items[i_input].1.max_size) - existing_size)
-                                    / mult,
-                            );
+                            demand.inputs.n_sets = demand
+                                .inputs
+                                .n_sets
+                                .min(((recipe.max_sets * mult).min(demand.inputs.items[i_input].1.max_size) - existing_size) / mult);
                             if demand.inputs.n_sets <= 0 {
                                 continue 'recipe;
                             }
@@ -140,11 +140,7 @@ impl SlottedProcess {
         let slots_to_free = Rc::new(RefCell::new(Vec::new()));
         let recipe = &self.config.recipes[demand.i_recipe];
         for (i_input, input) in recipe.inputs.iter().enumerate() {
-            let reservation = factory.reserve_item(
-                &self.config.name,
-                &demand.inputs.items[i_input].0,
-                demand.inputs.n_sets * input.size,
-            );
+            let reservation = factory.reserve_item(&self.config.name, &demand.inputs.items[i_input].0, demand.inputs.n_sets * input.size);
             let bus_slot = factory.bus_allocate();
             let slots_to_free = slots_to_free.clone();
             bus_slots.push(spawn(async move {

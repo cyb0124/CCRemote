@@ -26,13 +26,7 @@ pub struct BlockingFluidOutputProcess {
 impl IntoProcess for BlockingFluidOutputConfig {
     type Output = BlockingFluidOutputProcess;
     fn into_process(self, factory: &Factory) -> Rc<RefCell<Self::Output>> {
-        Rc::new_cyclic(|weak| {
-            RefCell::new(BlockingFluidOutputProcess {
-                weak: weak.clone(),
-                config: self,
-                factory: factory.get_weak().clone(),
-            })
-        })
+        Rc::new_cyclic(|weak| RefCell::new(BlockingFluidOutputProcess { weak: weak.clone(), config: self, factory: factory.get_weak().clone() }))
     }
 }
 

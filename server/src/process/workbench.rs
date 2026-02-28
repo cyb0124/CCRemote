@@ -2,9 +2,7 @@ use super::super::access::BusAccess;
 use super::super::action::{ActionFuture, Call};
 use super::super::factory::Factory;
 use super::super::inventory::Inventory;
-use super::super::recipe::{
-    compute_demands, resolve_inputs, CraftingGridRecipe, Demand, NonConsumable, ResolvedInputs,
-};
+use super::super::recipe::{compute_demands, resolve_inputs, CraftingGridRecipe, Demand, NonConsumable, ResolvedInputs};
 use super::super::util::{alive, join_outputs, join_tasks, spawn};
 use super::{IntoProcess, Process};
 use abort_on_drop::ChildTask;
@@ -45,8 +43,7 @@ impl Process for WorkbenchProcess {
                 let mut bus_slots = Vec::new();
                 let slots_to_free = Rc::new(RefCell::new(Vec::new()));
                 for (i_input, (item, _)) in items.into_iter().enumerate() {
-                    let reservation =
-                        factory.reserve_item(&self.config.name, &item, n_sets * recipe.inputs[i_input].size);
+                    let reservation = factory.reserve_item(&self.config.name, &item, n_sets * recipe.inputs[i_input].size);
                     let slots_to_free = slots_to_free.clone();
                     let weak = factory.get_weak().clone();
                     bus_slots.push(spawn(async move {
@@ -94,10 +91,7 @@ impl Process for WorkbenchProcess {
                                 store_non_consumable(&mut group, access, non_consumable)
                             }
                             let group: Vec<_> = group.into_iter().map(|x| ActionFuture::from(x)).collect();
-                            server.enqueue_request_group(
-                                &access.client,
-                                group.iter().map(|x| x.clone().into()).collect(),
-                            );
+                            server.enqueue_request_group(&access.client, group.iter().map(|x| x.clone().into()).collect());
                             group.into_iter().map(|x| spawn(async move { x.await.map(|_| ()) })).collect()
                         };
                         join_tasks(tasks).await?;
@@ -120,13 +114,7 @@ impl Process for WorkbenchProcess {
 fn load_input(group: &mut Vec<Call>, access: &BusAccess, bus_slot: usize, inv_slot: usize, size: i32) {
     group.push(Call {
         addr: access.bus_addr.clone(),
-        args: vec![
-            "pushItems".into(),
-            access.inv_addr.clone().into(),
-            (bus_slot + 1).into(),
-            size.into(),
-            (inv_slot + 1).into(),
-        ],
+        args: vec!["pushItems".into(), access.inv_addr.clone().into(), (bus_slot + 1).into(), size.into(), (inv_slot + 1).into()],
     })
 }
 

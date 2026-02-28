@@ -92,12 +92,7 @@ impl FluidReservation {
                     let access = server.load_balance(&storage.config.accesses);
                     task = ActionFuture::from(Call {
                         addr: access.fluid_bus_addrs[bus].clone(),
-                        args: vec![
-                            "pullFluid".into(),
-                            access.tank_addr.clone().into(),
-                            qty.into(),
-                            storage.config.fluid.clone().into(),
-                        ],
+                        args: vec!["pullFluid".into(), access.tank_addr.clone().into(), qty.into(), storage.config.fluid.clone().into()],
                     });
                     server.enqueue_request_group(&access.client, vec![task.clone().into()])
                 }
@@ -218,13 +213,7 @@ impl Factory {
     pub fn get_n_stored(&self, item: &Rc<Item>) -> i32 { self.items.get(item).map_or(0, |info| info.borrow().n_stored) }
     pub fn add_fluid_storage(&mut self, config: FluidStorageConfig) {
         self.fluid_storages.push(Rc::new_cyclic(|weak| {
-            RefCell::new(FluidStorage {
-                weak: weak.clone(),
-                factory: self.weak.clone(),
-                config,
-                n_stored_hi: 0,
-                n_stored_lo: 0,
-            })
+            RefCell::new(FluidStorage { weak: weak.clone(), factory: self.weak.clone(), config, n_stored_hi: 0, n_stored_lo: 0 })
         }))
     }
 
@@ -243,13 +232,7 @@ impl Factory {
                 let item = x.key();
                 self.label_map.entry(detail.label.clone()).or_default().push(item.clone());
                 self.name_map.entry(item.name.clone()).or_default().push(item.clone());
-                x.insert(RefCell::new(ItemInfo {
-                    detail: detail.clone(),
-                    n_stored: 0,
-                    n_backup: 0,
-                    providers: BinaryHeap::new(),
-                }))
-                .get_mut()
+                x.insert(RefCell::new(ItemInfo { detail: detail.clone(), n_stored: 0, n_backup: 0, providers: BinaryHeap::new() })).get_mut()
             }
         }
     }
@@ -299,9 +282,7 @@ impl Factory {
         best
     }
 
-    pub fn search_n_stored(&self, filter: &Filter) -> i32 {
-        self.search_item(filter).map_or(0, |(_, info)| info.borrow().n_stored)
-    }
+    pub fn search_n_stored(&self, filter: &Filter) -> i32 { self.search_item(filter).map_or(0, |(_, info)| info.borrow().n_stored) }
 
     pub fn bus_allocate(&mut self) -> LocalReceiver<usize> {
         let (sender, receiver) = make_local_one_shot();
@@ -413,13 +394,7 @@ impl Factory {
         }
     }
 
-    fn fluid_deposit(
-        &self,
-        bus: usize,
-        fluid: LocalStr,
-        mut qty: i64,
-        tasks: &mut Vec<ChildTask<Result<(), LocalStr>>>,
-    ) {
+    fn fluid_deposit(&self, bus: usize, fluid: LocalStr, mut qty: i64, tasks: &mut Vec<ChildTask<Result<(), LocalStr>>>) {
         self.log(Log { text: local_fmt!("{fluid}*{qty}"), color: 1 });
         let server = self.get_server().borrow();
         while qty > 0 {
@@ -441,12 +416,7 @@ impl Factory {
                 let access = server.load_balance(&sto.config.accesses);
                 let task = ActionFuture::from(Call {
                     addr: access.fluid_bus_addrs[bus].clone(),
-                    args: vec![
-                        "pushFluid".into(),
-                        access.tank_addr.clone().into(),
-                        n_deposited.into(),
-                        fluid.clone().into(),
-                    ],
+                    args: vec!["pushFluid".into(), access.tank_addr.clone().into(), n_deposited.into(), fluid.clone().into()],
                 });
                 server.enqueue_request_group(&access.client, vec![task.clone().into()]);
                 tasks.push(spawn(async move { task.await.map(|_| ()) }))
@@ -464,10 +434,7 @@ impl Factory {
             let mut best = None;
             for storage in &self.fluid_storages {
                 let sto = storage.borrow();
-                if sto.config.fluid == fluid
-                    && sto.n_stored_lo > 0
-                    && best.as_ref().map_or(true, |&(_, best)| sto.n_stored_lo < best)
-                {
+                if sto.config.fluid == fluid && sto.n_stored_lo > 0 && best.as_ref().map_or(true, |&(_, best)| sto.n_stored_lo < best) {
                     best = Some((storage.clone(), sto.n_stored_lo))
                 }
             }
@@ -667,9 +634,9 @@ async fn fluid_bus_update(factory: &Weak<RefCell<Factory>>) -> Result<bool, Loca
         let Some(acceess) = this.config.fluid_bus_accesses.first() else { return Ok(false) };
         let n_buses = acceess.fluid_bus_addrs.len();
         let server = this.get_server().borrow();
-        join_outputs(Vec::from_iter((0..n_buses).map(|i| {
-            spawn(read_tanks(&*server, &this.config.fluid_bus_accesses, |access| access.fluid_bus_addrs[i].clone()))
-        })))
+        join_outputs(Vec::from_iter(
+            (0..n_buses).map(|i| spawn(read_tanks(&*server, &this.config.fluid_bus_accesses, |access| access.fluid_bus_addrs[i].clone()))),
+        ))
     };
     let buses = buses.await?;
     let mut tasks = Vec::new();
@@ -711,9 +678,7 @@ async fn fluid_bus_update(factory: &Weak<RefCell<Factory>>) -> Result<bool, Loca
 }
 
 pub fn read_tanks<'a, T: GetClient + 'a>(
-    server: &Server,
-    accesses: impl IntoIterator<Item = &'a T>,
-    tank_addr: impl Fn(&'a T) -> LocalStr,
+    server: &Server, accesses: impl IntoIterator<Item = &'a T>, tank_addr: impl Fn(&'a T) -> LocalStr,
 ) -> impl Future<Output = Result<BTreeMap<usize, (LocalStr, i64)>, LocalStr>> + 'static {
     let access = server.load_balance(accesses);
     let action = ActionFuture::from(Call { addr: tank_addr(access), args: vec!["tanks".into()] });
@@ -744,11 +709,8 @@ pub fn tanks_to_fluid_map(tanks: &BTreeMap<usize, (LocalStr, i64)>) -> FnvHashMa
 
 impl FluidStorage {
     fn update(&self) -> ChildTask<Result<(), LocalStr>> {
-        let task = read_tanks(
-            &*self.factory.upgrade().unwrap().borrow().get_server().borrow(),
-            &self.config.accesses,
-            |access| access.tank_addr.clone(),
-        );
+        let task =
+            read_tanks(&*self.factory.upgrade().unwrap().borrow().get_server().borrow(), &self.config.accesses, |access| access.tank_addr.clone());
         let weak = self.weak.clone();
         spawn(async move {
             let tanks = task.await?;

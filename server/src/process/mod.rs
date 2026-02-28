@@ -47,9 +47,7 @@ pub type ExtractFilter = Box<dyn Fn(&Factory, usize, &DetailStack) -> bool>;
 pub fn extract_all() -> Option<ExtractFilter> { Some(Box::new(|_, _, _| true)) }
 
 fn extract_output<T>(this: &T, factory: &mut Factory, slot: usize, size: i32) -> ChildTask<Result<(), LocalStr>>
-where
-    T: Inventory<Access = BusAccess>,
-{
+where T: Inventory<Access = BusAccess> {
     let bus_slot = factory.bus_allocate();
     let weak = this.get_weak().clone();
     let factory = factory.get_weak().clone();
@@ -62,13 +60,7 @@ where
             let access = server.load_balance(this.get_accesses());
             action = ActionFuture::from(Call {
                 addr: access.bus_addr.clone(),
-                args: vec![
-                    "pullItems".into(),
-                    access.inv_addr.clone().into(),
-                    (slot + 1).into(),
-                    size.into(),
-                    (bus_slot + 1).into(),
-                ],
+                args: vec!["pullItems".into(), access.inv_addr.clone().into(), (slot + 1).into(), size.into(), (bus_slot + 1).into()],
             });
             server.enqueue_request_group(&access.client, vec![action.clone().into()])
         }
@@ -78,16 +70,10 @@ where
     })
 }
 
-fn scattering_insert<T, U>(
-    this: &T,
-    factory: &mut Factory,
-    reservation: Reservation,
-    insertions: U,
-) -> ChildTask<Result<(), LocalStr>>
+fn scattering_insert<T, U>(this: &T, factory: &mut Factory, reservation: Reservation, insertions: U) -> ChildTask<Result<(), LocalStr>>
 where
     T: Inventory<Access = BusAccess>,
-    U: IntoIterator<Item = (usize, i32)> + 'static,
-{
+    U: IntoIterator<Item = (usize, i32)> + 'static, {
     let bus_slot = factory.bus_allocate();
     let weak = this.get_weak().clone();
     let factory = factory.get_weak().clone();
@@ -103,13 +89,7 @@ where
                     let access = server.load_balance(this.get_accesses());
                     let action = ActionFuture::from(Call {
                         addr: access.bus_addr.clone(),
-                        args: vec![
-                            "pushItems".into(),
-                            access.inv_addr.clone().into(),
-                            (bus_slot + 1).into(),
-                            size.into(),
-                            (inv_slot + 1).into(),
-                        ],
+                        args: vec!["pushItems".into(), access.inv_addr.clone().into(), (bus_slot + 1).into(), size.into(), (inv_slot + 1).into()],
                     });
                     server.enqueue_request_group(&access.client, vec![action.clone().into()]);
                     tasks.push(spawn(async move { action.await.map(|_| ()) }))

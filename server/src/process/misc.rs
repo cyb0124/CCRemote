@@ -88,12 +88,7 @@ impl SyncAndRestockProcess {
     fn output(&self, server: &Server, is_high: bool) -> impl Future<Output = Result<(), LocalStr>> {
         let access = server.load_balance(&self.config.accesses_out);
         let value = if is_high { 15 } else { 0 };
-        let action = ActionFuture::from(RedstoneOutput {
-            side: access.side.clone(),
-            addr: access.addr.clone(),
-            bit: access.bit,
-            value,
-        });
+        let action = ActionFuture::from(RedstoneOutput { side: access.side.clone(), addr: access.addr.clone(), bit: access.bit, value });
         server.enqueue_request_group(&access.client, vec![action.clone().into()]);
         let weak = self.weak.clone();
         async move {
@@ -139,13 +134,11 @@ impl SyncAndRestockProcess {
                 for (stock, remaining) in stocks.iter().zip(&mut remaining_stocks) {
                     if let Some((item, info)) = factory.search_item(&stock.get_item()) {
                         let info = info.borrow();
-                        let to_insert =
-                            info.get_availability(stock.get_allow_backup(), stock.get_extra_backup()).min(*remaining);
+                        let to_insert = info.get_availability(stock.get_allow_backup(), stock.get_extra_backup()).min(*remaining);
                         if to_insert <= 0 {
                             continue;
                         }
-                        let InsertPlan { n_inserted, insertions } =
-                            insert_into_inventory(&mut stacks, item, &info.detail, to_insert);
+                        let InsertPlan { n_inserted, insertions } = insert_into_inventory(&mut stacks, item, &info.detail, to_insert);
                         drop(info);
                         if n_inserted <= 0 {
                             continue;
@@ -170,8 +163,7 @@ impl Process for SyncAndRestockProcess {
     fn run(&self, factory: &Factory) -> ChildTask<Result<(), LocalStr>> {
         let server = factory.get_server().borrow();
         let access = server.load_balance(&self.config.accesses_in);
-        let action =
-            ActionFuture::from(RedstoneInput { side: access.side.clone(), addr: access.addr.clone(), bit: access.bit });
+        let action = ActionFuture::from(RedstoneInput { side: access.side.clone(), addr: access.addr.clone(), bit: access.bit });
         server.enqueue_request_group(&access.client, vec![action.clone().into()]);
         let weak = self.weak.clone();
         spawn(async move {
@@ -272,8 +264,7 @@ pub struct ItemCycleProcess {
 impl IntoProcess for ItemCycleConfig {
     type Output = ItemCycleProcess;
     fn into_process(self, factory: &Factory) -> Rc<RefCell<Self::Output>> {
-        let next_item =
-            read_to_string(&*self.file_name).ok().and_then(|x| usize::from_str(&x).ok()).unwrap_or_default();
+        let next_item = read_to_string(&*self.file_name).ok().and_then(|x| usize::from_str(&x).ok()).unwrap_or_default();
         Rc::new_cyclic(|weak| {
             RefCell::new(Self::Output {
                 weak: weak.clone(),
@@ -345,8 +336,7 @@ impl Process for ItemCycleProcess {
                         if this.next_item == this.config.items.len() {
                             this.next_item = 0
                         }
-                        std::fs::write(&*this.config.file_name, this.next_item.to_string())
-                            .map_err(|e| local_fmt!("{}: {}", this.config.name, e))
+                        std::fs::write(&*this.config.file_name, this.next_item.to_string()).map_err(|e| local_fmt!("{}: {}", this.config.name, e))
                     }
                 } else {
                     return Ok(());

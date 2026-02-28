@@ -49,10 +49,7 @@ pub async fn join_outputs<T>(tasks: Vec<ChildTask<Result<T, LocalStr>>>) -> Resu
     result.map_err(|x| x.into_iter().collect())
 }
 
-pub async fn join_pair<A, B>(
-    a: impl Future<Output = Result<A, LocalStr>>,
-    b: impl Future<Output = Result<B, LocalStr>>,
-) -> Result<(A, B), LocalStr> {
+pub async fn join_pair<A, B>(a: impl Future<Output = Result<A, LocalStr>>, b: impl Future<Output = Result<B, LocalStr>>) -> Result<(A, B), LocalStr> {
     match join!(a, b) {
         (Ok(a), Ok(b)) => Ok((a, b)),
         (Err(e), Ok(_)) => Err(e),

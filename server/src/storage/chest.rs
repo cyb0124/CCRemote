@@ -130,13 +130,7 @@ impl Storage for ChestStorage {
         let access = server.load_balance(&self.config.accesses);
         let action = ActionFuture::from(Call {
             addr: access.bus_addr.clone(),
-            args: vec![
-                "pushItems".into(),
-                access.inv_addr.clone().into(),
-                (bus_slot + 1).into(),
-                n_deposited.into(),
-                (inv_slot + 1).into(),
-            ],
+            args: vec!["pushItems".into(), access.inv_addr.clone().into(), (bus_slot + 1).into(), n_deposited.into(), (inv_slot + 1).into()],
         });
         server.enqueue_request_group(&access.client, vec![action.clone().into()]);
         let task = spawn(async move { action.await.map(|_| ()) });
@@ -152,13 +146,7 @@ impl Extractor for ChestExtractor {
         let access = server.load_balance(&this.config.accesses);
         let action = ActionFuture::from(Call {
             addr: access.bus_addr.clone(),
-            args: vec![
-                "pullItems".into(),
-                access.inv_addr.clone().into(),
-                (inv_slot + 1).into(),
-                size.into(),
-                (bus_slot + 1).into(),
-            ],
+            args: vec!["pullItems".into(), access.inv_addr.clone().into(), (inv_slot + 1).into(), size.into(), (bus_slot + 1).into()],
         });
         server.enqueue_request_group(&access.client, vec![action.clone().into()]);
         let weak = self.weak.clone();

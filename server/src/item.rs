@@ -49,9 +49,7 @@ pub struct ItemStack {
 }
 
 impl ItemStack {
-    fn parse_part(table: &mut Table) -> Result<Self, LocalStr> {
-        Ok(Self { item: Item::parse_part(table)?, size: table_remove(table, "count")? })
-    }
+    fn parse_part(table: &mut Table) -> Result<Self, LocalStr> { Ok(Self { item: Item::parse_part(table)?, size: table_remove(table, "count")? }) }
 
     pub fn parse(value: Value) -> Result<Self, LocalStr> {
         let mut table = Table::try_from(value)?;
@@ -63,9 +61,7 @@ impl ItemStack {
         }
     }
 
-    pub fn with_detail(self, detail: Rc<Detail>) -> DetailStack {
-        DetailStack { item: self.item, size: self.size, detail }
-    }
+    pub fn with_detail(self, detail: Rc<Detail>) -> DetailStack { DetailStack { item: self.item, size: self.size, detail } }
 }
 
 pub struct Detail {
@@ -136,12 +132,7 @@ pub struct InsertPlan {
     pub insertions: Vec<(usize, i32)>,
 }
 
-pub fn insert_into_inventory(
-    inventory: &mut Vec<Option<DetailStack>>,
-    item: &Rc<Item>,
-    detail: &Rc<Detail>,
-    to_insert: i32,
-) -> InsertPlan {
+pub fn insert_into_inventory(inventory: &mut Vec<Option<DetailStack>>, item: &Rc<Item>, detail: &Rc<Detail>, to_insert: i32) -> InsertPlan {
     let mut result = InsertPlan { n_inserted: 0, insertions: Vec::new() };
     let mut remaining = min(to_insert, detail.max_size);
     let mut first_empty_slot = None;
