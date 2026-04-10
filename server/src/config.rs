@@ -37,7 +37,7 @@ fn ore_variants(x: &str) -> impl Iterator<Item = LocalStr> {
 fn cold_metal_output(x: &str) -> Rc<dyn Outputs> { Output::new(label!("{x} Dust"), 65).or(Output::new(label!("{x} Ingot"), 65)) }
 
 pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
-    let cold_metals = ["Silver", "Gold", "Tin"];
+    let cold_metals = ["Tantalum", "Gallium", "Silver", "Copper", "Gold", "Tin"];
     let washed_ores = ["Tricalcium Phosphate", "Apatite", "Chromite", "Uraninite", "Coal"];
     let mercury_bathed_ores = ["Silver", "Gold"];
     let all_ores = FnvHashSet::from_iter(washed_ores.into_iter().chain(mercury_bathed_ores));
@@ -55,7 +55,6 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
         fluid_backups: vec![],
     }
     .build(|factory| {
-        factory.add_process(LowAlert::new(label("Tin Dust"), 65));
         factory.add_process(LowAlert::new(label("End Stone"), 64));
         factory.add_process(LowAlert::new(label("Lead Dust"), 64));
         factory.add_process(LowAlert::new(label("Iron Dust"), 64));
@@ -63,26 +62,30 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
         factory.add_process(LowAlert::new(label("Netherrack"), 64));
         factory.add_process(LowAlert::new(label("Nickel Dust"), 64));
         factory.add_process(LowAlert::new(label("Sulfur Dust"), 64));
-        factory.add_process(LowAlert::new(label("Copper Ingot"), 64));
-        factory.add_process(LowAlert::new(label("Gallium Dust"), 64));
         factory.add_process(LowAlert::new(label("Bauxite Dust"), 64));
         factory.add_process(LowAlert::new(label("Diamond Dust"), 64));
         factory.add_process(LowAlert::new(label("Nether Quartz"), 64));
         factory.add_process(LowAlert::new(label("Antimony Dust"), 64));
         factory.add_process(LowAlert::new(label("Redstone Dust"), 64));
-        factory.add_process(LowAlert::new(label("Tantalum Dust"), 64));
         factory.add_process(LowAlert::new(label("Glowstone Dust"), 64));
         factory.add_process(LowAlert::new(label("Potassium Dust"), 64));
         factory.add_process(LowAlert::new(label("Aluminium Dust"), 64));
         factory.add_process(LowAlert::new(label("Silicon Dioxide Dust"), 64));
         factory.add_process(LowAlert::new(label("Small Pile of Gallium Arsenide Dust"), 64));
-        factory.add_process(LowAlert::new(custom("Coal Ore", |_, x| ore_variants("Coal").any(|i| x.label == i)), 64));
-        factory.add_process(LowAlert::new(custom("Gold Ore", |_, x| ore_variants("Gold").any(|i| x.label == i)), 64));
-        factory.add_process(LowAlert::new(custom("Silver Ore", |_, x| ore_variants("Silver").any(|i| x.label == i)), 64));
-        factory.add_process(LowAlert::new(custom("Chromite Ore", |_, x| ore_variants("Chromite").any(|i| x.label == i)), 64));
-        factory.add_process(LowAlert::new(custom("Uraninite Ore", |_, x| ore_variants("Uraninite").any(|i| x.label == i)), 64));
+        for x in ["Tin", "Copper", "Gallium", "Tantalum"] {
+            factory.add_process(LowAlert::new(
+                custom(local_fmt!("{x} Ingot/Dust"), move |_, y| {
+                    let Some(suffix) = y.label.strip_prefix(x) else { return false };
+                    suffix == " Ingot" || suffix == " Dust"
+                }),
+                65,
+            ));
+        }
+        for x in ["Coal", "Gold", "Silver", "Chromite", "Uraninite"] {
+            factory.add_process(LowAlert::new(custom(local_fmt!("{x} Ore"), move |_, y| ore_variants(x).any(|i| y.label == i)), 64));
+        }
         factory.add_process(LowAlert::new(
-            custom("Apatite/Tricalcium-Phosphate Ore", |_, x| {
+            custom(s("Apatite/Tricalcium-Phosphate Ore"), |_, x| {
                 ore_variants("Apatite").chain(ore_variants("Tricalcium Phosphate")).any(|i| x.label == i)
             }),
             64,
@@ -229,11 +232,6 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                         SlottedRecipe {
                             outputs: Output::new(label("Crushed Ice"), 64),
                             inputs: vec![SlottedInput::new(label("Ice"), vec![(0, 1)])],
-                            max_sets: 8,
-                        },
-                        SlottedRecipe {
-                            outputs: Output::new(label("Copper Dust"), 64),
-                            inputs: vec![SlottedInput::new(label("Copper Ingot"), vec![(0, 1)])],
                             max_sets: 8,
                         },
                         SlottedRecipe {
@@ -666,14 +664,6 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                         fluids: vec![],
                         max_sets: 8,
                     },
-                    /*
-                    FluidSlottedRecipe {
-                        outputs: Output::new(label("Tantalum Dust"), 64),
-                        inputs: vec![MultiInvSlottedInput::new(label("material.gtceu.tantalum_pentoxide Dust"), vec![(0, 0, 7)])],
-                        fluids: vec![],
-                        max_sets: 8,
-                    },
-                    */
                     FluidSlottedRecipe {
                         outputs: FluidOutput::new(s("gtceu:sodium_persulfate"), 64_000),
                         inputs: vec![MultiInvSlottedInput::new(label("Sodium Bisulfate Dust"), vec![(0, 0, 7)])],
@@ -876,23 +866,11 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     inputs: vec![SlottedInput::new(label!("{x} Dust"), vec![(0, 1)]).extra_backup(64)],
                     max_sets: 8,
                 })
-                .chain([
-                    SlottedRecipe {
-                        outputs: Output::new(label("Gallium Ingot"), 64),
-                        inputs: vec![SlottedInput::new(label("Gallium Dust"), vec![(0, 1)])],
-                        max_sets: 8,
-                    },
-                    SlottedRecipe {
-                        outputs: Output::new(label("Tantalum Ingot"), 64),
-                        inputs: vec![SlottedInput::new(label("Tantalum Dust"), vec![(0, 1)])],
-                        max_sets: 8,
-                    },
-                    SlottedRecipe {
-                        outputs: Output::new(label("item.kubejs.pulsating_dust"), 64),
-                        inputs: vec![SlottedInput::new(label("Uraninite Dust"), vec![(0, 1)])],
-                        max_sets: 8,
-                    },
-                ])
+                .chain([SlottedRecipe {
+                    outputs: Output::new(label("item.kubejs.pulsating_dust"), 64),
+                    inputs: vec![SlottedInput::new(label("Uraninite Dust"), vec![(0, 1)])],
+                    max_sets: 8,
+                }])
                 .collect(),
             strict_priority: false,
         });
