@@ -23,18 +23,27 @@ fn inv_tank(addr: LocalStr) -> Vec<InvTankAccess> {
     vec![InvTankAccess { client: s(MAIN), inv_addrs: vec![addr.clone()], tank_addrs: vec![addr], bus_addr: s(BUS), fluid_bus_addrs: fbus() }]
 }
 
-fn ore_variants(x: &str) -> impl Iterator<Item = LocalStr> {
-    <_>::into_iter([
+fn ore_variants(x: &str) -> Filter {
+    let variants = [
         local_fmt!("Raw {x}"),
         local_fmt!("{x} Ore"),
         local_fmt!("End {x} Ore"),
         local_fmt!("Talc {x} Ore"),
         local_fmt!("Nether {x} Ore"),
         local_fmt!("Deepslate {x} Ore"),
-    ])
+    ];
+    custom(local_fmt!("Any {x} Ore"), move |_, x| variants.iter().any(|y| y == x.label))
 }
 
 fn cold_metal_output(x: &str) -> Rc<dyn Outputs> { Output::new(label!("{x} Dust"), 65).or(Output::new(label!("{x} Ingot"), 65)) }
+
+fn less_than(x: Filter, y: Filter) -> Rc<dyn Outputs> {
+    Rc::new(move |f: &Factory| {
+        let x = f.search_n_stored(&x);
+        let y = f.search_n_stored(&y);
+        (!(x < y)).then_some(1.)
+    })
+}
 
 pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
     let cold_metals = ["Tantalum", "Gallium", "Silver", "Copper", "Gold", "Tin"];
@@ -81,15 +90,9 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                 65,
             ));
         }
-        for x in ["Coal", "Gold", "Silver", "Chromite", "Uraninite"] {
-            factory.add_process(LowAlert::new(custom(local_fmt!("{x} Ore"), move |_, y| ore_variants(x).any(|i| y.label == i)), 64));
+        for x in ["Coal", "Gold", "Silver", "Chromite", "Uraninite", "Apatite", "Tricalcium Phosphate"] {
+            factory.add_process(LowAlert::new(ore_variants(x), 64));
         }
-        factory.add_process(LowAlert::new(
-            custom(s("Apatite/Tricalcium-Phosphate Ore"), |_, x| {
-                ore_variants("Apatite").chain(ore_variants("Tricalcium Phosphate")).any(|i| x.label == i)
-            }),
-            64,
-        ));
         factory.add_process(ManualUiConfig { accesses: acc(s("minecraft:barrel_4")) });
         for i in [1, 3, 0, 2] {
             factory.add_storage(ChestConfig { accesses: acc(local_fmt!("gtceu:titanium_crate_{i}")), override_max_stack_size: None });
@@ -205,12 +208,10 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                 input_slots: vec![0],
                 to_extract: extract_all(),
                 recipes: (all_ores.iter())
-                    .flat_map(|&x| {
-                        ore_variants(x).map(move |i| SlottedRecipe {
-                            outputs: Output::new(label!("Crushed {x} Ore"), 64),
-                            inputs: vec![SlottedInput::new(Filter::Label(i), vec![(0, 1)])],
-                            max_sets: 8,
-                        })
+                    .map(|&x| SlottedRecipe {
+                        outputs: Output::new(label!("Crushed {x} Ore"), 64),
+                        inputs: vec![SlottedInput::new(ore_variants(x), vec![(0, 1)])],
+                        max_sets: 8,
                     })
                     .chain(["Coal", "Apatite", "Chromite", "Uraninite", "Tricalcium Phosphate"].into_iter().map(|x| SlottedRecipe {
                         outputs: Output::new(label!("{x} Dust"), 64),
@@ -653,13 +654,15 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                         max_sets: 8,
                     },
                     FluidSlottedRecipe {
-                        outputs: Output::new(label("Phosphorus Dust"), 64),
+                        outputs: Output::new(label("Phosphorus Dust"), 64)
+                            .or(less_than(ore_variants("Tricalcium Phosphate"), ore_variants("Apatite"))),
                         inputs: vec![MultiInvSlottedInput::new(label("Phosphate Dust"), vec![(0, 0, 5)])],
                         fluids: vec![],
                         max_sets: 8,
                     },
                     FluidSlottedRecipe {
-                        outputs: Output::new(label("Phosphorus Dust"), 64),
+                        outputs: Output::new(label("Phosphorus Dust"), 64)
+                            .or(<_>::not(less_than(ore_variants("Tricalcium Phosphate"), ore_variants("Apatite")))),
                         inputs: vec![MultiInvSlottedInput::new(label("Apatite Dust"), vec![(0, 0, 9)])],
                         fluids: vec![],
                         max_sets: 8,
