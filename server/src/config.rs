@@ -332,8 +332,31 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     outputs: ore_washing_outputs(x),
                     inputs: vec![MultiInvSlottedInput::new(label!("Crushed {x} Ore"), vec![(0, 0, 1)])],
                     fluids: vec![FluidSlottedInput::new(s("gtceu:distilled_water"), vec![(0, 100)])],
-                    max_sets: 8,
+                    max_sets: 4,
                 })
+                .collect(),
+            strict_priority: false,
+        });
+        factory.add_process(FluidSlottedConfig {
+            name: s("chemicalBath"),
+            input_slots: vec![vec![0]],
+            input_tanks: vec![vec![0]],
+            accesses: inv_tank(s("gtceu:hv_chemical_bath_1")),
+            to_extract: multi_inv_extract_all(),
+            fluid_extract: fluid_extract_all(),
+            recipes: (mercury_bathed_ores.iter())
+                .map(|&x| FluidSlottedRecipe {
+                    outputs: ore_washing_outputs(x),
+                    inputs: vec![MultiInvSlottedInput::new(label!("Crushed {x} Ore"), vec![(0, 0, 1)])],
+                    fluids: vec![FluidSlottedInput::new(s("gtceu:mercury"), vec![(0, 100)])],
+                    max_sets: 4,
+                })
+                .chain(persulfate_bathed_ores.iter().map(|&x| FluidSlottedRecipe {
+                    outputs: ore_washing_outputs(x),
+                    inputs: vec![MultiInvSlottedInput::new(label!("Crushed {x} Ore"), vec![(0, 0, 1)])],
+                    fluids: vec![FluidSlottedInput::new(s("gtceu:sodium_persulfate"), vec![(0, 100)])],
+                    max_sets: 4,
+                }))
                 .collect(),
             strict_priority: false,
         });
@@ -1512,29 +1535,6 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     max_sets: 8,
                 },
             ],
-            strict_priority: false,
-        });
-        factory.add_process(FluidSlottedConfig {
-            name: s("chemicalBath"),
-            input_slots: vec![vec![0]],
-            input_tanks: vec![vec![0]],
-            accesses: inv_tank(s("gtceu:hv_chemical_bath_1")),
-            to_extract: multi_inv_extract_all(),
-            fluid_extract: fluid_extract_all(),
-            recipes: (mercury_bathed_ores.iter())
-                .map(|&x| FluidSlottedRecipe {
-                    outputs: ore_washing_outputs(x),
-                    inputs: vec![MultiInvSlottedInput::new(label!("Crushed {x} Ore"), vec![(0, 0, 1)])],
-                    fluids: vec![FluidSlottedInput::new(s("gtceu:mercury"), vec![(0, 100)])],
-                    max_sets: 4,
-                })
-                .chain(persulfate_bathed_ores.iter().map(|&x| FluidSlottedRecipe {
-                    outputs: ore_washing_outputs(x),
-                    inputs: vec![MultiInvSlottedInput::new(label!("Crushed {x} Ore"), vec![(0, 0, 1)])],
-                    fluids: vec![FluidSlottedInput::new(s("gtceu:sodium_persulfate"), vec![(0, 100)])],
-                    max_sets: 4,
-                }))
-                .collect(),
             strict_priority: false,
         });
         factory.add_process(BlockingOutputConfig {
