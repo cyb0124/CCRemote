@@ -6,14 +6,14 @@ use fnv::FnvHashSet;
 use std::{cell::RefCell, rc::Rc, time::Duration};
 
 const MAIN: &str = "main";
-const BUS: &str = "minecraft:barrel_0";
+const BUS: &str = "minecraft:barrel_6";
 
 fn fbus() -> Vec<LocalStr> {
     vec![
-        s("enderio:pressurized_fluid_tank_0"),
-        s("enderio:pressurized_fluid_tank_1"),
+        s("enderio:pressurized_fluid_tank_4"),
+        s("enderio:pressurized_fluid_tank_5"),
+        s("enderio:pressurized_fluid_tank_6"),
         s("enderio:pressurized_fluid_tank_2"),
-        s("enderio:pressurized_fluid_tank_3"),
     ]
 }
 
@@ -82,6 +82,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
         factory.add_process(LowAlert::new(label("Glowstone Dust"), 64));
         factory.add_process(LowAlert::new(label("Potassium Dust"), 64));
         factory.add_process(LowAlert::new(label("Aluminium Dust"), 64));
+        factory.add_process(LowAlert::new(label("Manganese Dust"), 64));
         factory.add_process(LowAlert::new(label("Silicon Dioxide Dust"), 64));
         for x in ["Tin", "Copper", "Gallium", "Tantalum"] {
             factory.add_process(LowAlert::new(
@@ -96,12 +97,12 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             factory.add_process(LowAlert::new(ore_variants(x), 64));
         }
         factory.add_process(ManualUiConfig { accesses: acc(s("minecraft:barrel_4")) });
-        for i in [1, 3, 0, 2] {
+        for i in [4, 5, 1, 3] {
             factory.add_storage(ChestConfig { accesses: acc(local_fmt!("gtceu:titanium_crate_{i}")), override_max_stack_size: None });
         }
         for (capacity, addr, fluid) in [
             (32_000 * 8 * 8, "functionalstorage:fluid_1_0", "gtceu:oxygen"),
-            (32_000 * 8, "functionalstorage:fluid_1_1", "gtceu:high_octane_gasoline"),
+            (32_000 * 8, "functionalstorage:fluid_1_41", "gtceu:styrene_butadiene_rubber"),
             (32_000 * 8 * 8, "functionalstorage:fluid_1_2", "gtceu:hydrogen"),
             (32_000 * 8, "functionalstorage:fluid_1_3", "gtceu:hydrogen_sulfide"),
             (32_000 * 8, "functionalstorage:fluid_1_4", "gtceu:sulfuric_acid"),
@@ -131,11 +132,12 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             (32_000 * 8, "functionalstorage:fluid_1_38", "gtceu:phosphoric_acid"),
             (32_000 * 8, "functionalstorage:fluid_1_39", "gtceu:helium"),
             (32_000 * 8, "functionalstorage:fluid_1_40", "gtceu:sulfur_dioxide"),
+            (32_000 * 8, "functionalstorage:fluid_1_42", "gtceu:glue"),
         ] {
             factory.add_fluid_storage(FluidStorageConfig { accesses: tank(s(addr)), fluid: s(fluid), capacity });
         }
         for addr in [
-            "gtceu:mv_output_bus_1", // ebf
+            "gtceu:mv_output_bus_3", // ebf
             "gtceu:mv_output_bus_2", // freezer
         ] {
             factory.add_process(SlottedConfig {
@@ -148,7 +150,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             });
         }
         for addr in [
-            "gtceu:mv_output_hatch_1", // ebf
+            "gtceu:mv_output_hatch_3", // ebf
             "gtceu:mv_output_hatch_0", // freezer
         ] {
             factory.add_process(FluidSlottedConfig {
@@ -163,10 +165,10 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             });
         }
         for (addr, fluid, qty) in [
-            ("gtceu:hv_combustion_4", "gtceu:high_octane_gasoline", 16_000),
-            ("gtceu:hv_combustion_5", "gtceu:high_octane_gasoline", 16_000),
-            ("gtceu:hv_combustion_6", "gtceu:high_octane_gasoline", 16_000),
-            ("gtceu:hv_combustion_7", "gtceu:high_octane_gasoline", 16_000),
+            // ("gtceu:hv_combustion_4", "gtceu:high_octane_gasoline", 16_000),
+            // ("gtceu:hv_combustion_5", "gtceu:high_octane_gasoline", 16_000),
+            // ("gtceu:hv_combustion_6", "gtceu:high_octane_gasoline", 16_000),
+            // ("gtceu:hv_combustion_7", "gtceu:high_octane_gasoline", 16_000),
         ] {
             factory.add_process(FluidSlottedConfig {
                 name: s("fluidStock"),
@@ -186,7 +188,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
         }
         factory.add_process(BufferedConfig {
             name: s("export"),
-            accesses: acc(s("minecraft:barrel_3")),
+            accesses: acc(s("minecraft:barrel_5")),
             slot_filter: None,
             to_extract: None,
             recipes: vec![],
@@ -207,7 +209,55 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                 BufferedInput::new(label("Chromium Ingot"), 64),
             ],
         });
-        for i in [0, 1] {
+        factory.add_process(SlottedConfig {
+            name: s("microverse-chalcopyrite"),
+            accesses: acc(s("gtceu:mv_input_bus_4")),
+            input_slots: (0..9).collect(),
+            to_extract: None,
+            recipes: vec![SlottedRecipe {
+                outputs: ignore_outputs(1.),
+                inputs: vec![
+                    SlottedInput::new(label("item.kubejs.microminer_t1"), vec![(0, 1)]),
+                    SlottedInput::new(label("item.kubejs.basic_drilling_kit"), vec![(1, 1)]),
+                    SlottedInput::new(label("Bronze Drill Head"), vec![(2, 1)]),
+                ],
+                max_sets: 1,
+            }],
+            strict_priority: false,
+        });
+        factory.add_process(SlottedConfig {
+            name: s("microverse-galena"),
+            accesses: acc(s("gtceu:mv_input_bus_7")),
+            input_slots: (0..9).collect(),
+            to_extract: None,
+            recipes: vec![SlottedRecipe {
+                outputs: ignore_outputs(1.),
+                inputs: vec![
+                    SlottedInput::new(label("item.kubejs.microminer_t1"), vec![(0, 1)]),
+                    SlottedInput::new(label("item.kubejs.basic_drilling_kit"), vec![(1, 1)]),
+                    SlottedInput::new(label("Sterling Silver Drill Head"), vec![(2, 1)]),
+                ],
+                max_sets: 1,
+            }],
+            strict_priority: false,
+        });
+        factory.add_process(SlottedConfig {
+            name: s("microverse-goethite"),
+            accesses: acc(s("gtceu:mv_input_bus_8")),
+            input_slots: (0..9).collect(),
+            to_extract: None,
+            recipes: vec![SlottedRecipe {
+                outputs: ignore_outputs(1.),
+                inputs: vec![
+                    SlottedInput::new(label("item.kubejs.microminer_t1"), vec![(0, 1)]),
+                    SlottedInput::new(label("item.kubejs.basic_drilling_kit"), vec![(1, 1)]),
+                    SlottedInput::new(label("Invar Drill Head"), vec![(2, 1)]),
+                ],
+                max_sets: 1,
+            }],
+            strict_priority: false,
+        });
+        for i in [2, 3] {
             factory.add_process(SlottedConfig {
                 name: s("macerator"),
                 accesses: acc(local_fmt!("gtceu:hv_macerator_{i}")),
@@ -215,12 +265,12 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                 to_extract: extract_all(),
                 recipes: (all_ores.iter())
                     .map(|&x| SlottedRecipe {
-                        outputs: Output::new(label!("Crushed {x} Ore"), 64),
+                        outputs: Output::new(label!("Crushed {x} Ore"), 16),
                         inputs: vec![SlottedInput::new(ore_variants(x), vec![(0, 1)])],
                         max_sets: 8,
                     })
                     .chain(["Coal", "Apatite", "Chromite", "Uraninite", "Tricalcium Phosphate", "Cobaltite"].into_iter().map(|x| SlottedRecipe {
-                        outputs: Output::new(label!("{x} Dust"), 64),
+                        outputs: Output::new(label!("{x} Dust"), 16),
                         inputs: vec![SlottedInput::new(label!("Refined {x} Ore"), vec![(0, 1)])],
                         max_sets: 8,
                     }))
@@ -237,22 +287,22 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     .chain([
                         SlottedRecipe { outputs: ignore_outputs(2.), inputs: vec![SlottedInput::new(label("Apatite"), vec![(0, 1)])], max_sets: 8 },
                         SlottedRecipe {
-                            outputs: Output::new(label("Crushed Ice"), 64),
+                            outputs: Output::new(label("Crushed Ice"), 16),
                             inputs: vec![SlottedInput::new(label("Ice"), vec![(0, 1)])],
                             max_sets: 8,
                         },
                         SlottedRecipe {
-                            outputs: Output::new(label("Obsidian Dust"), 64),
+                            outputs: Output::new(label("Obsidian Dust"), 16),
                             inputs: vec![SlottedInput::new(label("Obsidian"), vec![(0, 1)])],
                             max_sets: 8,
                         },
                         SlottedRecipe {
-                            outputs: Output::new(label("Endstone Dust"), 64),
+                            outputs: Output::new(label("Endstone Dust"), 16),
                             inputs: vec![SlottedInput::new(label("End Stone"), vec![(0, 1)])],
                             max_sets: 8,
                         },
                         SlottedRecipe {
-                            outputs: Output::new(label("Netherrack Dust"), 64),
+                            outputs: Output::new(label("Netherrack Dust"), 16),
                             inputs: vec![SlottedInput::new(label("Netherrack"), vec![(0, 1)])],
                             max_sets: 8,
                         },
@@ -265,12 +315,12 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             name: s("oreWasher"),
             input_slots: vec![vec![0, 1]],
             input_tanks: vec![vec![0]],
-            accesses: inv_tank(s("gtceu:hv_ore_washer_0")),
+            accesses: inv_tank(s("gtceu:hv_ore_washer_1")),
             to_extract: multi_inv_extract_all(),
             fluid_extract: None,
             recipes: (washed_ores.iter())
                 .map(|&x| FluidSlottedRecipe {
-                    outputs: Output::new(label!("Purified {x} Ore"), 64),
+                    outputs: Output::new(label!("Purified {x} Ore"), 16),
                     inputs: vec![MultiInvSlottedInput::new(label!("Crushed {x} Ore"), vec![(0, 0, 1)])],
                     fluids: vec![FluidSlottedInput::new(s("gtceu:distilled_water"), vec![(0, 100)])],
                     max_sets: 8,
@@ -280,12 +330,12 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: s("thermalCentrifuge"),
-            accesses: acc(s("gtceu:hv_thermal_centrifuge_0")),
+            accesses: acc(s("gtceu:hv_thermal_centrifuge_1")),
             input_slots: vec![0],
             to_extract: extract_all(),
             recipes: (refined_ores.iter())
                 .map(|&x| SlottedRecipe {
-                    outputs: Output::new(label!("Refined {x} Ore"), 64),
+                    outputs: Output::new(label!("Refined {x} Ore"), 16),
                     inputs: vec![SlottedInput::new(label!("Purified {x} Ore"), vec![(0, 1)])],
                     max_sets: 8,
                 })
@@ -293,13 +343,13 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             strict_priority: false,
         });
         factory.add_process(FluidSlottedConfig {
-            name: s("ebf"),
+            name: s("ebf-2/none"),
             input_slots: vec![(0..9).collect(), (0..9).collect()],
             input_tanks: vec![vec![0]],
             accesses: vec![InvTankAccess {
                 client: s(MAIN),
-                inv_addrs: vec![s("gtceu:mv_input_bus_1"), s("gtceu:mv_input_bus_2")],
-                tank_addrs: vec![s("gtceu:mv_input_hatch_1")],
+                inv_addrs: vec![s("gtceu:mv_input_bus_6"), s("gtceu:mv_input_bus_5")],
+                tank_addrs: vec![s("gtceu:mv_input_hatch_4")],
                 bus_addr: s(BUS),
                 fluid_bus_addrs: fbus(),
             }],
@@ -317,7 +367,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     max_sets: 1,
                 },
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("Arsenic Trioxide Dust"), 64),
+                    outputs: Output::new(label("Arsenic Trioxide Dust"), 16),
                     inputs: vec![MultiInvSlottedInput::new(label("Cobaltite Dust"), vec![(0, 0, 1)])],
                     fluids: vec![FluidSlottedInput::new(s("gtceu:oxygen"), vec![(0, 3_000)])],
                     max_sets: 8,
@@ -331,6 +381,18 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                 FluidSlottedRecipe {
                     outputs: Output::new(label("Chromium Ingot"), 64),
                     inputs: vec![MultiInvSlottedInput::new(label("Chromium Dust"), vec![(0, 0, 1)])],
+                    fluids: vec![FluidSlottedInput::new(s("gtceu:nitrogen"), vec![(0, 1_000)])],
+                    max_sets: 4,
+                },
+                FluidSlottedRecipe {
+                    outputs: Output::new(label("Stainless Steel Ingot"), 64),
+                    inputs: vec![MultiInvSlottedInput::new(label("Stainless Steel Dust"), vec![(0, 0, 1)])],
+                    fluids: vec![FluidSlottedInput::new(s("gtceu:nitrogen"), vec![(0, 1_000)])],
+                    max_sets: 4,
+                },
+                FluidSlottedRecipe {
+                    outputs: Output::new(label("Sterling Silver Ingot"), 64),
+                    inputs: vec![MultiInvSlottedInput::new(label("Sterling Silver Dust"), vec![(0, 0, 1)])],
                     fluids: vec![FluidSlottedInput::new(s("gtceu:nitrogen"), vec![(0, 1_000)])],
                     max_sets: 4,
                 },
@@ -435,7 +497,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     max_sets: 4,
                 },
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("Plastic Circuit Board"), 64),
+                    outputs: Output::new(label("Plastic Circuit Board"), 16),
                     inputs: vec![
                         MultiInvSlottedInput::new(label("Polytetrafluoroethylene Sheet"), vec![(0, 0, 1)]),
                         MultiInvSlottedInput::new(label("Copper Foil"), vec![(0, 1, 4)]),
@@ -444,7 +506,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     max_sets: 4,
                 },
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("Plastic Printed Circuit Board"), 64),
+                    outputs: Output::new(label("Plastic Printed Circuit Board"), 16),
                     inputs: vec![
                         MultiInvSlottedInput::new(label("Plastic Circuit Board"), vec![(0, 0, 1)]),
                         MultiInvSlottedInput::new(label("Copper Foil"), vec![(0, 1, 6)]),
@@ -453,7 +515,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     max_sets: 4,
                 },
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("Epoxy Circuit Board"), 64),
+                    outputs: Output::new(label("Epoxy Circuit Board"), 16),
                     inputs: vec![
                         MultiInvSlottedInput::new(label("Epoxy Sheet"), vec![(0, 0, 1)]),
                         MultiInvSlottedInput::new(label("Gold Foil"), vec![(0, 1, 8)]),
@@ -462,7 +524,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     max_sets: 4,
                 },
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("Epoxy Printed Circuit Board"), 64),
+                    outputs: Output::new(label("Epoxy Printed Circuit Board"), 16),
                     inputs: vec![
                         MultiInvSlottedInput::new(label("Epoxy Circuit Board"), vec![(0, 0, 1)]),
                         MultiInvSlottedInput::new(label("Electrum Foil"), vec![(0, 1, 8)]),
@@ -471,7 +533,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     max_sets: 4,
                 },
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("Saltpeter Dust"), 64),
+                    outputs: Output::new(label("Saltpeter Dust"), 16),
                     inputs: vec![MultiInvSlottedInput::new(label("Potassium Dust"), vec![(0, 0, 1)])],
                     fluids: vec![
                         FluidSlottedInput::new(s("gtceu:oxygen"), vec![(0, 3_000)]),
@@ -480,25 +542,25 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     max_sets: 5,
                 },
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("Blizz Powder"), 64),
+                    outputs: Output::new(label("Blizz Powder"), 16),
                     inputs: vec![MultiInvSlottedInput::new(label("Crushed Ice"), vec![(0, 0, 1)])],
                     fluids: vec![FluidSlottedInput::new(s("gtceu:elemental_reduction_fluid"), vec![(0, 100)])],
                     max_sets: 8,
                 },
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("Blaze Powder"), 64),
+                    outputs: Output::new(label("Blaze Powder"), 16),
                     inputs: vec![MultiInvSlottedInput::new(label("Netherrack Dust"), vec![(0, 0, 1)])],
                     fluids: vec![FluidSlottedInput::new(s("gtceu:elemental_reduction_fluid"), vec![(0, 100)])],
                     max_sets: 8,
                 },
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("Basalz Powder"), 64),
+                    outputs: Output::new(label("Basalz Powder"), 16),
                     inputs: vec![MultiInvSlottedInput::new(label("Coal Dust"), vec![(0, 0, 1)])],
                     fluids: vec![FluidSlottedInput::new(s("gtceu:elemental_reduction_fluid"), vec![(0, 100)])],
                     max_sets: 8,
                 },
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("Blitz Powder"), 64),
+                    outputs: Output::new(label("Blitz Powder"), 16),
                     inputs: vec![MultiInvSlottedInput::new(label("Endstone Dust"), vec![(0, 0, 1)])],
                     fluids: vec![FluidSlottedInput::new(s("gtceu:elemental_reduction_fluid"), vec![(0, 100)])],
                     max_sets: 8,
@@ -509,19 +571,19 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             name: s("reactor-1"),
             input_slots: vec![vec![0, 1]],
             input_tanks: vec![vec![0, 1, 2]],
-            accesses: inv_tank(s("gtceu:hv_chemical_reactor_1")),
+            accesses: inv_tank(s("gtceu:hv_chemical_reactor_2")),
             to_extract: multi_inv_extract_all(),
             fluid_extract: fluid_extract_all(),
             recipes: (reactor_any().into_iter())
                 .chain([
                     FluidSlottedRecipe {
-                        outputs: Output::new(label("Sodium Bisulfate Dust"), 64),
+                        outputs: Output::new(label("Sodium Bisulfate Dust"), 16),
                         inputs: vec![MultiInvSlottedInput::new(label("Salt"), vec![(0, 0, 2)])],
                         fluids: vec![FluidSlottedInput::new(s("gtceu:sulfuric_acid"), vec![(0, 1_000)])],
                         max_sets: 8,
                     },
                     FluidSlottedRecipe {
-                        outputs: Output::new(label("Phosphorus Pentoxide Dust"), 64),
+                        outputs: Output::new(label("Phosphorus Pentoxide Dust"), 16),
                         inputs: vec![MultiInvSlottedInput::new(label("Phosphorus Dust"), vec![(0, 0, 4)])],
                         fluids: vec![FluidSlottedInput::new(s("gtceu:oxygen"), vec![(0, 10_000)])],
                         max_sets: 1,
@@ -534,7 +596,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             name: s("reactor-2"),
             input_slots: vec![vec![0, 1]],
             input_tanks: vec![vec![0, 1, 2]],
-            accesses: inv_tank(s("gtceu:hv_chemical_reactor_0")),
+            accesses: inv_tank(s("gtceu:hv_chemical_reactor_3")),
             to_extract: multi_inv_extract_all(),
             fluid_extract: fluid_extract_all(),
             recipes: (reactor_any().into_iter())
@@ -574,13 +636,13 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             name: s("solidifier-plate"),
             input_slots: vec![vec![]],
             input_tanks: vec![vec![0]],
-            accesses: inv_tank(s("gtceu:hv_fluid_solidifier_0")),
+            accesses: inv_tank(s("gtceu:hv_fluid_solidifier_3")),
             to_extract: Some(Box::new(|_, _, i, _| i == 1)),
             fluid_extract: None,
             recipes: [
-                (64, "Polytetrafluoroethylene Sheet", "gtceu:polytetrafluoroethylene"),
-                (64, "Polyvinyl Chloride Sheet", "gtceu:polyvinyl_chloride"),
-                (64, "Epoxy Sheet", "gtceu:epoxy"),
+                (16, "Polytetrafluoroethylene Sheet", "gtceu:polytetrafluoroethylene"),
+                (16, "Polyvinyl Chloride Sheet", "gtceu:polyvinyl_chloride"),
+                (16, "Epoxy Sheet", "gtceu:epoxy"),
             ]
             .into_iter()
             .map(|(qty, o, i)| FluidSlottedRecipe {
@@ -596,11 +658,11 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             name: s("solidifier-block"),
             input_slots: vec![vec![]],
             input_tanks: vec![vec![0]],
-            accesses: inv_tank(s("gtceu:hv_fluid_solidifier_1")),
+            accesses: inv_tank(s("gtceu:hv_fluid_solidifier_5")),
             to_extract: Some(Box::new(|_, _, i, _| i == 1)),
             fluid_extract: None,
             recipes: vec![FluidSlottedRecipe {
-                outputs: Output::new(label("Ice"), 64),
+                outputs: Output::new(label("Ice"), 16),
                 inputs: vec![],
                 fluids: vec![FluidSlottedInput::new(s("gtceu:ice"), vec![(0, 144)])],
                 max_sets: 16,
@@ -611,11 +673,11 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             name: s("solidifier-ball"),
             input_slots: vec![vec![]],
             input_tanks: vec![vec![0]],
-            accesses: inv_tank(s("gtceu:hv_fluid_solidifier_2")),
+            accesses: inv_tank(s("gtceu:hv_fluid_solidifier_4")),
             to_extract: Some(Box::new(|_, _, i, _| i == 1)),
             fluid_extract: None,
             recipes: vec![FluidSlottedRecipe {
-                outputs: Output::new(label("Snowball"), 64),
+                outputs: Output::new(label("Snowball"), 16),
                 inputs: vec![],
                 fluids: vec![FluidSlottedInput::new(s("minecraft:water"), vec![(0, 250)])],
                 max_sets: 16,
@@ -626,7 +688,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             name: s("electrolyzer"),
             input_slots: vec![vec![0, 1]],
             input_tanks: vec![vec![0]],
-            accesses: inv_tank(s("gtceu:hv_electrolyzer_0")),
+            accesses: inv_tank(s("gtceu:hv_electrolyzer_1")),
             to_extract: multi_inv_extract_all(),
             fluid_extract: fluid_extract_all(),
             recipes: [(1_000, "gtceu:carbon_monoxide"), (1_000, "gtceu:sulfur_dioxide")]
@@ -639,32 +701,32 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                 })
                 .chain([
                     FluidSlottedRecipe {
-                        outputs: Output::new(label("Arsenic Dust"), 64),
+                        outputs: Output::new(label("Arsenic Dust"), 16),
                         inputs: vec![MultiInvSlottedInput::new(label("Arsenic Trioxide Dust"), vec![(0, 0, 5)])],
                         fluids: vec![],
                         max_sets: 8,
                     },
                     FluidSlottedRecipe {
-                        outputs: Output::new(label("Rutile Dust"), 64),
+                        outputs: Output::new(label("Rutile Dust"), 16),
                         inputs: vec![MultiInvSlottedInput::new(label("Bauxite Dust"), vec![(0, 0, 15)])],
                         fluids: vec![],
                         max_sets: 8,
                     },
                     FluidSlottedRecipe {
-                        outputs: Output::new(label("Chromium Dust"), 64),
+                        outputs: Output::new(label("Chromium Dust"), 16),
                         inputs: vec![MultiInvSlottedInput::new(label("Chromite Dust"), vec![(0, 0, 7)])],
                         fluids: vec![],
                         max_sets: 8,
                     },
                     FluidSlottedRecipe {
-                        outputs: Output::new(label("Phosphorus Dust"), 64)
+                        outputs: Output::new(label("Phosphorus Dust"), 16)
                             .or(less_than(ore_variants("Tricalcium Phosphate"), ore_variants("Apatite"))),
                         inputs: vec![MultiInvSlottedInput::new(label("Phosphate Dust"), vec![(0, 0, 5)])],
                         fluids: vec![],
                         max_sets: 8,
                     },
                     FluidSlottedRecipe {
-                        outputs: Output::new(label("Phosphorus Dust"), 64)
+                        outputs: Output::new(label("Phosphorus Dust"), 16)
                             .or(<_>::not(less_than(ore_variants("Tricalcium Phosphate"), ore_variants("Apatite")))),
                         inputs: vec![MultiInvSlottedInput::new(label("Apatite Dust"), vec![(0, 0, 9)])],
                         fluids: vec![],
@@ -709,11 +771,11 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             name: s("autoclave"),
             input_slots: vec![vec![0, 1]],
             input_tanks: vec![vec![0]],
-            accesses: inv_tank(s("gtceu:hv_autoclave_0")),
+            accesses: inv_tank(s("gtceu:hv_autoclave_1")),
             to_extract: multi_inv_extract_all(),
             fluid_extract: fluid_extract_all(),
             recipes: vec![FluidSlottedRecipe {
-                outputs: Output::new(label("Raw Carbon Fibers"), 64),
+                outputs: Output::new(label("Raw Carbon Fibers"), 16),
                 inputs: vec![MultiInvSlottedInput::new(label("Carbon Dust"), vec![(0, 0, 4)])],
                 fluids: vec![FluidSlottedInput::new(s("gtceu:epoxy"), vec![(0, 9)])],
                 max_sets: 8,
@@ -724,7 +786,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             name: s("centrifuge"),
             input_slots: vec![vec![0, 1]],
             input_tanks: vec![vec![0]],
-            accesses: inv_tank(s("gtceu:hv_centrifuge_0")),
+            accesses: inv_tank(s("gtceu:hv_centrifuge_1")),
             to_extract: multi_inv_extract_all(),
             fluid_extract: fluid_extract_all(),
             recipes: vec![
@@ -735,13 +797,13 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     max_sets: 8,
                 },
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("Phosphate Dust"), 64),
+                    outputs: Output::new(label("Phosphate Dust"), 16),
                     inputs: vec![MultiInvSlottedInput::new(label("Tricalcium Phosphate Dust"), vec![(0, 0, 5)])],
                     fluids: vec![],
                     max_sets: 8,
                 },
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("Salt"), 64),
+                    outputs: Output::new(label("Salt"), 16),
                     inputs: vec![],
                     fluids: vec![FluidSlottedInput::new(s("gtceu:salt_water"), vec![(0, 1_000)])],
                     max_sets: 8,
@@ -750,22 +812,59 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             strict_priority: false,
         });
         factory.add_process(SlottedConfig {
+            name: s("formingPress"),
+            accesses: acc(s("gtceu:hv_forming_press_1")),
+            input_slots: (0..6).collect(),
+            to_extract: extract_all(),
+            recipes: vec![
+                SlottedRecipe {
+                    outputs: Output::new(label("Bronze Drill Head"), 1),
+                    inputs: vec![
+                        SlottedInput::new(label("Double Steel Plate"), vec![(0, 2)]),
+                        SlottedInput::new(label("Bronze Plate"), vec![(1, 4)]),
+                    ],
+                    max_sets: 1,
+                },
+                SlottedRecipe {
+                    outputs: Output::new(label("Sterling Silver Drill Head"), 1),
+                    inputs: vec![
+                        SlottedInput::new(label("Double Steel Plate"), vec![(0, 2)]),
+                        SlottedInput::new(label("Sterling Silver Plate"), vec![(1, 4)]),
+                    ],
+                    max_sets: 1,
+                },
+                SlottedRecipe {
+                    outputs: Output::new(label("Invar Drill Head"), 1),
+                    inputs: vec![SlottedInput::new(label("Double Steel Plate"), vec![(0, 2)]), SlottedInput::new(label("Invar Plate"), vec![(1, 4)])],
+                    max_sets: 1,
+                },
+            ],
+            strict_priority: false,
+        });
+        factory.add_process(SlottedConfig {
             name: s("packer-2"),
-            accesses: acc(s("gtceu:hv_packer_0")),
+            accesses: acc(s("gtceu:hv_packer_1")),
             input_slots: vec![0, 1],
             to_extract: extract_all(),
-            recipes: vec![SlottedRecipe {
-                outputs: Output::new(label("Small Pile of Gallium Arsenide Dust"), 64),
-                inputs: vec![SlottedInput::new(label("Gallium Arsenide Dust"), vec![(0, 1)])],
-                max_sets: 8,
-            }],
+            recipes: vec![
+                SlottedRecipe {
+                    outputs: Output::new(label("2x Cupronickel Wire"), 16),
+                    inputs: vec![SlottedInput::new(label("1x Cupronickel Wire"), vec![(0, 2)])],
+                    max_sets: 8,
+                },
+                SlottedRecipe {
+                    outputs: Output::new(label("Small Pile of Gallium Arsenide Dust"), 16),
+                    inputs: vec![SlottedInput::new(label("Gallium Arsenide Dust"), vec![(0, 1)])],
+                    max_sets: 8,
+                },
+            ],
             strict_priority: false,
         });
         factory.add_process(FluidSlottedConfig {
             name: s("distillery-1"),
             input_slots: vec![vec![]],
             input_tanks: vec![vec![0]],
-            accesses: inv_tank(s("gtceu:hv_distillery_0")),
+            accesses: inv_tank(s("gtceu:hv_distillery_1")),
             to_extract: Some(Box::new(|_, _, i, _| i == 1)),
             fluid_extract: fluid_extract_all(),
             recipes: vec![FluidSlottedRecipe {
@@ -776,15 +875,62 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             }],
             strict_priority: false,
         });
+        factory.add_process(FluidSlottedConfig {
+            name: s("arcFurnace"),
+            input_slots: vec![vec![0]],
+            input_tanks: vec![vec![0]],
+            accesses: inv_tank(s("gtceu:hv_arc_furnace_0")),
+            to_extract: multi_inv_extract_all(),
+            fluid_extract: fluid_extract_all(),
+            recipes: vec![FluidSlottedRecipe {
+                outputs: Output::new(label("Glass"), 64),
+                inputs: vec![MultiInvSlottedInput::new(label("Sand"), vec![(0, 0, 1)])],
+                fluids: vec![FluidSlottedInput::new(s("gtceu:oxygen"), vec![(0, 20)])],
+                max_sets: 16,
+            }],
+            strict_priority: false,
+        });
         factory.add_process(SlottedConfig {
-            name: s("bender-10"),
-            accesses: acc(s("gtceu:hv_bender_0")),
-            input_slots: vec![0, 1],
+            name: s("forgeHammer"),
+            accesses: acc(s("gtceu:hv_forge_hammer_0")),
+            input_slots: vec![0],
             to_extract: extract_all(),
-            recipes: ["Gold", "Copper", "Gallium", "Tantalum", "Electrum"]
-                .into_iter()
+            recipes: vec![
+                SlottedRecipe {
+                    outputs: Output::new(label("Gravel"), 64),
+                    inputs: vec![SlottedInput::new(label("Cobblestone"), vec![(0, 1)])],
+                    max_sets: 64,
+                },
+                SlottedRecipe {
+                    outputs: Output::new(label("Sand"), 64),
+                    inputs: vec![SlottedInput::new(label("Gravel"), vec![(0, 1)])],
+                    max_sets: 64,
+                },
+            ],
+            strict_priority: false,
+        });
+        factory.add_process(SlottedConfig {
+            name: s("polarizer"),
+            accesses: acc(s("gtceu:hv_polarizer_0")),
+            input_slots: vec![0],
+            to_extract: extract_all(),
+            recipes: (["Steel Rod"].into_iter())
                 .map(|x| SlottedRecipe {
-                    outputs: Output::new(label!("{x} Foil"), 64),
+                    outputs: Output::new(label!("Magnetic {x}"), 16),
+                    inputs: vec![SlottedInput::new(label(x), vec![(0, 1)])],
+                    max_sets: 8,
+                })
+                .collect(),
+            strict_priority: false,
+        });
+        factory.add_process(SlottedConfig {
+            name: s("lathe"),
+            accesses: acc(s("gtceu:hv_lathe_0")),
+            input_slots: vec![0],
+            to_extract: extract_all(),
+            recipes: (["Steel", "Aluminium"].into_iter())
+                .map(|x| SlottedRecipe {
+                    outputs: Output::new(label!("{x} Rod"), 16),
                     inputs: vec![SlottedInput::new(label!("{x} Ingot"), vec![(0, 1)])],
                     max_sets: 8,
                 })
@@ -793,32 +939,77 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: s("bender-1"),
-            accesses: acc(s("gtceu:hv_bender_1")),
+            accesses: acc(s("gtceu:hv_bender_2")),
             input_slots: vec![0, 1],
             to_extract: extract_all(),
-            recipes: vec![
-                SlottedRecipe {
-                    outputs: Output::new(label("Thin Polyvinyl Chloride Sheet"), 64),
+            recipes: (["Invar", "Bronze", "Sterling Silver"].into_iter())
+                .map(|x| SlottedRecipe {
+                    outputs: Output::new(label!("{x} Plate"), 16),
+                    inputs: vec![SlottedInput::new(label!("{x} Ingot"), vec![(0, 1)])],
+                    max_sets: 8,
+                })
+                .chain([SlottedRecipe {
+                    outputs: Output::new(label("Thin Polyvinyl Chloride Sheet"), 16),
                     inputs: vec![SlottedInput::new(label("Polyvinyl Chloride Sheet"), vec![(0, 1)])],
                     max_sets: 8,
-                },
-                SlottedRecipe {
-                    outputs: Output::new(label("Invar Plate"), 64),
-                    inputs: vec![SlottedInput::new(label("Invar Ingot"), vec![(0, 1)])],
+                }])
+                .collect(),
+            strict_priority: false,
+        });
+        factory.add_process(SlottedConfig {
+            name: s("bender-2"),
+            accesses: acc(s("gtceu:hv_bender_4")),
+            input_slots: vec![0, 1],
+            to_extract: extract_all(),
+            recipes: ["Steel"]
+                .into_iter()
+                .map(|x| SlottedRecipe {
+                    outputs: Output::new(label!("Double {x} Plate"), 16),
+                    inputs: vec![SlottedInput::new(label!("{x} Ingot"), vec![(0, 2)])],
+                    max_sets: 4,
+                })
+                .collect(),
+            strict_priority: false,
+        });
+        factory.add_process(SlottedConfig {
+            name: s("bender-10"),
+            accesses: acc(s("gtceu:hv_bender_3")),
+            input_slots: vec![0, 1],
+            to_extract: extract_all(),
+            recipes: ["Gold", "Copper", "Gallium", "Tantalum", "Electrum"]
+                .into_iter()
+                .map(|x| SlottedRecipe {
+                    outputs: Output::new(label!("{x} Foil"), 16),
+                    inputs: vec![SlottedInput::new(label!("{x} Ingot"), vec![(0, 1)])],
                     max_sets: 8,
-                },
-            ],
+                })
+                .collect(),
+            strict_priority: false,
+        });
+        factory.add_process(SlottedConfig {
+            name: s("wiremill-1"),
+            accesses: acc(s("gtceu:hv_wiremill_2")),
+            input_slots: vec![0, 1],
+            to_extract: extract_all(),
+            recipes: ["Cupronickel", "Copper"]
+                .into_iter()
+                .map(|x| SlottedRecipe {
+                    outputs: Output::new(label!("1x {x} Wire"), 16),
+                    inputs: vec![SlottedInput::new(label!("{x} Ingot"), vec![(0, 1)])],
+                    max_sets: 8,
+                })
+                .collect(),
             strict_priority: false,
         });
         factory.add_process(SlottedConfig {
             name: s("wiremill-3"),
-            accesses: acc(s("gtceu:hv_wiremill_0")),
+            accesses: acc(s("gtceu:hv_wiremill_1")),
             input_slots: vec![0, 1],
             to_extract: extract_all(),
             recipes: ["Electrum", "Tantalum", "Red Alloy", "Copper", "material.gtceu.lumium", "Platinum"]
                 .into_iter()
                 .map(|x| SlottedRecipe {
-                    outputs: Output::new(label!("Fine {x} Wire"), 64),
+                    outputs: Output::new(label!("Fine {x} Wire"), 16),
                     inputs: vec![SlottedInput::new(label!("{x} Ingot"), vec![(0, 1)])],
                     max_sets: 8,
                 })
@@ -827,11 +1018,11 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: s("extruder-ring"),
-            accesses: acc(s("gtceu:hv_extruder_0")),
+            accesses: acc(s("gtceu:hv_extruder_2")),
             input_slots: vec![0],
             to_extract: Some(Box::new(|_, i, _| i == 2)),
             recipes: vec![SlottedRecipe {
-                outputs: Output::new(label("Nickel Zinc Ferrite Ring"), 64),
+                outputs: Output::new(label("Nickel Zinc Ferrite Ring"), 16),
                 inputs: vec![SlottedInput::new(label("Nickel Zinc Ferrite Ingot"), vec![(0, 1)])],
                 max_sets: 4,
             }],
@@ -839,11 +1030,11 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: s("extruder-bolt"),
-            accesses: acc(s("gtceu:hv_extruder_1")),
+            accesses: acc(s("gtceu:hv_extruder_3")),
             input_slots: vec![0],
             to_extract: Some(Box::new(|_, i, _| i == 2)),
             recipes: vec![SlottedRecipe {
-                outputs: Output::new(label("Tin Bolt"), 64),
+                outputs: Output::new(label("Tin Bolt"), 16),
                 inputs: vec![SlottedInput::new(label("Tin Ingot"), vec![(0, 1)])],
                 max_sets: 4,
             }],
@@ -870,7 +1061,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
         }
         factory.add_process(SlottedConfig {
             name: s("furnace"),
-            accesses: acc(s("gtceu:hv_electric_furnace_0")),
+            accesses: acc(s("gtceu:hv_electric_furnace_1")),
             input_slots: vec![0],
             to_extract: extract_all(),
             recipes: (cold_metals.iter())
@@ -880,7 +1071,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     max_sets: 8,
                 })
                 .chain([SlottedRecipe {
-                    outputs: Output::new(label("item.kubejs.pulsating_dust"), 64),
+                    outputs: Output::new(label("item.kubejs.pulsating_dust"), 16),
                     inputs: vec![SlottedInput::new(label("Uraninite Dust"), vec![(0, 1)])],
                     max_sets: 8,
                 }])
@@ -889,10 +1080,15 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
         });
         factory.add_process(SlottedConfig {
             name: s("alloySmelter"),
-            accesses: acc(s("gtceu:hv_alloy_smelter_0")),
+            accesses: acc(s("gtceu:hv_alloy_smelter_2")),
             input_slots: vec![0, 1],
             to_extract: extract_all(),
             recipes: vec![
+                SlottedRecipe {
+                    outputs: Output::new(label("Cupronickel Ingot"), 64),
+                    inputs: vec![SlottedInput::new(label("Copper Dust"), vec![(0, 1)]), SlottedInput::new(label("Nickel Dust"), vec![(1, 1)])],
+                    max_sets: 8,
+                },
                 SlottedRecipe {
                     outputs: Output::new(label("Red Alloy Ingot"), 64),
                     inputs: vec![SlottedInput::new(label("Copper Dust"), vec![(0, 1)]), SlottedInput::new(label("Redstone Dust"), vec![(1, 4)])],
@@ -908,13 +1104,46 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     inputs: vec![SlottedInput::new(label("Iron Dust"), vec![(0, 2)]), SlottedInput::new(label("Nickel Dust"), vec![(1, 1)])],
                     max_sets: 8,
                 },
+                SlottedRecipe {
+                    outputs: Output::new(label("Bronze Ingot"), 64),
+                    inputs: vec![SlottedInput::new(label("Copper Dust"), vec![(0, 3)]), SlottedInput::new(label("Tin Dust"), vec![(1, 1)])],
+                    max_sets: 8,
+                },
             ],
             strict_priority: false,
         });
         let asm_any = || {
             [
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("SMD Resistor"), 64),
+                    outputs: Output::new(label("1x Copper Cable"), 16),
+                    inputs: vec![MultiInvSlottedInput::new(label("1x Copper Wire"), vec![(0, 0, 1)])],
+                    fluids: vec![FluidSlottedInput::new(s("gtceu:styrene_butadiene_rubber"), vec![(0, 36)])],
+                    max_sets: 8,
+                },
+                FluidSlottedRecipe {
+                    outputs: Output::new(label("MV Electric Motor"), 16),
+                    inputs: vec![
+                        MultiInvSlottedInput::new(label("1x Copper Cable"), vec![(0, 0, 2)]),
+                        MultiInvSlottedInput::new(label("Aluminium Rod"), vec![(0, 1, 2)]),
+                        MultiInvSlottedInput::new(label("Magnetic Steel Rod"), vec![(0, 2, 1)]),
+                        MultiInvSlottedInput::new(label("2x Cupronickel Wire"), vec![(0, 3, 4)]),
+                    ],
+                    fluids: vec![],
+                    max_sets: 8,
+                },
+                FluidSlottedRecipe {
+                    outputs: Output::new(label("item.kubejs.basic_drilling_kit"), 1),
+                    inputs: vec![
+                        MultiInvSlottedInput::new(label("Double Steel Plate"), vec![(0, 0, 3)]),
+                        MultiInvSlottedInput::new(label("MV Electric Motor"), vec![(0, 1, 1)]),
+                        MultiInvSlottedInput::new(label("Microchip Processor"), vec![(0, 2, 2)]),
+                        MultiInvSlottedInput::new(label("Glass"), vec![(0, 3, 2)]),
+                    ],
+                    fluids: vec![FluidSlottedInput::new(s("gtceu:glue"), vec![(0, 200)])],
+                    max_sets: 1,
+                },
+                FluidSlottedRecipe {
+                    outputs: Output::new(label("SMD Resistor"), 16),
                     inputs: vec![
                         MultiInvSlottedInput::new(label("Carbon Dust"), vec![(0, 0, 1)]),
                         MultiInvSlottedInput::new(label("Fine Tantalum Wire"), vec![(0, 1, 4)]),
@@ -923,7 +1152,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     max_sets: 2,
                 },
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("SMD Capacitor"), 64),
+                    outputs: Output::new(label("SMD Capacitor"), 16),
                     inputs: vec![
                         MultiInvSlottedInput::new(label("Thin Polyvinyl Chloride Sheet"), vec![(0, 0, 2)]),
                         MultiInvSlottedInput::new(label("Tantalum Foil"), vec![(0, 1, 1)]),
@@ -932,7 +1161,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     max_sets: 2,
                 },
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("SMD Transistor"), 64),
+                    outputs: Output::new(label("SMD Transistor"), 16),
                     inputs: vec![
                         MultiInvSlottedInput::new(label("Gallium Foil"), vec![(0, 0, 1)]),
                         MultiInvSlottedInput::new(label("Fine Tantalum Wire"), vec![(0, 1, 8)]),
@@ -941,7 +1170,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     max_sets: 2,
                 },
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("SMD Inductor"), 64),
+                    outputs: Output::new(label("SMD Inductor"), 16),
                     inputs: vec![
                         MultiInvSlottedInput::new(label("Nickel Zinc Ferrite Ring"), vec![(0, 0, 1)]),
                         MultiInvSlottedInput::new(label("Fine Tantalum Wire"), vec![(0, 1, 4)]),
@@ -950,7 +1179,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     max_sets: 2,
                 },
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("SMD Diode"), 64),
+                    outputs: Output::new(label("SMD Diode"), 16),
                     inputs: vec![
                         MultiInvSlottedInput::new(label("Gallium Arsenide Dust"), vec![(0, 0, 1)]),
                         MultiInvSlottedInput::new(label("Fine Platinum Wire"), vec![(0, 1, 8)]),
@@ -964,7 +1193,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             name: s("asm-1"),
             input_slots: vec![(0..9).collect()],
             input_tanks: vec![vec![0]],
-            accesses: inv_tank(s("gtceu:hv_assembler_0")),
+            accesses: inv_tank(s("gtceu:hv_assembler_1")),
             to_extract: multi_inv_extract_all(),
             fluid_extract: None,
             recipes: asm_any().into_iter().collect(),
@@ -979,7 +1208,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             fluid_extract: None,
             recipes: vec![
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("Microchip Processor"), 64),
+                    outputs: Output::new(label("Microchip Processor"), 16),
                     inputs: vec![
                         MultiInvSlottedInput::new(label("Plastic Printed Circuit Board"), vec![(0, 0, 1)]),
                         MultiInvSlottedInput::new(label("SoC"), vec![(0, 1, 1)]),
@@ -990,7 +1219,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     max_sets: 4,
                 },
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("Microprocessor"), 64),
+                    outputs: Output::new(label("Microprocessor"), 16),
                     inputs: vec![
                         MultiInvSlottedInput::new(label("Plastic Printed Circuit Board"), vec![(0, 0, 1)]),
                         MultiInvSlottedInput::new(label("CPU Chip"), vec![(0, 1, 1)]),
@@ -1003,7 +1232,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     max_sets: 4,
                 },
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("Nanoprocessor"), 64),
+                    outputs: Output::new(label("Nanoprocessor"), 16),
                     inputs: vec![
                         MultiInvSlottedInput::new(label("Epoxy Printed Circuit Board"), vec![(0, 0, 1)]),
                         MultiInvSlottedInput::new(label("Nano CPU Chip"), vec![(0, 1, 1)]),
@@ -1047,7 +1276,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
         let mixer_any = || {
             [
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("item.kubejs.cryotheum_dust"), 64),
+                    outputs: Output::new(label("item.kubejs.cryotheum_dust"), 16),
                     inputs: vec![
                         MultiInvSlottedInput::new(label("Blizz Powder"), vec![(0, 0, 2)]),
                         MultiInvSlottedInput::new(label("Redstone Dust"), vec![(0, 1, 1)]),
@@ -1057,7 +1286,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     max_sets: 8,
                 },
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("item.kubejs.pyrotheum_dust"), 64),
+                    outputs: Output::new(label("item.kubejs.pyrotheum_dust"), 16),
                     inputs: vec![
                         MultiInvSlottedInput::new(label("Blaze Powder"), vec![(0, 0, 2)]),
                         MultiInvSlottedInput::new(label("Redstone Dust"), vec![(0, 1, 1)]),
@@ -1067,7 +1296,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     max_sets: 8,
                 },
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("item.kubejs.petrotheum_dust"), 64),
+                    outputs: Output::new(label("item.kubejs.petrotheum_dust"), 16),
                     inputs: vec![
                         MultiInvSlottedInput::new(label("Basalz Powder"), vec![(0, 0, 2)]),
                         MultiInvSlottedInput::new(label("Redstone Dust"), vec![(0, 1, 1)]),
@@ -1077,7 +1306,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     max_sets: 8,
                 },
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("item.kubejs.aerotheum_dust"), 64),
+                    outputs: Output::new(label("item.kubejs.aerotheum_dust"), 16),
                     inputs: vec![
                         MultiInvSlottedInput::new(label("Blitz Powder"), vec![(0, 0, 2)]),
                         MultiInvSlottedInput::new(label("Redstone Dust"), vec![(0, 1, 1)]),
@@ -1087,7 +1316,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     max_sets: 8,
                 },
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("item.kubejs.primal_mana"), 64),
+                    outputs: Output::new(label("item.kubejs.primal_mana"), 16),
                     inputs: vec![
                         MultiInvSlottedInput::new(label("item.kubejs.petrotheum_dust"), vec![(0, 0, 2)]),
                         MultiInvSlottedInput::new(label("item.kubejs.pyrotheum_dust"), vec![(0, 1, 2)]),
@@ -1099,7 +1328,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     max_sets: 8,
                 },
                 FluidSlottedRecipe {
-                    outputs: Output::new(label("Luminessence"), 64),
+                    outputs: Output::new(label("Luminessence"), 16),
                     inputs: vec![
                         MultiInvSlottedInput::new(label("Redstone Dust"), vec![(0, 0, 1)]),
                         MultiInvSlottedInput::new(label("Glowstone Dust"), vec![(0, 1, 1)]),
@@ -1114,13 +1343,13 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             name: s("mixer-1"),
             input_slots: vec![(0..6).collect()],
             input_tanks: vec![vec![0, 1]],
-            accesses: inv_tank(s("gtceu:hv_mixer_2")),
+            accesses: inv_tank(s("gtceu:hv_mixer_3")),
             to_extract: multi_inv_extract_all(),
             fluid_extract: fluid_extract_all(),
             recipes: (mixer_any().into_iter())
                 .chain([
                     FluidSlottedRecipe {
-                        outputs: Output::new(label("Gallium Arsenide Dust"), 64),
+                        outputs: Output::new(label("Gallium Arsenide Dust"), 16),
                         inputs: vec![
                             MultiInvSlottedInput::new(label("Gallium Dust"), vec![(0, 0, 1)]),
                             MultiInvSlottedInput::new(label("Arsenic Dust"), vec![(0, 1, 1)]),
@@ -1129,7 +1358,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                         max_sets: 4,
                     },
                     FluidSlottedRecipe {
-                        outputs: Output::new(label("Sterling Silver Dust"), 64),
+                        outputs: Output::new(label("Sterling Silver Dust"), 16),
                         inputs: vec![
                             MultiInvSlottedInput::new(label("Copper Dust"), vec![(0, 0, 1)]),
                             MultiInvSlottedInput::new(label("Silver Dust"), vec![(0, 1, 4)]),
@@ -1138,7 +1367,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                         max_sets: 4,
                     },
                     FluidSlottedRecipe {
-                        outputs: Output::new(label("Tin Alloy Dust"), 64),
+                        outputs: Output::new(label("Tin Alloy Dust"), 16),
                         inputs: vec![
                             MultiInvSlottedInput::new(label("Tin Dust"), vec![(0, 0, 1)]),
                             MultiInvSlottedInput::new(label("Iron Dust"), vec![(0, 1, 1)]),
@@ -1154,13 +1383,13 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             name: s("mixer-2"),
             input_slots: vec![(0..6).collect()],
             input_tanks: vec![vec![0, 1]],
-            accesses: inv_tank(s("gtceu:hv_mixer_1")),
+            accesses: inv_tank(s("gtceu:hv_mixer_4")),
             to_extract: multi_inv_extract_all(),
             fluid_extract: fluid_extract_all(),
             recipes: (mixer_any().into_iter())
                 .chain([
                     FluidSlottedRecipe {
-                        outputs: Output::new(label("Nichrome Dust"), 64),
+                        outputs: Output::new(label("Nichrome Dust"), 16),
                         inputs: vec![
                             MultiInvSlottedInput::new(label("Nickel Dust"), vec![(0, 0, 4)]),
                             MultiInvSlottedInput::new(label("Chromium Dust"), vec![(0, 1, 1)]),
@@ -1169,7 +1398,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                         max_sets: 4,
                     },
                     FluidSlottedRecipe {
-                        outputs: Output::new(label("Ferrite Mixture Dust"), 64),
+                        outputs: Output::new(label("Ferrite Mixture Dust"), 16),
                         inputs: vec![
                             MultiInvSlottedInput::new(label("Nickel Dust"), vec![(0, 0, 1)]),
                             MultiInvSlottedInput::new(label("Zinc Dust"), vec![(0, 1, 1)]),
@@ -1186,20 +1415,33 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             name: s("mixer-3"),
             input_slots: vec![(0..6).collect()],
             input_tanks: vec![vec![0, 1]],
-            accesses: inv_tank(s("gtceu:hv_mixer_0")),
+            accesses: inv_tank(s("gtceu:hv_mixer_5")),
             to_extract: multi_inv_extract_all(),
             fluid_extract: fluid_extract_all(),
             recipes: (mixer_any().into_iter())
-                .chain([FluidSlottedRecipe {
-                    outputs: Output::new(label("Soldering Alloy Dust"), 64),
-                    inputs: vec![
-                        MultiInvSlottedInput::new(label("Tin Dust"), vec![(0, 0, 6)]),
-                        MultiInvSlottedInput::new(label("Lead Dust"), vec![(0, 1, 3)]),
-                        MultiInvSlottedInput::new(label("Antimony Dust"), vec![(0, 2, 1)]),
-                    ],
-                    fluids: vec![],
-                    max_sets: 4,
-                }])
+                .chain([
+                    FluidSlottedRecipe {
+                        outputs: Output::new(label("Soldering Alloy Dust"), 16),
+                        inputs: vec![
+                            MultiInvSlottedInput::new(label("Tin Dust"), vec![(0, 0, 6)]),
+                            MultiInvSlottedInput::new(label("Lead Dust"), vec![(0, 1, 3)]),
+                            MultiInvSlottedInput::new(label("Antimony Dust"), vec![(0, 2, 1)]),
+                        ],
+                        fluids: vec![],
+                        max_sets: 4,
+                    },
+                    FluidSlottedRecipe {
+                        outputs: Output::new(label("Stainless Steel Dust"), 16),
+                        inputs: vec![
+                            MultiInvSlottedInput::new(label("Iron Dust"), vec![(0, 0, 6)]),
+                            MultiInvSlottedInput::new(label("Nickel Dust"), vec![(0, 1, 1)]),
+                            MultiInvSlottedInput::new(label("Manganese Dust"), vec![(0, 2, 1)]),
+                            MultiInvSlottedInput::new(label("Chromium Dust"), vec![(0, 3, 1)]),
+                        ],
+                        fluids: vec![],
+                        max_sets: 4,
+                    },
+                ])
                 .collect(),
             strict_priority: false,
         });
@@ -1229,7 +1471,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             name: s("extractor"),
             input_slots: vec![vec![0]],
             input_tanks: vec![vec![]],
-            accesses: inv_tank(s("gtceu:hv_extractor_0")),
+            accesses: inv_tank(s("gtceu:hv_extractor_1")),
             to_extract: multi_inv_extract_all(),
             fluid_extract: fluid_extract_all(),
             recipes: vec![
@@ -1258,18 +1500,18 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             name: s("chemicalBath"),
             input_slots: vec![vec![0]],
             input_tanks: vec![vec![0]],
-            accesses: inv_tank(s("gtceu:hv_chemical_bath_0")),
+            accesses: inv_tank(s("gtceu:hv_chemical_bath_1")),
             to_extract: multi_inv_extract_all(),
             fluid_extract: fluid_extract_all(),
             recipes: (mercury_bathed_ores.iter())
                 .map(|&x| FluidSlottedRecipe {
-                    outputs: Output::new(label!("Purified {x} Ore"), 64),
+                    outputs: Output::new(label!("Purified {x} Ore"), 16),
                     inputs: vec![MultiInvSlottedInput::new(label!("Crushed {x} Ore"), vec![(0, 0, 1)])],
                     fluids: vec![FluidSlottedInput::new(s("gtceu:mercury"), vec![(0, 100)])],
                     max_sets: 4,
                 })
                 .chain(persulfate_bathed_ores.iter().map(|&x| FluidSlottedRecipe {
-                    outputs: Output::new(label!("Purified {x} Ore"), 64),
+                    outputs: Output::new(label!("Purified {x} Ore"), 16),
                     inputs: vec![MultiInvSlottedInput::new(label!("Crushed {x} Ore"), vec![(0, 0, 1)])],
                     fluids: vec![FluidSlottedInput::new(s("gtceu:sodium_persulfate"), vec![(0, 100)])],
                     max_sets: 4,
@@ -1278,15 +1520,15 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             strict_priority: false,
         });
         factory.add_process(BlockingOutputConfig {
-            accesses: acc(s("gtceu:hv_rock_crusher_0")),
+            accesses: acc(s("gtceu:hv_rock_crusher_1")),
             slot_filter: None,
             outputs: vec![Output { item: label("Obsidian"), n_wanted: 64 }],
         });
         factory.add_process(BlockingFluidOutputConfig {
-            accesses: tank(s("ae2:cable_bus_1")),
+            accesses: tank(s("ae2:cable_bus_3")),
             outputs: vec![
                 FluidOutput { fluid: s("gtceu:oxygen"), n_wanted: 64_000 },
-                FluidOutput { fluid: s("gtceu:high_octane_gasoline"), n_wanted: 64_000 },
+                // FluidOutput { fluid: s("gtceu:high_octane_gasoline"), n_wanted: 64_000 },
                 FluidOutput { fluid: s("minecraft:water"), n_wanted: 64_000 },
                 FluidOutput { fluid: s("gtceu:chlorine"), n_wanted: 64_000 },
                 FluidOutput { fluid: s("gtceu:hydrogen"), n_wanted: 64_000 },
@@ -1300,16 +1542,25 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                 FluidOutput { fluid: s("gtceu:polyethylene"), n_wanted: 64_000 },
                 FluidOutput { fluid: s("gtceu:oxalic_acid_solution"), n_wanted: 64_000 },
                 FluidOutput { fluid: s("gtceu:helium"), n_wanted: 64_000 },
+                FluidOutput { fluid: s("gtceu:styrene_butadiene_rubber"), n_wanted: 64_000 },
+                FluidOutput { fluid: s("gtceu:glue"), n_wanted: 64_000 },
             ],
         });
         factory.add_process(BlockingOutputConfig {
-            accesses: acc(s("ae2:cable_bus_2")),
+            accesses: acc(s("ae2:cable_bus_4")),
             slot_filter: None,
-            outputs: vec![Output { item: label("Silicon Dust"), n_wanted: 64 }, Output { item: label("Carbon Dust"), n_wanted: 64 }],
+            outputs: vec![
+                Output { item: label("item.kubejs.microminer_t1"), n_wanted: 1 },
+                Output { item: label("Aluminium Ingot"), n_wanted: 64 },
+                Output { item: label("Silicon Dust"), n_wanted: 64 },
+                Output { item: label("Carbon Dust"), n_wanted: 64 },
+                Output { item: label("Steel Ingot"), n_wanted: 64 },
+                Output { item: label("Cobblestone"), n_wanted: 64 },
+            ],
         });
         factory.add_process(BufferedConfig {
             name: s("dump"),
-            accesses: acc(s("ae2:cable_bus_2")),
+            accesses: acc(s("ae2:cable_bus_4")),
             slot_filter: Some(Box::new(|i| i >= 2)),
             to_extract: None,
             recipes: vec![],
