@@ -28,7 +28,7 @@ fn ore_variants(x: &str) -> Filter {
         local_fmt!("Raw {x}"),
         local_fmt!("{x} Ore"),
         local_fmt!("End {x} Ore"),
-        local_fmt!("Talc {x} Ore"),
+        local_fmt!("Tuff {x} Ore"),
         local_fmt!("Nether {x} Ore"),
         local_fmt!("Marble {x} Ore"),
         local_fmt!("Deepslate {x} Ore"),
@@ -36,7 +36,7 @@ fn ore_variants(x: &str) -> Filter {
     custom(local_fmt!("Any {x} Ore"), move |_, x| variants.iter().any(|y| y == x.label))
 }
 
-fn cold_metal_output(x: &str) -> Rc<dyn Outputs> { Output::new(label!("{x} Dust"), 65).or(Output::new(label!("{x} Ingot"), 65)) }
+fn cold_metal_output(x: &str) -> Rc<dyn Outputs> { Output::new(label!("{x} Dust"), 80).or(Output::new(label!("{x} Ingot"), 80)) }
 
 fn less_than(x: Filter, y: Filter) -> Rc<dyn Outputs> {
     Rc::new(move |f: &Factory| {
@@ -47,18 +47,27 @@ fn less_than(x: Filter, y: Filter) -> Rc<dyn Outputs> {
 }
 
 pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
-    let cold_metals = ["Tantalum", "Gallium", "Silver", "Copper", "Gold", "Tin"];
-    let washed_ores = ["Tricalcium Phosphate", "Apatite", "Chromite", "Uraninite", "Coal"];
+    let cold_metals = ["Tantalum", "Gallium", "Silver", "Copper", "Gold", "Tin", "Nickel"];
+    let washed_ores = ["Tricalcium Phosphate", "Uraninite", "Chromite", "Redstone", "Apatite", "Coal"];
     let mercury_bathed_ores = ["Silver", "Chalcopyrite"];
     let persulfate_bathed_ores = ["Cobaltite"];
     let all_ores = FnvHashSet::from_iter(washed_ores.into_iter().chain(mercury_bathed_ores).chain(persulfate_bathed_ores));
     let refined_ores = all_ores.clone();
     let washing_byproducts: FnvHashMap<_, _> = [("Chalcopyrite", cold_metal_output("Gold"))].into_iter().collect();
-    let ore_final_outputs: Box<_> = ["Tricalcium Phosphate", "Apatite", "Chromite", "Uraninite", "Coal", "Chalcopyrite", "Cobaltite"]
-        .into_iter()
-        .map(|x| (x, Output::new(label!("{x} Dust"), 16)))
-        .chain(["Silver"].into_iter().map(|x| (x, cold_metal_output(x))))
-        .collect();
+    let ore_final_outputs: Box<_> = [
+        "Tricalcium Phosphate",
+        "Uraninite",
+        "Chromite",
+        "Redstone",
+        "Apatite",
+        "Coal",
+        "Cobaltite",
+        // Chalcopyrite
+    ]
+    .into_iter()
+    .map(|x| (x, Output::new(label!("{x} Dust"), 16)))
+    .chain(["Silver"].into_iter().map(|x| (x, cold_metal_output(x))))
+    .collect();
     let ore_washing_outputs = |x: &str| {
         let mut out = Output::new(label!("Purified {x} Ore"), 16);
         if let Some(x) = washing_byproducts.get(x) {
@@ -84,13 +93,11 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
         factory.add_process(LowAlert::new(label("Iron Dust"), 64));
         factory.add_process(LowAlert::new(label("Zinc Dust"), 64));
         factory.add_process(LowAlert::new(label("Netherrack"), 64));
-        factory.add_process(LowAlert::new(label("Nickel Dust"), 64));
         factory.add_process(LowAlert::new(label("Sulfur Dust"), 64));
         factory.add_process(LowAlert::new(label("Bauxite Dust"), 64));
         factory.add_process(LowAlert::new(label("Diamond Dust"), 64));
         factory.add_process(LowAlert::new(label("Nether Quartz"), 64));
         factory.add_process(LowAlert::new(label("Antimony Dust"), 64));
-        factory.add_process(LowAlert::new(label("Redstone Dust"), 64));
         factory.add_process(LowAlert::new(label("Platinum Ingot"), 64));
         factory.add_process(LowAlert::new(label("Glowstone Dust"), 64));
         factory.add_process(LowAlert::new(label("Potassium Dust"), 64));
@@ -106,12 +113,14 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                 65,
             ));
         }
-        for x in ["Coal", "Silver", "Chromite", "Uraninite", "Apatite", "Tricalcium Phosphate", "Cobaltite"] {
+        for x in ["Coal", "Silver", "Chromite", "Uraninite", "Apatite", "Tricalcium Phosphate", "Cobaltite", "Redstone"] {
             factory.add_process(LowAlert::new(ore_variants(x), 64));
         }
         factory.add_process(ManualUiConfig { accesses: acc(s("minecraft:barrel_4")) });
-        for i in [4, 5, 1, 3] {
-            factory.add_storage(ChestConfig { accesses: acc(local_fmt!("gtceu:titanium_crate_{i}")), override_max_stack_size: None });
+        for addr in
+            ["gtceu:titanium_crate_4", "gtceu:titanium_crate_5", "gtceu:titanium_crate_1", "gtceu:titanium_crate_3", "gtceu:tungsten_steel_crate_0"]
+        {
+            factory.add_storage(ChestConfig { accesses: acc(s(addr)), override_max_stack_size: None });
         }
         for (capacity, addr, fluid) in [
             (32_000 * 8 * 8, "functionalstorage:fluid_1_0", "gtceu:oxygen"),
@@ -121,7 +130,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             (32_000 * 8, "functionalstorage:fluid_1_4", "gtceu:sulfuric_acid"),
             (32_000 * 8, "functionalstorage:fluid_1_34", "gtceu:oxalic_acid_solution"),
             (32_000 * 8, "functionalstorage:fluid_1_6", "gtceu:polyethylene"),
-            (32_000 * 8, "functionalstorage:fluid_1_7", "gtceu:chlorine"),
+            (32_000 * 8 * 8, "functionalstorage:fluid_1_7", "gtceu:chlorine"),
             (32_000 * 8 * 8, "functionalstorage:fluid_1_8", "minecraft:water"),
             (32_000 * 8, "functionalstorage:fluid_1_33", "gtceu:glowstone"),
             (32_000 * 8, "functionalstorage:fluid_1_24", "gtceu:soldering_alloy"),
@@ -1104,18 +1113,11 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                     inputs: vec![SlottedInput::new(label!("{x} Dust"), vec![(0, 1)]).extra_backup(64)],
                     max_sets: 8,
                 })
-                .chain([
-                    SlottedRecipe {
-                        outputs: cold_metal_output("Copper"),
-                        inputs: vec![SlottedInput::new(label("Chalcopyrite Dust"), vec![(0, 1)])],
-                        max_sets: 8,
-                    },
-                    SlottedRecipe {
-                        outputs: Output::new(label("item.kubejs.pulsating_dust"), 16),
-                        inputs: vec![SlottedInput::new(label("Uraninite Dust"), vec![(0, 1)])],
-                        max_sets: 8,
-                    },
-                ])
+                .chain([SlottedRecipe {
+                    outputs: Output::new(label("item.kubejs.pulsating_dust"), 16),
+                    inputs: vec![SlottedInput::new(label("Uraninite Dust"), vec![(0, 1)])],
+                    max_sets: 8,
+                }])
                 .collect(),
             strict_priority: false,
         });
@@ -1572,6 +1574,8 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                 Output { item: label("Raw Chalcopyrite"), n_wanted: 64 },
                 Output { item: label("Aluminium Ingot"), n_wanted: 64 },
                 Output { item: label("Silicon Dust"), n_wanted: 64 },
+                Output { item: label("Nickel Ingot"), n_wanted: 80 },
+                Output { item: label("Copper Ingot"), n_wanted: 80 },
                 Output { item: label("Carbon Dust"), n_wanted: 64 },
                 Output { item: label("Steel Ingot"), n_wanted: 64 },
                 Output { item: label("Cobblestone"), n_wanted: 64 },
@@ -1580,7 +1584,7 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
         factory.add_process(BufferedConfig {
             name: s("dump"),
             accesses: acc(s("ae2:cable_bus_4")),
-            slot_filter: Some(Box::new(|i| i == 8)),
+            slot_filter: Some(Box::new(|i| i >= 9)),
             to_extract: None,
             recipes: vec![],
             max_recipe_inputs: 0,
