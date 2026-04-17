@@ -28,11 +28,12 @@ fn cold_metal_output(x: &str) -> Rc<dyn Outputs> { Output::new(label!("{x} Dust"
 
 pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
     let cold_metals = ["Tantalum", "Gallium", "Copper", "Gold", "Tin", "Nickel", "Iron", "Platinum", "Silver"];
-    let washed_ores = ["Tricalcium Phosphate", "Uraninite", "Chromite", "Redstone", "Apatite", "Coal"];
+    let washed_ores = ["Tricalcium Phosphate", "Uraninite", "Chromite", "Redstone", "Apatite", "Coal", "Nether Quartz"];
     let mercury_bathed_ores = ["Chalcopyrite", "Galena"];
     let persulfate_bathed_ores = ["Cobaltite", "Sphalerite", "Bauxite", "Ilmenite"];
     let refined_ores =
         ["Tricalcium Phosphate", "Uraninite", "Chromite", "Redstone", "Apatite", "Coal", "Cobaltite", "Bauxite", "Ilmenite", "Chalcopyrite"];
+    let sifted_ores = ["Nether Quartz"];
     let less_ilmenite_than_bauxite: Rc<dyn Outputs> =
         Rc::new(move |f: &Factory| (!(f.search_n_stored(&label("Ilmenite Dust")) < f.search_n_stored(&label("Bauxite Dust")))).then_some(1.));
     let less_phosphate_than_apatite: Rc<dyn Outputs> = Rc::new(move |f: &Factory| {
@@ -522,6 +523,15 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
             stocks: (refined_ores.iter().map(|&x| BufferedInput::new(label!("Refined {x} Ore"), i32::MAX)))
                 .chain([BufferedInput::new(label("Apatite"), i32::MAX)])
                 .collect(),
+        });
+        factory.add_process(BufferedConfig {
+            name: s("sifter"),
+            accesses: acc(s("gtceu:hv_sifter_0")),
+            slot_filter: Some(Box::new(|i| i == 0)),
+            to_extract: Some(Box::new(|_, i, _| i > 0)),
+            recipes: vec![],
+            max_recipe_inputs: 0,
+            stocks: sifted_ores.iter().map(|&x| BufferedInput::new(label!("Purified {x} Ore"), i32::MAX)).collect(),
         });
         let ebf_any = || {
             [
@@ -1043,14 +1053,21 @@ pub fn build_factory(tui: Rc<Tui>) -> Rc<RefCell<Factory>> {
                 accesses: inv_tank(local_fmt!("gtceu:hv_centrifuge_{i}")),
                 to_extract: multi_inv_extract_all(),
                 fluid_extract: fluid_extract_all(),
-                recipes: [("gtceu:uranium_hexafluoride", 1_000), ("gtceu:lead_zinc_solution", 1_000)]
-                    .into_iter()
-                    .map(|(x, qty)| FluidSlottedRecipe {
-                        outputs: ignore_outputs(1.),
-                        inputs: vec![],
-                        fluids: vec![FluidSlottedInput::new(s(x), vec![(0, qty)]).extra_backup(1)],
-                        max_sets: (16_000 / qty).min(8) as i32,
+                recipes: (sifted_ores.iter())
+                    .map(|&x| FluidSlottedRecipe {
+                        outputs: ignore_outputs(2.),
+                        inputs: vec![MultiInvSlottedInput::new(label!("Purified Pile of {x} Dust"), vec![(0, 0, 1)])],
+                        fluids: vec![],
+                        max_sets: i32::MAX,
                     })
+                    .chain([("gtceu:uranium_hexafluoride", 1_000), ("gtceu:lead_zinc_solution", 1_000)].into_iter().map(|(x, qty)| {
+                        FluidSlottedRecipe {
+                            outputs: ignore_outputs(1.),
+                            inputs: vec![],
+                            fluids: vec![FluidSlottedInput::new(s(x), vec![(0, qty)]).extra_backup(1)],
+                            max_sets: (16_000 / qty).min(8) as i32,
+                        }
+                    }))
                     .chain([
                         FluidSlottedRecipe {
                             outputs: Output::new(label("Phosphate Dust"), 16),
